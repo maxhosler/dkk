@@ -71,6 +71,16 @@ export class Result<T> {
         return null;
     }
 
+    is_ok(): boolean
+    {
+        return this.success;
+    }
+
+    if_err(): boolean
+    {
+        return !this.success;
+    }
+
     error(): ResultError
     {
         if(this.success)
@@ -102,3 +112,81 @@ export class Result<T> {
     }
 }
 
+export class Option<T>
+{
+    valid: boolean;
+    value: T | undefined
+
+    private constructor(
+        valid: boolean,
+        some: T | undefined,
+    )
+    {
+        this.valid = valid;
+        if(valid)
+        {
+            if(!some)
+            { throw new Error("Invalid result construction, 'ok' undefined on success."); }
+
+            this.value = some;
+        }
+        else
+        {
+            this.value = undefined;
+        }
+    }
+
+    public static some<T>(t: T): Option<T>
+    {
+        return new Option<T>(true, t);
+    }
+
+    public static none<T>(): Option<T>
+    {
+        return new Option<T>(false, undefined);
+    }
+
+    unwrap(): T
+    {
+        if(!this.valid)
+        { throw new Error("Tried to unwrap None.") }
+        return this.value as T;
+    }
+
+    unwrap_or(val: T): T
+    {
+        if(this.valid)
+        { return this.value as T; }
+        return val;
+    }
+
+    unwrap_or_null(): T | null
+    {
+        if(this.valid)
+        { return this.value as T; }
+        return null;
+    }
+
+    is_some(): boolean
+    {
+        return this.valid;
+    }
+
+    if_none(): boolean
+    {
+        return !this.valid;
+    }
+
+    map<S>(fn: (a: T) => S): Option<S>
+    {
+        if(this.valid)
+        {
+            let new_some: S = fn(this.value as T);
+            return Option.some(new_some);
+        }
+        else
+        {
+            return Option.none();
+        }
+    }
+}

@@ -1,13 +1,19 @@
-import { Result, ResultError } from "./result";
+import { Result, Option } from "./result";
 
+
+export const dag_error_types = {
+    NoSuchVertex: "NoSuchVertex",
+    IllegalCycle: "IllegalCycle"
+
+};
 export type Edge = { start: number, end: number };
 export class FramedDAG {
     num_edges: number;
     num_verts: number;
-    out_edges: Array<Array<number>>; // out_edges[i] is the list of edges going out
-                                     // of vertex v_i, in order
-    in_edges:  Array<Array<number>>; // Same as above, except with in-edges.
-    edges: Array<Edge> = [];
+    private out_edges: Array<Array<number>>; // out_edges[i] is the list of edges going out
+                                             // of vertex v_i, in order
+    private in_edges:  Array<Array<number>>; // Same as above, except with in-edges.
+    private edges: Array<Edge> = [];
 
     constructor(num_verts: number) {
         this.num_edges = 0;
@@ -38,7 +44,7 @@ export class FramedDAG {
             
             if(!this.valid_vert(num))
             {
-                return Result.err("NoSuchVertex",
+                return Result.err(dag_error_types.NoSuchVertex,
                     "Provided vertex with impossible index " +
                     num.toString() +
                     " for field " +
@@ -47,7 +53,13 @@ export class FramedDAG {
             }
         }
 
-        //TODO: Check if maintains acyclicness.
+        if(this.preceeds(end, start))
+        {
+            return Result.err(
+                dag_error_types.IllegalCycle,
+                "End preceeds start, introducing illegal cycle."
+            );
+        }
 
         let new_edge = this.num_edges;
         this.num_edges += 1;
@@ -69,7 +81,7 @@ export class FramedDAG {
             
             if(!this.valid_vert(num))
             {
-                return Result.err("NoSuchVertex",
+                return Result.err(dag_error_types.NoSuchVertex,
                     "Provided vertex with impossible index " +
                     num.toString() +
                     " for field " +
@@ -96,5 +108,54 @@ export class FramedDAG {
 
         return Result.ok(false);
     }
+
+    //returns a copy of out edges
+    get_out_edges(vert: number): Option<Array<number>>
+    {
+        if(!this.valid_vert(vert))
+        {
+            return Option.none();
+        }
+        return Option.some([...this.out_edges[vert]])
+    }
+
+    //returns a copy of in edges
+    get_in_edges(vert: number): Option<Array<number>>
+    {
+        if(!this.valid_vert(vert))
+        {
+            return Option.none();
+        }
+        return Option.some([...this.in_edges[vert]])
+    }
+
+    reorder_out_edges(vert: number, new_arr: Array<number>): boolean
+    {
+        if(!this.valid_vert(vert)) { return false; }
+        if(!valid_replacement(this.out_edges[vert], new_arr)) { return false; }
+        this.out_edges[vert] = new_arr;
+        return true;
+    }
+
+    reorder_in_edges(vert: number, new_arr: Array<number>): boolean
+    {
+        if(!this.valid_vert(vert)) { return false; }
+        if(!valid_replacement(this.in_edges[vert], new_arr)) { return false; }
+        this.in_edges[vert] = new_arr;
+        return true;
+    }
 }
 
+function valid_replacement(arr1: Array<number>, arr2: Array<number>): boolean
+{
+    if(arr1.length != arr2.length) { return false; }
+
+    let a1 = arr1.toSorted();
+    let a2 = arr2.toSorted();
+
+    for(let i = 0; i < a1.length; i++)
+        if (a1[i] != a2[i])
+            return false;
+    
+    return true;
+}
