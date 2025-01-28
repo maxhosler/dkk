@@ -1,0 +1,19 @@
+{
+  "name": "dkk",
+  "version": "0.0.1",
+  "description": "flow graph visualization",
+  "license": "ISC",
+  "author": "Maxwell Hosler",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node dkk_js/index.js"
+  },
+  "dependencies": {
+    "typescript": "^5.7.3"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}
