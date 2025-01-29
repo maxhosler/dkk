@@ -15,4 +15,4 @@ class PageManager
 const pm = new PageManager();
 const dag = test_dag();
 const layout = new FramedDAGEmbedding(dag);
-console.log(layout);
+console.log(layout.bake())

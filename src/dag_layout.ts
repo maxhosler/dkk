@@ -167,10 +167,35 @@ export class FramedDAGEmbedding
 		for(let i = 0; i < this.base_dag.num_edges(); i++)
 		{
 			let edge: Edge = this.base_dag.get_edge(i).unwrap();
-			//todo: delta vec
+			let edge_data = this.edge_data[i];
 
-			let rel_coords = this.edge_data[i].middle_rel_coords.clone();
-			
+			let start_data = this.vert_data[edge.start];
+			let end_data = this.vert_data[edge.end];
+
+			let start_pos = start_data.position;
+			let end_pos = end_data.position;
+			let delta = end_pos.add(start_pos.scale(-1));
+
+			let rel_coords = this.edge_data[i].middle_rel_coords;
+			let midpoint = delta.scale(rel_coords.x).add(
+				delta.rot90().scale(rel_coords.y)
+			);
+
+			let spread_percents = spread_percent(edge_data);
+			let start_tan = edge_data.start_vec_override.unwrap_or(
+				delta.rot(spread_percents[0] * start_data.spread)
+			);
+			let end_tan = edge_data.end_vec_override.unwrap_or(
+				delta.scale(-1).rot(-spread_percents[1] * end_data.spread)
+			);
+
+			let bez: Bezier = {
+				start_tangent: start_tan,
+				end_tangent: end_tan,
+				midpoint: midpoint
+			};
+
+			edges.push(bez);
 		}
 
 		return {
@@ -192,6 +217,20 @@ function all_depths(
 		let next = framed_dag.get_edge(edge).unwrap().end;
 		all_depths(framed_dag, next, vert_depth+1, depths);
 	}
+}
+
+function spread_percent(
+	edge_data: EdgeData
+): [start: number, end: number]
+{
+	let out: [number, number] = [0,0];
+	let start_end = [edge_data.start_list_pos, edge_data.end_list_pos];
+	for(let i = 0; i < 2; i++)
+	{
+		if (start_end[i][1] > 1)
+			out[i] = start_end[i][0] / (start_end[i][1] - 1) - 0.5; 
+	}
+	return out;
 }
 
 export type Bezier = 
