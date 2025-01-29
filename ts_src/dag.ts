@@ -53,7 +53,7 @@ export class FramedDAG {
             }
         }
 
-        if(this.preceeds(end, start))
+        if(this.preceeds(end, start).unwrap_or(false))
         {
             return Result.err(
                 dag_error_types.IllegalCycle,
@@ -158,4 +158,14 @@ function valid_replacement(arr1: Array<number>, arr2: Array<number>): boolean
             return false;
     
     return true;
+}
+
+export function test_dag(): FramedDAG
+{
+    let out = new FramedDAG(3);
+    out.add_edge(0,1).unwrap();
+    out.add_edge(0,1).unwrap();
+    out.add_edge(1,2).unwrap();
+    out.add_edge(1,2).unwrap();
+    return out;
 }

@@ -2,18 +2,18 @@
   "name": "dkk",
   "version": "0.0.1",
   "description": "flow graph visualization",
-  "license": "ISC",
+  "license": "MIT",
   "author": "Maxwell Hosler",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc"
-  },
-  "dependencies": {
-    "typescript": "^5.7.3"
+    "start": "tsc && npx webpack"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   }
 }

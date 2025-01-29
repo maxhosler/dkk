@@ -13,11 +13,11 @@
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
         "module": "commonjs",
-        "outDir": "dkk_js",
-        "rootDir": "src"
+        "outDir": "src",
+        "rootDir": "ts_src"
     },
     "include": [
-        "src/**/*"
+        "ts_src/**/*"
     ],
     "exclude": [
         "node_modules"

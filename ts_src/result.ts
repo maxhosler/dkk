@@ -22,14 +22,14 @@ export class Result<T> {
         this.success = success;
         if(success)
         {
-            if(!ok)
+            if(typeof ok === "undefined")
             { throw new Error("Invalid result construction, 'ok' undefined on success."); }
 
             this.ok = ok;
         }
         else
         {
-            if(!err)
+            if(typeof err === "undefined")
             { throw new Error("Invalid result construction, 'err' undefined on failure."); }
 
             this.err = err;
@@ -50,7 +50,7 @@ export class Result<T> {
         return new Result<T>(false, undefined, err);
     }
 
-    unwrap(): T
+      unwrap(): T
     {
         if(!this.success)
         { throw new Error("Tried to unwrap failed Result.\nError: "+this.err?.err_name + "\nMessage: "+this.err?.err_message) }
@@ -125,7 +125,7 @@ export class Option<T>
         this.valid = valid;
         if(valid)
         {
-            if(!some)
+            if(typeof some === "undefined")
             { throw new Error("Invalid result construction, 'ok' undefined on success."); }
 
             this.value = some;
