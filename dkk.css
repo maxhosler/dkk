@@ -1,4 +1,56 @@
 html {
-    background-color: aliceblue;
     font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body
+{
+    
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+#complete
+{
+    background-color: rgb(216, 216, 216);
+    flex-grow: 1;
+
+    display: flex;
+    flex-direction: row;
+}
+
+#sidebar
+{
+    width: 6cm;
+    background-color: rgb(244, 244, 244);
+    padding: 12pt;
+}
+
+#right_area
+{
+    flex-grow: 1;
+    padding: 12pt;
+    position: relative;
+}
+
+#draw_zone
+{
+    height: 50%;
+    width: 95%;
+    min-height: 15cm;
+
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+
+    background-color: rgb(176, 176, 176);
+
 }
