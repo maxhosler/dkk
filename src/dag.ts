@@ -8,16 +8,16 @@ export const dag_error_types = {
 };
 export type Edge = { start: number, end: number };
 export class FramedDAG {
-    num_edges: number;
-    num_verts: number;
+    private _num_edges: number;
+    private _num_verts: number;
     private out_edges: Array<Array<number>>; // out_edges[i] is the list of edges going out
                                              // of vertex v_i, in order
     private in_edges:  Array<Array<number>>; // Same as above, except with in-edges.
     private edges: Array<Edge> = [];
 
     constructor(num_verts: number) {
-        this.num_edges = 0;
-        this.num_verts = num_verts;
+        this._num_edges = 0;
+        this._num_verts = num_verts;
 
         this.out_edges = []
         this.in_edges  = []
@@ -31,7 +31,17 @@ export class FramedDAG {
 
     valid_vert(v: number): boolean
     {
-        return Number.isInteger(v) &&  v >= 0 && v < this.num_verts;
+        return Number.isInteger(v) &&  v >= 0 && v < this._num_verts;
+    }
+
+    num_edges(): number
+    {
+        return this._num_edges;
+    }
+
+    num_verts(): number
+    {
+        return this._num_verts;
     }
     
     //If OK, returns index of new edge.
@@ -61,8 +71,8 @@ export class FramedDAG {
             );
         }
 
-        let new_edge = this.num_edges;
-        this.num_edges += 1;
+        let new_edge = this._num_edges;
+        this._num_edges += 1;
 
         this.edges.push({start:start, end:end})
         this.out_edges[start].push(new_edge);
