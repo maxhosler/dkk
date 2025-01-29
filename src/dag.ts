@@ -34,6 +34,11 @@ export class FramedDAG {
         return Number.isInteger(v) &&  v >= 0 && v < this._num_verts;
     }
 
+    valid_edge(v: number): boolean
+    {
+        return Number.isInteger(v) &&  v >= 0 && v < this._num_edges;
+    }
+
     num_edges(): number
     {
         return this._num_edges;
@@ -42,6 +47,15 @@ export class FramedDAG {
     num_verts(): number
     {
         return this._num_verts;
+    }
+
+    get_edge(i: number): Option<Edge>
+    {
+        if(!this.valid_edge(i))
+        {
+            return Option.none();
+        }
+        return Option.some(this.edges[i]);
     }
     
     //If OK, returns index of new edge.
@@ -153,6 +167,32 @@ export class FramedDAG {
         if(!valid_replacement(this.in_edges[vert], new_arr)) { return false; }
         this.in_edges[vert] = new_arr;
         return true;
+    }
+
+    sources(): Array<number>
+    {
+        let out: number[] = [];
+
+        for(let i = 0; i < this._num_verts; i++)
+        {
+            if(this.in_edges[i].length == 0)
+                out.push( i );
+        }
+
+        return out;
+    }
+
+    clone(): FramedDAG
+    {
+        let out = new FramedDAG(this._num_verts);
+        
+        out._num_verts = this._num_verts;
+        out._num_edges = this._num_edges;
+        out.out_edges  = structuredClone(this.out_edges);
+        out.in_edges   = structuredClone(this.in_edges);
+        out.edges      = structuredClone(this.edges);
+
+        return out;
     }
 }
 
