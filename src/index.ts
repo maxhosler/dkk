@@ -3,11 +3,11 @@ import { FramedDAG, Edge, test_dag } from "./dag";
 
 class PageManager
 {
-	draw_zone: HTMLDivElement;
+	draw_zone: HTMLCanvasElement;
 
 	constructor()
 	{
-		this.draw_zone = document.getElementById("draw_zone") as HTMLDivElement;
+		this.draw_zone = document.getElementById("draw_zone") as HTMLCanvasElement;
 	}
 }
 
