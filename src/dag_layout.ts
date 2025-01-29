@@ -1,4 +1,5 @@
-import { FramedDAG } from "./dag";
+import { Edge, FramedDAG } from "./dag";
+import { Option } from "./result";
 
 export class Vector
 {
@@ -47,11 +48,24 @@ export class Vector
 			this.x * Math.sin(d) + this.y * Math.cos(d)
 		);
 	}
+
+	clone(): Vector
+	{
+		return new Vector(
+			this.x,
+			this.y
+		);
+	}
 }
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
 	end_list_pos:   [pos: number, out_of: number],
+
+	start_vec_override: Option<Vector>,
+	end_vec_override:   Option<Vector>,
+
+
 	middle_rel_coords: Vector
 }
 
@@ -60,7 +74,7 @@ export type VertData = {
 	spread: number
 }
 
-export class FramedDAGLayout
+export class FramedDAGEmbedding
 {
 	readonly base_dag: FramedDAG;
 	
@@ -82,6 +96,8 @@ export class FramedDAGLayout
 			() => ({ 
 				start_list_pos: [1,1],
 				end_list_pos: [1,1],
+				start_vec_override: Option.none(),
+				end_vec_override: Option.none(),
 				middle_rel_coords: new Vector(0.5, 0.0)
 			})
 		);
@@ -91,6 +107,7 @@ export class FramedDAGLayout
 
 	default_layout()
 	{
+		let edge_mid_heights: {[key:number]:number} = {};
 		for(let v = 0; v < this.base_dag.num_verts(); v++)
 		{
 			let out_edges: number[] = this.base_dag.get_out_edges(v).unwrap();
@@ -98,6 +115,9 @@ export class FramedDAGLayout
 			{
 				let edge = out_edges[i];
 				this.edge_data[edge].start_list_pos = [i, out_edges.length-1];
+				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
+				if(out_edges.length > 1)
+					edge_mid_heights[edge] += i / (out_edges.length-1) - 0.5;
 			}
 
 			let in_edges: number[] = this.base_dag.get_in_edges(v).unwrap();
@@ -105,8 +125,14 @@ export class FramedDAGLayout
 			{
 				let edge = in_edges[i];
 				this.edge_data[edge].end_list_pos = [i, in_edges.length-1];
+				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
+				if(out_edges.length > 1)
+					edge_mid_heights[edge] += i / (in_edges.length-1) - 0.5;
 			}
 		}
+		for(let i = 0; i < this.base_dag.num_edges(); i++)
+			this.edge_data[i].middle_rel_coords.y = 
+				(edge_mid_heights[i] || 0)/2;
 
 		let depths: {[key: number]: number} = {}
 		for(let src of this.base_dag.sources())
@@ -129,6 +155,29 @@ export class FramedDAGLayout
 			vd.position.x = depth;
 		}
 	}
+
+	bake(): BakedData
+	{
+		let verts: Vector[] = [];
+		let edges: Bezier[] = [];
+
+		for(let x of this.vert_data)
+			verts.push(x.position.clone());
+		
+		for(let i = 0; i < this.base_dag.num_edges(); i++)
+		{
+			let edge: Edge = this.base_dag.get_edge(i).unwrap();
+			//todo: delta vec
+
+			let rel_coords = this.edge_data[i].middle_rel_coords.clone();
+			
+		}
+
+		return {
+			verts: verts,
+			edges: edges
+		};
+	}
 }
 
 function all_depths(
@@ -143,5 +192,17 @@ function all_depths(
 		let next = framed_dag.get_edge(edge).unwrap().end;
 		all_depths(framed_dag, next, vert_depth+1, depths);
 	}
-
 }
+
+export type Bezier = 
+{
+	start_tangent: Vector,
+	end_tangent: Vector,
+	midpoint: Vector
+}
+
+export type BakedData = 
+{
+	verts: Vector[],
+	edges: Bezier[]
+};

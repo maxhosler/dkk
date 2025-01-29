@@ -55,7 +55,7 @@ export class FramedDAG {
         {
             return Option.none();
         }
-        return Option.some(this.edges[i]);
+        return Option.some(structuredClone(this.edges[i]));
     }
     
     //If OK, returns index of new edge.
