@@ -190,6 +190,8 @@ export class FramedDAGEmbedding
 			);
 
 			let bez: Bezier = {
+				start_point: start_pos,
+				end_point: end_pos,
 				start_tangent: start_tan,
 				end_tangent: end_tan,
 				midpoint: midpoint
@@ -235,8 +237,12 @@ function spread_percent(
 
 export type Bezier = 
 {
+	start_point: Vector,
+	end_point: Vector,
+	
 	start_tangent: Vector,
 	end_tangent: Vector,
+
 	midpoint: Vector
 }
 
