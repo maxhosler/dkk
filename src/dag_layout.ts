@@ -69,7 +69,7 @@ export class Vector
 	normalized(): Vector
 	{
 		let n = this.norm();
-		if (n == 0) {
+		if (Math.abs(n) < 0.00000000001) {
 			console.warn("Tried to normalize zero vector.")
 			return Vector.zero();
 		}
@@ -148,7 +148,7 @@ export class FramedDAGEmbedding
 			for(let i = 0; i < out_edges.length; i++)
 			{
 				let edge = out_edges[i];
-				this.edge_data[edge].start_list_pos = [i, out_edges.length-1];
+				this.edge_data[edge].start_list_pos = [i, out_edges.length];
 				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
 				if(out_edges.length > 1)
 					edge_mid_heights[edge] += i / (out_edges.length-1) - 0.5;
@@ -158,9 +158,9 @@ export class FramedDAGEmbedding
 			for(let i = 0; i < in_edges.length; i++)
 			{
 				let edge = in_edges[i];
-				this.edge_data[edge].end_list_pos = [i, in_edges.length-1];
+				this.edge_data[edge].end_list_pos = [i, in_edges.length];
 				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
-				if(out_edges.length > 1)
+				if(in_edges.length > 1)
 					edge_mid_heights[edge] += i / (in_edges.length-1) - 0.5;
 			}
 		}
@@ -209,26 +209,16 @@ export class FramedDAGEmbedding
 			let start_pos = start_data.position;
 			let end_pos = end_data.position;
 			let delta = end_pos.sub(start_pos);
-  
-			let rel_coords = this.edge_data[i].middle_rel_coords;
-			let midpoint = delta.scale(rel_coords.x).add(
-				delta.rot90().scale(rel_coords.y)
-			).add(start_pos);
+			
+			let tan_len = delta.norm() / 3;
 
 			let spread_percents = spread_percent(edge_data);
 			let start_tan = edge_data.start_vec_override.unwrap_or(
 				delta.rot(spread_percents[0] * start_data.spread)
-			).normalized();
+			).normalized().scale(tan_len);
 			let end_tan = edge_data.end_vec_override.unwrap_or(
 				delta.rot(-spread_percents[1] * end_data.spread)
-			).normalized();
-
-			let t = midpoint.scale(2).sub(end_pos).sub(start_pos);
-			let inv: Matrix = [
-				[start_tan.y, -start_tan.x],
-				[end_tan.y, -end_tan.x]
-			];
-			let k = t.transform(inv);
+			).normalized().scale(tan_len);
 
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
