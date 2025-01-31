@@ -210,12 +210,22 @@ function valid_replacement(arr1: Array<number>, arr2: Array<number>): boolean
     return true;
 }
 
-export function test_dag(): FramedDAG
+export function test_dag1(): FramedDAG
 {
-    let out = new FramedDAG(3);
+    let out = new FramedDAG(4);
     out.add_edge(0,1).unwrap();
     out.add_edge(0,1).unwrap();
     out.add_edge(1,2).unwrap();
     out.add_edge(1,2).unwrap();
+    out.add_edge(2,3).unwrap();
+    out.add_edge(2,3).unwrap();
+    return out;
+}
+
+export function test_dag2(): FramedDAG
+{
+    let out = test_dag1();
+    if(!out.reorder_in_edges(2, [3,2]))
+        throw Error("Something went wrong with test dag 2!")
     return out;
 }

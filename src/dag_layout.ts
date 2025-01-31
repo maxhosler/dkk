@@ -1,6 +1,7 @@
 import { Edge, FramedDAG } from "./dag";
 import { Option } from "./result";
 
+type Matrix = [[number,number], [number, number]];
 export class Vector
 {
 	public x: number;
@@ -33,6 +34,14 @@ export class Vector
 		);
 	}
 
+	sub(v: Vector): Vector
+	{
+		return new Vector(
+			this.x - v.x,
+			this.y - v.y
+		);
+	}
+
 	rot90(): Vector
 	{
 		return new Vector(
@@ -47,6 +56,31 @@ export class Vector
 			this.x * Math.cos(d) - this.y * Math.sin(d),
 			this.x * Math.sin(d) + this.y * Math.cos(d)
 		);
+	}
+
+	norm(): number
+	{
+		return Math.sqrt( 
+			this.x * this.x +
+			this.y * this.y
+		);
+	}
+
+	normalized(): Vector
+	{
+		let n = this.norm();
+		if (n == 0) {
+			console.warn("Tried to normalize zero vector.")
+			return Vector.zero();
+		}
+		return this.scale(1/n);
+	}
+
+	transform(m: Matrix): Vector
+	{
+		let c1 = new Vector(m[0][0], m[1][0]);
+		let c2 = new Vector(m[0][1], m[1][1]);
+		return c1.scale(this.x).add( c2.scale(this.y) )
 	}
 
 	clone(): Vector
@@ -88,7 +122,7 @@ export class FramedDAGEmbedding
 			{length:dag.num_verts()},
 			() => ({
 				position: Vector.zero(),
-				spread: Math.PI / 2
+				spread: Math.PI / 4
 			})
 		);
 		this.edge_data = Array.from(
@@ -174,27 +208,36 @@ export class FramedDAGEmbedding
 
 			let start_pos = start_data.position;
 			let end_pos = end_data.position;
-			let delta = end_pos.add(start_pos.scale(-1));
-
+			let delta = end_pos.sub(start_pos);
+  
 			let rel_coords = this.edge_data[i].middle_rel_coords;
 			let midpoint = delta.scale(rel_coords.x).add(
 				delta.rot90().scale(rel_coords.y)
-			);
+			).add(start_pos);
 
 			let spread_percents = spread_percent(edge_data);
 			let start_tan = edge_data.start_vec_override.unwrap_or(
 				delta.rot(spread_percents[0] * start_data.spread)
-			);
+			).normalized();
 			let end_tan = edge_data.end_vec_override.unwrap_or(
-				delta.scale(-1).rot(-spread_percents[1] * end_data.spread)
-			);
+				delta.rot(-spread_percents[1] * end_data.spread)
+			).normalized();
+
+			let t = midpoint.scale(2).sub(end_pos).sub(start_pos);
+			let inv: Matrix = [
+				[start_tan.y, -start_tan.x],
+				[end_tan.y, -end_tan.x]
+			];
+			let k = t.transform(inv);
+
+			let cp1 = start_pos.add( start_tan );
+			let cp2 = end_pos.sub( end_tan );
 
 			let bez: Bezier = {
 				start_point: start_pos,
 				end_point: end_pos,
-				start_tangent: start_tan,
-				end_tangent: end_tan,
-				midpoint: midpoint
+				cp1: cp1,
+				cp2: cp2
 			};
 
 			edges.push(bez);
@@ -240,10 +283,8 @@ export type Bezier =
 	start_point: Vector,
 	end_point: Vector,
 	
-	start_tangent: Vector,
-	end_tangent: Vector,
-
-	midpoint: Vector
+	cp1: Vector,
+	cp2: Vector
 }
 
 export type BakedData = 
