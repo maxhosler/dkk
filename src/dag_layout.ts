@@ -122,7 +122,7 @@ export class FramedDAGEmbedding
 			{length:dag.num_verts()},
 			() => ({
 				position: Vector.zero(),
-				spread: Math.PI / 4
+				spread: Math.PI / 2
 			})
 		);
 		this.edge_data = Array.from(
@@ -172,25 +172,29 @@ export class FramedDAGEmbedding
 		for(let src of this.base_dag.sources())
 			all_depths(this.base_dag, src, 0, depths);
 
-		let depth_total: {[key: number]: number} = {};
-		for(let d of Object.values(depths))
-			depth_total[d] = (depth_total[d] || 0) + 1;
+		let depths_arr: [number, number][] = []
 
-		let depth_count: {[key: number]: number} = {};
 		for(let i = 0; i < this.base_dag.num_verts(); i++)
 		{
-			let depth = depths[i];
-			let depth_c = depth_count[depth] || 0;
-			depth_count[depth] = depth_c + 1;
-			let depth_t = depth_total[depth] - 1;
-
-			let vd = this.vert_data[i];
-			vd.position.y = depth_c - depth_t/2;
-			vd.position.x = depth;
+			depths_arr.push([depths[i], i])
+		}
+		depths_arr.sort(
+			(a,b) => {
+				if(a[0] < b[0]) { return -1; }
+				if(a[0] > b[0]) { return 1; }
+				return a[1] - b[1];
+			}
+		);
+		for(let j = 0; j < depths_arr.length; j++)
+		{
+			let index = depths_arr[j][1];
+			let vd = this.vert_data[index];
+			vd.position.x = j;
+			vd.position.y = 0;
 		}
 	}
 
-	bake(): BakedData
+	bake(): BakedDAGEmbedding
 	{
 		let verts: Vector[] = [];
 		let edges: Bezier[] = [];
@@ -210,7 +214,7 @@ export class FramedDAGEmbedding
 			let end_pos = end_data.position;
 			let delta = end_pos.sub(start_pos);
 			
-			let tan_len = delta.norm() / 3;
+			let tan_len = delta.norm() / 2;
 
 			let spread_percents = spread_percent(edge_data);
 			let start_tan = edge_data.start_vec_override.unwrap_or(
@@ -277,7 +281,7 @@ export type Bezier =
 	cp2: Vector
 }
 
-export type BakedData = 
+export type BakedDAGEmbedding = 
 {
 	verts: Vector[],
 	edges: Bezier[]
