@@ -3,11 +3,14 @@ import { FramedDAG, Edge, test_dag } from "./dag";
 import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, Vector } from "./dag_layout";
 
 type DrawCtx = CanvasRenderingContext2D;
-class PageManager
+class EmbeddingEditorManager
 {
 	scale: number = 200;
 	node_radius: number = 12;
 	stroke_weight: number = 6;
+	stroke_halo: number = 6;
+	background_color: string = "#b0b0b0";
+
 	draw_zone: HTMLCanvasElement;
 
 	offset: Option<Vector> = Option.none();
@@ -48,7 +51,7 @@ class PageManager
 		let ctx = this.get_ctx();
 
 		for(let edge of data.edges)
-		{ this.draw_bez(edge, "#222222", ctx); }
+		{ this.draw_bez(edge, "#222222", ctx, true); }
 
 		for(let vert of data.verts)
 		{ this.draw_node(vert, ctx); }
@@ -69,15 +72,12 @@ class PageManager
 		ctx?.fill();
 	}
 
-	draw_bez(edge: Bezier, color: string, ctx: DrawCtx)
+	draw_bez(edge: Bezier, color: string, ctx: DrawCtx, halo: boolean)
 	{
 		let st = this.local_trans(edge.start_point);
 		let c1 = this.local_trans(edge.cp1);
 		let c2 = this.local_trans(edge.cp2);
 		let en = this.local_trans(edge.end_point);
-
-		ctx.strokeStyle = color;
-		ctx.lineWidth = this.stroke_weight;
 
 		ctx.beginPath();
 		ctx.moveTo(st.x, st.y);
@@ -86,7 +86,18 @@ class PageManager
 			c2.x, c2.y,
 			en.x, en.y
 		);
+
+		if (halo)
+		{
+			ctx.strokeStyle = this.background_color;
+			ctx.lineWidth = this.stroke_weight + this.stroke_halo;
+			ctx.stroke()
+		}
+
+		ctx.strokeStyle = color;
+		ctx.lineWidth = this.stroke_weight;
 		ctx.stroke()
+
 	}
 
 	get_offset(): Vector
@@ -101,11 +112,13 @@ class PageManager
 
 	local_trans(vec: Vector)
 	{
-		return vec.scale(this.scale).add(this.get_offset());
+		return vec
+			.scale(this.scale)
+			.add(this.get_offset());
 	}
 }
 
-const pm = new PageManager();
-const dag = test_dag(2);
+const pm = new EmbeddingEditorManager();
+const dag = test_dag(1);
 const layout = new FramedDAGEmbedding(dag);
 pm.set_dag_embedding(layout);
