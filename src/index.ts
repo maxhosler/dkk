@@ -1,6 +1,6 @@
 import { Result, Option } from "./result";
-import { FramedDAG, Edge, test_dag } from "./dag";
-import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, Vector } from "./dag_layout";
+import { FramedDAG, Edge, prebuilt_dag } from "./dag";
+import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, prebuilt_dag_embedding, Vector } from "./dag_layout";
 
 type DrawCtx = CanvasRenderingContext2D;
 class EmbeddingEditorManager
@@ -8,7 +8,7 @@ class EmbeddingEditorManager
 	scale: number = 200;
 	node_radius: number = 12;
 	stroke_weight: number = 6;
-	stroke_halo: number = 6;
+	stroke_halo: number = 0;
 	background_color: string = "#b0b0b0";
 
 	draw_zone: HTMLCanvasElement;
@@ -119,6 +119,7 @@ class EmbeddingEditorManager
 }
 
 const pm = new EmbeddingEditorManager();
-const dag = test_dag(1);
-const layout = new FramedDAGEmbedding(dag);
+//const dag = prebuilt_dag(1);
+//const layout = new FramedDAGEmbedding(dag);
+const layout = prebuilt_dag_embedding(2);
 pm.set_dag_embedding(layout);

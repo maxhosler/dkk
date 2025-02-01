@@ -1,4 +1,4 @@
-import { Edge, FramedDAG } from "./dag";
+import { Edge, FramedDAG, prebuilt_dag } from "./dag";
 import { Option } from "./result";
 
 type Matrix = [[number,number], [number, number]];
@@ -89,6 +89,11 @@ export class Vector
 			this.x,
 			this.y
 		);
+	}
+
+	static right(): Vector
+	{
+		return new Vector(1,0);
 	}
 }
 
@@ -286,3 +291,25 @@ export type BakedDAGEmbedding =
 	verts: Vector[],
 	edges: Bezier[]
 };
+
+export function prebuilt_dag_embedding(num: number): FramedDAGEmbedding
+{
+	let dag = prebuilt_dag(num);
+	let emb = new FramedDAGEmbedding(dag);
+
+	if(num == 2)
+	{
+		for(let i of [2,3,4]){
+			emb.edge_data[i].start_vec_override = Option.some(Vector.right());
+			emb.edge_data[i].end_vec_override = Option.some(Vector.right());
+		}
+		emb.edge_data[1].start_vec_override = Option.some(
+			Vector.right().rot(-Math.PI/8)
+		);
+		emb.edge_data[5].end_vec_override = Option.some(
+			Vector.right().rot(-Math.PI/8)
+		)
+	}
+
+	return emb;
+}

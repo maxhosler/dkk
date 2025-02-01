@@ -210,7 +210,7 @@ function valid_replacement(arr1: Array<number>, arr2: Array<number>): boolean
     return true;
 }
 
-export function test_dag(num: number): FramedDAG
+export function prebuilt_dag(num: number): FramedDAG
 {
     if(num == 0)
     {
@@ -225,7 +225,7 @@ export function test_dag(num: number): FramedDAG
     }
     else if (num == 1)
     {
-        let out = test_dag(0);
+        let out = prebuilt_dag(0);
         if(!out.reorder_in_edges(2, [3,2]))
             throw Error("Something went wrong with test dag 2!")
         return out;
@@ -243,5 +243,5 @@ export function test_dag(num: number): FramedDAG
         return out;
     }
     console.warn("Invalid test_dag number, returning (0).")
-    return test_dag(0);
+    return prebuilt_dag(0);
 }
