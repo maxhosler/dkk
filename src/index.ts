@@ -5,12 +5,13 @@ import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, Vector } from "./dag_lay
 type DrawCtx = CanvasRenderingContext2D;
 class PageManager
 {
-	scale: number = 150;
+	scale: number = 200;
 	node_radius: number = 12;
 	stroke_weight: number = 6;
 	draw_zone: HTMLCanvasElement;
 
 	offset: Option<Vector> = Option.none();
+	current_dag: Option<FramedDAGEmbedding> = Option.none();
 
 	constructor()
 	{
@@ -26,6 +27,7 @@ class PageManager
 		this.draw_zone.height = this.draw_zone.clientHeight;
 		this.draw_zone.width = this.draw_zone.clientWidth;
 		this.offset = Option.none();
+		this.draw();
 	}
 
 	get_ctx(): DrawCtx
@@ -33,8 +35,16 @@ class PageManager
 		return this.draw_zone.getContext("2d") as DrawCtx;
 	}
 
-	draw_dag(data: BakedDAGEmbedding)
+	set_dag_embedding(dag: FramedDAGEmbedding)
 	{
+		this.current_dag = Option.some(dag);
+		this.draw();
+	}
+
+	draw()
+	{
+		if(!this.current_dag.is_some()) { return; }
+		let data = this.current_dag.unwrap().bake();
 		let ctx = this.get_ctx();
 
 		for(let edge of data.edges)
@@ -98,4 +108,4 @@ class PageManager
 const pm = new PageManager();
 const dag = test_dag(2);
 const layout = new FramedDAGEmbedding(dag);
-pm.draw_dag(layout.bake())
+pm.set_dag_embedding(layout);
