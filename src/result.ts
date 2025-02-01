@@ -172,7 +172,7 @@ export class Option<T>
         return this.valid;
     }
 
-    if_none(): boolean
+    is_none(): boolean
     {
         return !this.valid;
     }
