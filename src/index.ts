@@ -1,7 +1,8 @@
 import { Result, Option } from "./result";
 import { FramedDAG, Edge, prebuilt_dag } from "./dag";
-import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, prebuilt_dag_embedding, Vector } from "./dag_layout";
+import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, prebuilt_dag_embedding } from "./dag_layout";
 import { clear_page, RIGHT_AREA, SIDEBAR } from "./html_elems";
+import { Vector } from "./util";
 
 type SelectionType = "none" | "vertex";
 class Selection
@@ -32,7 +33,7 @@ class EmbeddingEditorManager
 	scale: number = 200;
 	node_radius: number = 12;
 	stroke_weight: number = 6;
-	stroke_halo: number = 0;
+	stroke_halo: number = 6;
 	background_color: string = "#b0b0b0";
 	selection_color: string = "#2160c4aa";
 
@@ -173,6 +174,15 @@ class EmbeddingEditorManager
 
 		if (halo)
 		{
+			let grad=ctx.createLinearGradient(st.x,st.y,en.x,en.y);
+			let trans_bk = this.background_color + "00"; //Assumes in hex form. 
+			grad.addColorStop(0, trans_bk);
+			grad.addColorStop(0.095, trans_bk);
+			grad.addColorStop(0.1, this.background_color);
+			grad.addColorStop(0.9, this.background_color);
+			grad.addColorStop(0.0905, trans_bk);
+			grad.addColorStop(1.0, trans_bk);
+
 			ctx.strokeStyle = this.background_color;
 			ctx.lineWidth = this.stroke_weight + this.stroke_halo;
 			ctx.stroke()
@@ -229,5 +239,5 @@ class EmbeddingEditorManager
 const pm = new EmbeddingEditorManager();
 //const dag = prebuilt_dag(1);
 //const layout = new FramedDAGEmbedding(dag);
-const layout = prebuilt_dag_embedding(2);
+const layout = prebuilt_dag_embedding(1);
 pm.set_dag_embedding(layout);
