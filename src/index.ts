@@ -2,6 +2,29 @@ import { Result, Option } from "./result";
 import { FramedDAG, Edge, prebuilt_dag } from "./dag";
 import { BakedDAGEmbedding, Bezier, FramedDAGEmbedding, prebuilt_dag_embedding, Vector } from "./dag_layout";
 
+type SelectionType = "none" | "vertex";
+class Selection
+{
+	readonly type: SelectionType;
+	readonly inner: null | number  ;
+
+	private constructor(type: SelectionType, inner: null|number)
+	{
+		this.type = type;
+		this.inner = inner;
+	}
+
+	static none(): Selection
+	{
+		return new Selection("none", null);
+	}
+
+	static vertex(num: number): Selection
+	{
+		return new Selection("vertex", num);
+	}
+}
+
 type DrawCtx = CanvasRenderingContext2D;
 class EmbeddingEditorManager
 {
@@ -10,11 +33,13 @@ class EmbeddingEditorManager
 	stroke_weight: number = 6;
 	stroke_halo: number = 0;
 	background_color: string = "#b0b0b0";
+	selection_color: string = "#2160c4aa";
 
 	draw_zone: HTMLCanvasElement;
 
 	offset: Option<Vector> = Option.none();
 	current_dag: Option<FramedDAGEmbedding> = Option.none();
+	selected: Selection = Selection.none();
 
 	constructor()
 	{
@@ -47,8 +72,9 @@ class EmbeddingEditorManager
 	draw()
 	{
 		if(!this.current_dag.is_some()) { return; }
-		let data = this.current_dag.unwrap().bake();
+		
 		let ctx = this.get_ctx();
+		let data = this.current_dag.unwrap().bake();
 
 		for(let edge of data.edges)
 		{ this.draw_bez(edge, "#222222", ctx, true); }
@@ -56,20 +82,24 @@ class EmbeddingEditorManager
 		for(let vert of data.verts)
 		{ this.draw_node(vert, ctx); }
 
+		this.draw_selection(data, ctx);
+
 	}
 
 	draw_node(pos: Vector, ctx: DrawCtx)
 	{
 		let scaled = this.local_trans(pos);
 
-		ctx?.beginPath();
-		ctx?.arc(
+		ctx.fillStyle = "black";
+
+		ctx.beginPath();
+		ctx.arc(
 			scaled.x,
 			scaled.y,
 			this.node_radius,
 			0, 2*Math.PI
 		);
-		ctx?.fill();
+		ctx.fill();
 	}
 
 	draw_bez(edge: Bezier, color: string, ctx: DrawCtx, halo: boolean)
@@ -97,7 +127,31 @@ class EmbeddingEditorManager
 		ctx.strokeStyle = color;
 		ctx.lineWidth = this.stroke_weight;
 		ctx.stroke()
+	}
 
+	draw_selection(data: BakedDAGEmbedding, ctx: DrawCtx)
+	{
+		if(this.selected.type == "vertex")
+		{
+			let vert = this.selected.inner as number;
+			if(0 > vert || vert >= data.verts.length)
+			{
+				this.change_selection(Selection.none());
+				return;
+			}
+			let vpos = this.local_trans(data.verts[vert]);
+
+			ctx.fillStyle = this.selection_color;
+
+			ctx.beginPath();
+			ctx.arc(
+				vpos.x,
+				vpos.y,
+				this.node_radius + 4,
+				0, 2*Math.PI
+			);
+			ctx.fill();
+		}
 	}
 
 	get_offset(): Vector
@@ -115,6 +169,11 @@ class EmbeddingEditorManager
 		return vec
 			.scale(this.scale)
 			.add(this.get_offset());
+	}
+
+	change_selection(sel: Selection)
+	{
+		this.selected = sel;
 	}
 }
 
