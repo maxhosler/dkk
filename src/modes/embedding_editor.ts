@@ -1,9 +1,10 @@
-import { BakedDAGEmbedding } from "./dag_layout";
-import { Bezier, Vector } from "./util";
-import { Option } from "./result";
-import { FramedDAG } from "./dag";
-import { FramedDAGEmbedding } from "./dag_layout";
-import { SIDEBAR_HEAD, clear_page, SIDEBAR_CONTENTS, RIGHT_AREA } from "./html_elems";
+import { BakedDAGEmbedding } from "../dag_layout";
+import { Bezier, Vector } from "../util";
+import { Option } from "../result";
+import { FramedDAG } from "../dag";
+import { FramedDAGEmbedding } from "../dag_layout";
+import { SIDEBAR_HEAD, clear_page, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
+import { DAGCanvas, DrawOptions } from "../dag_canvas";
 
 type SelectionType = "none" | "vertex" | "edge";
 class Selection
@@ -36,23 +37,17 @@ class Selection
 type DrawCtx = CanvasRenderingContext2D;
 export class EmbeddingEditorManager
 {
-	scale: number = 200;
-	node_radius: number = 12;
-	stroke_weight: number = 6;
-	stroke_halo: number = 6;
+	draw_options: DrawOptions;
 
-	background_color: string = "#b0b0b0";
-	selection_color: string = "#2160c487";
-
-	canvas: HTMLCanvasElement;
+	canvas: DAGCanvas;
 	dag: FramedDAGEmbedding;
 
-	offset: Option<Vector> = Option.none();
 	selected: Selection = Selection.none();
 
-	constructor(dag: FramedDAGEmbedding)
+	constructor(dag: FramedDAGEmbedding, draw_options: DrawOptions)
 	{
 		this.dag = dag;
+		this.draw_options = draw_options;
 
 		clear_page();
 		SIDEBAR_HEAD.innerText = "Embedding Editor";
@@ -70,17 +65,17 @@ export class EmbeddingEditorManager
 		let draw_zone = document.createElement("canvas")
 		draw_zone.id = "draw_zone";
 		RIGHT_AREA.appendChild(draw_zone);
-		this.canvas = draw_zone;
-		this.canvas.addEventListener("click",
+		draw_zone.addEventListener("click",
 			(ev) => {
 				this.canvas_click(new Vector(ev.layerX, ev.layerY))
 			}
 		)
+		this.canvas = new DAGCanvas(draw_zone, draw_options);
 
-		this.resize_canvas();
+		this.draw();
 		addEventListener("resize", (event) => {
 			if(this)
-			this.resize_canvas();
+			this.draw();
 		});
 	}
 
@@ -125,8 +120,8 @@ export class EmbeddingEditorManager
 		
 		for(let i = 0; i < dag.verts.length; i++)
 		{
-			let vert_pos = this.local_trans(dag.verts[i]);
-			if(position.sub(vert_pos).norm() <= this.node_radius)
+			let vert_pos = this.canvas.local_trans(dag.verts[i]);
+			if(position.sub(vert_pos).norm() <= this.draw_options.node_radius)
 				return Option.some(i);
 		}
 			
@@ -141,9 +136,9 @@ export class EmbeddingEditorManager
 		for(let i = dag.edges.length - 1; i >= 0; i--)
 		{
 			let bez = dag.edges[i].transform
-				((v: Vector) => this.local_trans(v));
+				((v: Vector) => this.canvas.local_trans(v));
 
-			if(bez.distance_to(position) <= this.stroke_weight)
+			if(bez.distance_to(position) <= this.draw_options.stroke_weight)
 				return Option.some(i);
 		}
 			
@@ -154,92 +149,24 @@ export class EmbeddingEditorManager
 	Code for drawing
 	*/
 
-	resize_canvas()
-	{
-		this.canvas.height = this.canvas.clientHeight;
-		this.canvas.width = this.canvas.clientWidth;
-		this.offset = Option.none();
-		this.draw();
-	}
-
-	get_ctx(): DrawCtx
-	{
-		return this.canvas.getContext("2d") as DrawCtx;
-	}
 
 	draw()
 	{		
-		let ctx = this.get_ctx();
+		let ctx = this.canvas.get_ctx();
 		let data = this.dag.bake();
 
-		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
 
 		for(let edge of data.edges)
-		{ this.draw_bez(edge, "#222222", ctx, true); }
+		{ this.canvas.draw_bez(edge, "#222222", ctx, true); }
 
 		this.draw_selection_edge(data, ctx);
 
 		for(let vert of data.verts)
-		{ this.draw_node(vert, ctx); }
+		{ this.canvas.draw_node(vert, ctx); }
 
 		this.draw_selection_vert(data, ctx);
 
-	}
-
-	draw_node(pos: Vector, ctx: DrawCtx)
-	{
-		let scaled = this.local_trans(pos);
-
-		ctx.fillStyle = "black";
-
-		ctx.beginPath();
-		ctx.arc(
-			scaled.x,
-			scaled.y,
-			this.node_radius,
-			0, 2*Math.PI
-		);
-		ctx.fill();
-	}
-
-	draw_bez(edge: Bezier, color: string, ctx: DrawCtx, halo: boolean)
-	{
-		let e = edge.transform
-			((v: Vector) => this.local_trans(v));
-
-		ctx.beginPath();
-		ctx.moveTo(e.start_point.x, e.start_point.y);
-		ctx.bezierCurveTo(
-			e.cp1.x, e.cp1.y,
-			e.cp2.x, e.cp2.y,
-			e.end_point.x, e.end_point.y
-		);
-
-		if (halo)
-		{
-			let grad=ctx.createLinearGradient(
-				e.start_point.x,
-				e.start_point.y,
-				e.end_point.x,
-				e.end_point.y
-			);
-			let trans_bk = this.background_color + "00"; //Assumes in hex form. 
-			let bk = this.background_color;
-			grad.addColorStop(0.0,   trans_bk);
-			grad.addColorStop(0.2,   trans_bk);
-			grad.addColorStop(0.201, bk);
-			grad.addColorStop(0.8,   bk);
-			grad.addColorStop(0.801, trans_bk);
-			grad.addColorStop(1.0,   trans_bk);
-
-			ctx.strokeStyle = grad;
-			ctx.lineWidth = this.stroke_weight + this.stroke_halo;
-			ctx.stroke()
-		}
-
-		ctx.strokeStyle = color;
-		ctx.lineWidth = this.stroke_weight;
-		ctx.stroke()
 	}
 
 	draw_selection_vert(data: BakedDAGEmbedding, ctx: DrawCtx)
@@ -252,13 +179,13 @@ export class EmbeddingEditorManager
 				this.change_selection(Selection.none());
 				return;
 			}
-			let vpos = this.local_trans(data.verts[vert]);
-			ctx.fillStyle = this.selection_color;
+			let vpos = this.canvas.local_trans(data.verts[vert]);
+			ctx.fillStyle = this.draw_options.selection_color;
 			ctx.beginPath();
 			ctx.arc(
 				vpos.x,
 				vpos.y,
-				this.node_radius + 4,
+				this.draw_options.node_radius + 4,
 				0, 2*Math.PI
 			);
 			ctx.fill();
@@ -276,7 +203,7 @@ export class EmbeddingEditorManager
 				return;
 			}
 			let bez = data.edges[edge].transform
-				((v: Vector) => this.local_trans(v));
+				((v: Vector) => this.canvas.local_trans(v));
 
 			ctx.beginPath();
 			ctx.moveTo(bez.start_point.x, bez.start_point.y);
@@ -286,33 +213,9 @@ export class EmbeddingEditorManager
 				bez.end_point.x, bez.end_point.y
 			);
 
-			ctx.strokeStyle = this.selection_color;
-			ctx.lineWidth = this.stroke_weight + 5;
+			ctx.strokeStyle = this.draw_options.selection_color;
+			ctx.lineWidth = this.draw_options.stroke_weight + 5;
 			ctx.stroke()
 		}
-	}
-
-	get_offset(): Vector
-	{
-		if (this.offset.is_none())
-		{
-			let os = new Vector( this.scale/2, this.canvas.height/2 );
-			this.offset = Option.some(os);
-		}
-		return this.offset.unwrap();
-	}
-
-	local_trans(vec: Vector)
-	{
-		return vec
-			.scale(this.scale)
-			.add(this.get_offset());
-	}
-
-	local_trans_inv(vec: Vector)
-	{
-		return vec
-			.sub(this.get_offset())
-			.scale(1/this.scale);
 	}
 }
