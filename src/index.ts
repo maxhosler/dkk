@@ -42,13 +42,15 @@ class EmbeddingEditorManager
 	selection_color: string = "#2160c4aa";
 
 	canvas: HTMLCanvasElement;
+	dag: FramedDAGEmbedding;
 
 	offset: Option<Vector> = Option.none();
-	current_dag: Option<FramedDAGEmbedding> = Option.none();
 	selected: Selection = Selection.none();
 
-	constructor()
+	constructor(dag: FramedDAGEmbedding)
 	{
+		this.dag = dag;
+
 		clear_page();
 
 		let draw_zone = document.createElement("canvas")
@@ -105,8 +107,7 @@ class EmbeddingEditorManager
 	//TODO: provide baked optional
 	get_vertex_at(position: Vector): Option<number>
 	{
-		if(this.current_dag.is_none()) { return Option.none() }
-		let dag = this.current_dag.unwrap().bake();
+		let dag = this.dag.bake();
 		
 		for(let i = 0; i < dag.verts.length; i++)
 		{
@@ -121,8 +122,7 @@ class EmbeddingEditorManager
 	//TODO: provide baked optional
 	get_edge_at(position: Vector): Option<number>
 	{
-		if(this.current_dag.is_none()) { return Option.none() }
-		let dag = this.current_dag.unwrap().bake();
+		let dag = this.dag.bake();
 		
 		for(let i = dag.edges.length - 1; i >= 0; i--)
 		{
@@ -153,18 +153,10 @@ class EmbeddingEditorManager
 		return this.canvas.getContext("2d") as DrawCtx;
 	}
 
-	set_dag_embedding(dag: FramedDAGEmbedding)
-	{
-		this.current_dag = Option.some(dag);
-		this.draw();
-	}
-
 	draw()
-	{
-		if(!this.current_dag.is_some()) { return; }
-		
+	{		
 		let ctx = this.get_ctx();
-		let data = this.current_dag.unwrap().bake();
+		let data = this.dag.bake();
 
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -303,8 +295,5 @@ class EmbeddingEditorManager
 	}
 }
 
-const pm = new EmbeddingEditorManager();
-//const dag = prebuilt_dag(1);
-//const layout = new FramedDAGEmbedding(dag);
 const layout = prebuilt_dag_embedding(1);
-pm.set_dag_embedding(layout);
+const pm = new EmbeddingEditorManager(layout);
