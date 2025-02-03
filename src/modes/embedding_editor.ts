@@ -1,10 +1,9 @@
 import { BakedDAGEmbedding } from "../dag_layout";
-import { Bezier, Vector } from "../util";
+import { Vector } from "../util";
 import { Option } from "../result";
-import { FramedDAG } from "../dag";
 import { FramedDAGEmbedding } from "../dag_layout";
-import { SIDEBAR_HEAD, clear_page, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
-import { DAGCanvas, DrawOptions } from "../dag_canvas";
+import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
+import { DAGCanvas, DrawOptions } from "../subelements/dag_canvas";
 
 type SelectionType = "none" | "vertex" | "edge";
 class Selection
@@ -35,26 +34,59 @@ class Selection
 }
 
 type DrawCtx = CanvasRenderingContext2D;
-export class EmbeddingEditorManager
+export class EmbeddingEditor
 {
-	draw_options: DrawOptions;
+	readonly draw_options: DrawOptions;
 
 	canvas: DAGCanvas;
 	dag: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
 
-	constructor(dag: FramedDAGEmbedding, draw_options: DrawOptions)
+	static destructive_new(
+		dag: FramedDAGEmbedding,
+		draw_options: DrawOptions,
+	): EmbeddingEditor
+	{
+		SIDEBAR_HEAD.innerHTML = "";
+		SIDEBAR_CONTENTS.innerHTML = "";
+		RIGHT_AREA.innerHTML = "";
+		return new EmbeddingEditor
+		(
+			dag, draw_options,
+			SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
+		);
+	}
+
+	static dummy_new(
+        dag: FramedDAGEmbedding,
+        draw_options: DrawOptions,
+    ){
+        let get_dummy = () => document.createElement("div");
+        return new EmbeddingEditor
+        (
+            dag, draw_options,
+            get_dummy(), get_dummy(), get_dummy()
+        );
+    }
+
+	private constructor(
+		dag: FramedDAGEmbedding,
+		draw_options: DrawOptions,
+
+		sidebar_head: HTMLDivElement,
+		sidebar_contents: HTMLDivElement,
+		right_area: HTMLDivElement
+	)
 	{
 		this.dag = dag;
 		this.draw_options = draw_options;
 
-		clear_page();
-		SIDEBAR_HEAD.innerText = "Embedding Editor";
+		sidebar_head.innerText = "Embedding Editor";
 		
 		let display_settings = document.createElement("div");
 		display_settings.className = "sb-subsection";
-		SIDEBAR_CONTENTS.appendChild(display_settings);
+		sidebar_contents.appendChild(display_settings);
 
 		//TODO: Scale slider
 
@@ -62,15 +94,14 @@ export class EmbeddingEditorManager
 
 		//TODO: Edge editor
 
-		let draw_zone = document.createElement("canvas")
-		draw_zone.id = "draw_zone";
-		RIGHT_AREA.appendChild(draw_zone);
-		draw_zone.addEventListener("click",
+		let {canvas, element} = DAGCanvas.create(draw_options);
+		right_area.appendChild(element);
+		element.addEventListener("click",
 			(ev) => {
 				this.canvas_click(new Vector(ev.layerX, ev.layerY))
 			}
 		)
-		this.canvas = new DAGCanvas(draw_zone, draw_options);
+		this.canvas = canvas;
 
 		this.draw();
 		addEventListener("resize", (event) => {

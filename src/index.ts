@@ -1,7 +1,8 @@
-import { DrawOptions } from "./dag_canvas";
+import { DrawOptions } from "./subelements/dag_canvas";
 import { prebuilt_dag_embedding } from "./dag_layout";
-import { EmbeddingEditorManager } from "./modes/embedding_editor";
+import { CliqueViewer } from "./modes/clique_viewer";
+import { EmbeddingEditor } from "./modes/embedding_editor";
 
 const draw_options = new DrawOptions();
 const layout = prebuilt_dag_embedding(2);
-const pm = new EmbeddingEditorManager(layout, draw_options);
+const pm = EmbeddingEditor.destructive_new(layout, draw_options);

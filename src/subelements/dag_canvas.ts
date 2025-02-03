@@ -1,5 +1,5 @@
-import { BakedDAGEmbedding } from "./dag_layout";
-import { Bezier, Vector } from "./util";
+import { BakedDAGEmbedding } from "../dag_layout";
+import { Bezier, Vector } from "../util";
 
 export class DrawOptions
 {
@@ -18,7 +18,18 @@ export class DAGCanvas
 	canvas: HTMLCanvasElement;
 	draw_options: DrawOptions;
 
-	constructor(canvas: HTMLCanvasElement, draw_options: DrawOptions)
+	static create(draw_options: DrawOptions): { canvas: DAGCanvas, element: HTMLCanvasElement }
+	{
+		let draw_zone = document.createElement("canvas")
+		draw_zone.id = "draw_zone";
+		let canvas = new DAGCanvas(draw_zone, draw_options);
+		return {
+			canvas: canvas,
+			element: draw_zone
+		}
+	}
+
+	private constructor(canvas: HTMLCanvasElement, draw_options: DrawOptions)
 	{
 		this.canvas = canvas;
 		this.draw_options = draw_options;
