@@ -92,10 +92,10 @@ export class DAGCanvas
 			let trans_bk = this.draw_options.background_color + "00"; //Assumes in hex form. 
 			let bk = this.draw_options.background_color;
 			grad.addColorStop(0.0,   trans_bk);
-			grad.addColorStop(0.2,   trans_bk);
-			grad.addColorStop(0.201, bk);
-			grad.addColorStop(0.8,   bk);
-			grad.addColorStop(0.801, trans_bk);
+			grad.addColorStop(0.3,   trans_bk);
+			grad.addColorStop(0.301, bk);
+			grad.addColorStop(0.7,   bk);
+			grad.addColorStop(0.701, trans_bk);
 			grad.addColorStop(1.0,   trans_bk);
 
 			ctx.strokeStyle = grad;

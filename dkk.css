@@ -27,7 +27,7 @@ html, body {
 
 #sidebar
 {
-    width: 6cm;
+    width: 8cm;
     background-color: rgb(244, 244, 244);
     padding: 12pt;
 }
@@ -60,6 +60,21 @@ html, body {
     border-style: solid;
     border-color: #b0b0b0;
     border-width: 1pt;
+    padding: 10pt;
 
     min-height: 12pt;
+}
+
+.inputtable
+{
+    width: 100%;
+    font-size: large;
+}
+
+.slider
+{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
