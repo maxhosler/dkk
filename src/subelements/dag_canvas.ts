@@ -10,6 +10,8 @@ export class DrawOptions
 
 	background_color: string = "#b0b0b0";
 	selection_color: string = "#2160c487";
+	edge_color: string = "#222222";
+	node_color: string = "#000000";
 }
 
 type DrawCtx = CanvasRenderingContext2D;
@@ -56,7 +58,7 @@ export class DAGCanvas
 	{
 		let scaled = this.local_trans(pos);
 
-		ctx.fillStyle = "black";
+		ctx.fillStyle = this.draw_options.node_color;
 
 		ctx.beginPath();
 		ctx.arc(

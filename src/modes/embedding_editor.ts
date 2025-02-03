@@ -50,9 +50,9 @@ export class EmbeddingEditor
 		draw_options: DrawOptions,
 	): EmbeddingEditor
 	{
-		SIDEBAR_HEAD.innerHTML = "";
+		SIDEBAR_HEAD.innerHTML     = "";
 		SIDEBAR_CONTENTS.innerHTML = "";
-		RIGHT_AREA.innerHTML = "";
+		RIGHT_AREA.innerHTML       = "";
 		return new EmbeddingEditor
 		(
 			dag, draw_options,
@@ -195,7 +195,7 @@ export class EmbeddingEditor
 		ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
 
 		for(let edge of data.edges)
-		{ this.canvas.draw_bez(edge, "#222222", ctx, true); }
+		{ this.canvas.draw_bez(edge, this.draw_options.edge_color, ctx, true); }
 
 		this.draw_selection_edge(data, ctx);
 
