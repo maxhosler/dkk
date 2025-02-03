@@ -88,6 +88,9 @@ export class EmbeddingEditor
 		
 		let {box, element: box_element} = DrawOptionsBox.create(draw_options);
 		sidebar_contents.appendChild(box_element);
+		box.add_on_change(
+            () => {if(this) this.draw()}
+        )
 		this.draw_options_box = box;
 
 		//TODO: Scale slider

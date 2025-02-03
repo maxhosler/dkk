@@ -51,12 +51,18 @@ export class CliqueViewer
         this.dag = dag;
         this.draw_options = draw_options;
 
+        //sidebar
         sidebar_head.innerText = "Clique Viewer";
         
+        //Settings box
         let {box, element: box_element} = DrawOptionBox.create(draw_options);
         sidebar_contents.appendChild(box_element);
+        box.add_on_change(
+            () => {if(this) this.draw()}
+        )
         this.draw_options_box = box;
 
+        //Graph Canvas
         let {canvas, element: canvas_element} = DAGCanvas.create(draw_options);
 		right_area.appendChild(canvas_element);
 		canvas_element.addEventListener("click",
@@ -67,6 +73,7 @@ export class CliqueViewer
         canvas.resize_canvas();
 		this.canvas = canvas;
 
+        //Draw and setup redraw
         this.draw();
         addEventListener("resize", (event) => {
             if(this)

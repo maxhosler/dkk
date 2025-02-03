@@ -2,7 +2,8 @@ import { DrawOptions } from "./dag_canvas";
 
 export class DrawOptionBox
 {
-    draw_options: DrawOptions
+    draw_options: DrawOptions;
+    on_change_listeners: (() => void)[] = [];
 
     static create(draw_options: DrawOptions): { box: DrawOptionBox, element: HTMLDivElement }
 	{
@@ -21,5 +22,16 @@ export class DrawOptionBox
     )
     {
         this.draw_options = draw_options;
+    }
+
+    fire_on_change()
+    {
+        for(let f of this.on_change_listeners)
+            f();
+    }
+
+    add_on_change(f: () => void)
+    {
+        this.on_change_listeners.push(f);
     }
 }
