@@ -1,6 +1,6 @@
 import { Result, Option } from "./result";
 import { BakedDAGEmbedding, FramedDAGEmbedding, prebuilt_dag_embedding } from "./dag_layout";
-import { clear_page, RIGHT_AREA } from "./html_elems";
+import { clear_page, RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "./html_elems";
 import { Bezier, Vector } from "./util";
 
 type SelectionType = "none" | "vertex" | "edge";
@@ -38,8 +38,9 @@ class EmbeddingEditorManager
 	node_radius: number = 12;
 	stroke_weight: number = 6;
 	stroke_halo: number = 6;
+
 	background_color: string = "#b0b0b0";
-	selection_color: string = "#2160c4aa";
+	selection_color: string = "#2160c487";
 
 	canvas: HTMLCanvasElement;
 	dag: FramedDAGEmbedding;
@@ -52,6 +53,17 @@ class EmbeddingEditorManager
 		this.dag = dag;
 
 		clear_page();
+		SIDEBAR_HEAD.innerText = "Embedding Editor";
+		
+		let display_settings = document.createElement("div");
+		display_settings.className = "sb-subsection";
+		SIDEBAR_CONTENTS.appendChild(display_settings);
+
+		//TODO: Scale slider
+
+		//TODO: Node editor
+
+		//TODO: Edge editor
 
 		let draw_zone = document.createElement("canvas")
 		draw_zone.id = "draw_zone";
@@ -282,7 +294,7 @@ class EmbeddingEditorManager
 	{
 		if (this.offset.is_none())
 		{
-			let os = new Vector( this.scale, this.canvas.height/2 );
+			let os = new Vector( this.scale/2, this.canvas.height/2 );
 			this.offset = Option.some(os);
 		}
 		return this.offset.unwrap();
@@ -294,10 +306,15 @@ class EmbeddingEditorManager
 			.scale(this.scale)
 			.add(this.get_offset());
 	}
+
+	local_trans_inv(vec: Vector)
+	{
+		return vec
+			.sub(this.get_offset())
+			.scale(1/this.scale);
+	}
 }
 
-const layout = prebuilt_dag_embedding(1);
-let pm = new EmbeddingEditorManager(layout);
 
-const layout2 = prebuilt_dag_embedding(2);
-const pm2 = new EmbeddingEditorManager(layout2);
+const layout = prebuilt_dag_embedding(2);
+const pm = new EmbeddingEditorManager(layout);
