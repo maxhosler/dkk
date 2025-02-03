@@ -1,8 +1,8 @@
 export type Matrix = [[number,number], [number, number]];
 export class Vector
 {
-	public x: number;
-	public y: number;
+	readonly x: number;
+	readonly y: number;
 
 	constructor(x: number, y: number)
 	{
@@ -94,18 +94,71 @@ export class Vector
 	}
 }
 
-export function on_thick_bezier(
-	position: Vector,
-
-	start: Vector,
-	cp1:   Vector,
-	cp2:   Vector,
-	end:   Vector,
-
-	thickness: number
-): boolean
+export class Bezier 
 {
-	
+	readonly start_point: Vector;
+	readonly end_point: Vector;
+	readonly cp1: Vector;
+	readonly cp2: Vector;
 
-	return false;
+	constructor(st: Vector, cp1: Vector, cp2: Vector, end: Vector)
+	{
+		this.start_point = st;
+		this.end_point = end,
+		this.cp1 = cp1;
+		this.cp2 = cp2;
+	}
+
+	transform(trans: (v: Vector) => Vector): Bezier
+	{
+		return new Bezier
+		(
+			trans(this.start_point),
+			trans(this.cp1),
+			trans(this.cp2),
+			trans(this.end_point)
+		)
+	}
+
+	get_point(t: number): Vector
+	{
+		let it = 1-t;
+		return this.start_point.scale( it * it * it)
+			.add( this.cp1.scale( 3 * t * it * it  ) )
+			.add( this.cp2.scale( 3 * t * t * it ) )
+			.add( this.end_point.scale( t * t * t ) );
+	}
+
+	distance_to(position: Vector): number
+	{
+		const EPSILON = 0.001;
+		const STEP = 0.02;
+	
+		let dist = (t: number) => this.get_point(t).sub(position).norm();
+		let d_dist = (t: number) => (dist(t+EPSILON) - dist(t)) / EPSILON;
+		
+		let min_t = 0;
+		let min_dst = dist(0);
+	
+		for(let tp of [0, 0.2, 0.4, 0.6, 0.8, 1.0])
+		{
+			let d = dist(tp);
+			if (d < min_dst)
+			{
+				min_t = tp;
+				min_dst = d;
+			}
+		}
+		let t = min_t;
+		for(let i = 0; i < 20; i++)
+		{
+			t -= clamp(d_dist(t), 0, 1) * STEP;
+			t = clamp(t, 0, 1);
+		}
+		
+		return dist(t);
+	}
 }
+
+const clamp: (num: number, min: number, max: number) => number
+	= (num: number, min: number, max: number) => Math.min(Math.max(num, min), max)

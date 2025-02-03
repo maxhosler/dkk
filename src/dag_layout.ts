@@ -1,6 +1,6 @@
 import { Edge, FramedDAG, prebuilt_dag } from "./dag";
 import { Option } from "./result";
-import { Vector } from "./util";
+import { Bezier, Vector } from "./util";
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
@@ -8,9 +8,6 @@ export type EdgeData = {
 
 	start_vec_override: Option<Vector>,
 	end_vec_override:   Option<Vector>,
-
-
-	middle_rel_coords: Vector
 }
 
 export type VertData = {
@@ -42,7 +39,6 @@ export class FramedDAGEmbedding
 				end_list_pos: [1,1],
 				start_vec_override: Option.none(),
 				end_vec_override: Option.none(),
-				middle_rel_coords: new Vector(0.5, 0.0)
 			})
 		);
 
@@ -74,9 +70,6 @@ export class FramedDAGEmbedding
 					edge_mid_heights[edge] += i / (in_edges.length-1) - 0.5;
 			}
 		}
-		for(let i = 0; i < this.base_dag.num_edges(); i++)
-			this.edge_data[i].middle_rel_coords.y = 
-				(edge_mid_heights[i] || 0)/2;
 
 		let depths: {[key: number]: number} = {}
 		for(let src of this.base_dag.sources())
@@ -99,8 +92,7 @@ export class FramedDAGEmbedding
 		{
 			let index = depths_arr[j][1];
 			let vd = this.vert_data[index];
-			vd.position.x = j;
-			vd.position.y = 0;
+			vd.position = new Vector(j,0);
 		}
 	}
 
@@ -137,12 +129,12 @@ export class FramedDAGEmbedding
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
 
-			let bez: Bezier = {
-				start_point: start_pos,
-				end_point: end_pos,
-				cp1: cp1,
-				cp2: cp2
-			};
+			let bez: Bezier = new Bezier(
+				start_pos,
+				cp1,
+				cp2,
+				end_pos,
+			);
 
 			edges.push(bez);
 		}
@@ -180,15 +172,6 @@ function spread_percent(
 			out[i] = start_end[i][0] / (start_end[i][1] - 1) - 0.5; 
 	}
 	return out;
-}
-
-export type Bezier = 
-{
-	start_point: Vector,
-	end_point: Vector,
-	
-	cp1: Vector,
-	cp2: Vector
 }
 
 export type BakedDAGEmbedding = 
