@@ -3,6 +3,7 @@ import { FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
+import { DAGRoutes } from "../routes/routes";
 
 export class CliqueViewer
 {
@@ -11,6 +12,9 @@ export class CliqueViewer
 
     canvas: DAGCanvas;
     dag: FramedDAGEmbedding;
+    routes: DAGRoutes;
+
+    _dbg_current_route: number = 0;
 
     static destructive_new(
         dag: FramedDAGEmbedding,
@@ -50,6 +54,7 @@ export class CliqueViewer
     {
         this.dag = dag;
         this.draw_options = draw_options;
+        this.routes = new DAGRoutes(dag.base_dag);
 
         //sidebar
         sidebar_head.innerText = "Clique Viewer";
@@ -84,7 +89,10 @@ export class CliqueViewer
 
     canvas_click(position: Vector)
     {
-            
+        this._dbg_current_route += 1;
+        this._dbg_current_route = this._dbg_current_route % this.routes.routes.length;
+        console.debug(this._dbg_current_route);
+        this.draw()
     }
 
     /*
@@ -100,11 +108,17 @@ export class CliqueViewer
         ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
 
         for(let edge of data.edges)
-        { this.canvas.draw_bez(edge, "#222222", ctx, true); }
+        { this.canvas.draw_bez(edge, this.draw_options.edge_color, ctx, true); }
 
         for(let vert of data.verts)
         { this.canvas.draw_node(vert, ctx); }
 
+        let route = this.routes.routes[this._dbg_current_route];
+        for(let e_idx of route.edges)
+        {
+            let e_bez = data.edges[e_idx];
+            this.canvas.draw_bez(e_bez, "red", ctx, false);
+        }
     }
 
 }
