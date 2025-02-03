@@ -167,6 +167,13 @@ export class Option<T>
         return null;
     }
 
+    expect(err: string): T
+    {
+        if(!this.valid)
+        { throw new Error(err) }
+        return this.value as T;
+    }
+
     is_some(): boolean
     {
         return this.valid;

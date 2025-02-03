@@ -182,6 +182,35 @@ export class FramedDAG {
         return out;
     }
 
+    sinks(): Array<number>
+    {
+        let out: number[] = [];
+
+        for(let i = 0; i < this._num_verts; i++)
+        {
+            if(this.out_edges[i].length == 0)
+                out.push( i );
+        }
+
+        return out;
+    }
+
+    source(): Option<number>
+    {
+        let ls = this.sources();
+        if(ls.length == 1)
+            return Option.some(ls[0]);
+        return Option.none();
+    }
+
+    sink(): Option<number>
+    {
+        let ls = this.sinks();
+        if(ls.length == 1)
+            return Option.some(ls[0]);
+        return Option.none();
+    }
+
     clone(): FramedDAG
     {
         let out = new FramedDAG(this._num_verts);
