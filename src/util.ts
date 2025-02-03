@@ -149,14 +149,27 @@ export class Bezier
 				min_dst = d;
 			}
 		}
-		let t = min_t;
-		for(let i = 0; i < 20; i++)
-		{
-			t -= clamp(d_dist(t), 0, 1) * STEP;
-			t = clamp(t, 0, 1);
-		}
 		
-		return dist(t);
+		let low  = clamp(min_t - 0.2, 0, 1);
+		let high = clamp(min_t + 0.2, 0, 1);
+		
+		for(let i = 0; i < 8; i++)
+		{
+			let mid = (low + high) / 2;
+			let dl = d_dist(low);
+			let dm = d_dist(mid);
+
+			if(dl * dm < 0)
+			{
+				high = mid;
+			}
+			else
+			{
+				low = mid;
+			}
+		}
+
+		return dist((low + high) / 2);
 	}
 }
 

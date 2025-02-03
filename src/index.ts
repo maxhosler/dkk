@@ -78,17 +78,25 @@ class EmbeddingEditorManager
 	{
 		let clicked_vert = this.get_vertex_at(position);
 		if (clicked_vert.is_some())
-		{ this.change_selection(Selection.vertex(clicked_vert.unwrap())) }
+		{
+			this.change_selection(
+				Selection.vertex(clicked_vert.unwrap())
+			);
+		}
 		else
 		{
 			let clicked_edge = this.get_edge_at(position);
 			if(clicked_edge.is_some())
 			{
-				this.change_selection(Selection.edge(clicked_edge.unwrap()))
+				this.change_selection(
+					Selection.edge(clicked_edge.unwrap())
+				);
 			}
 			else
 			{
-				this.change_selection(Selection.none())
+				this.change_selection(
+					Selection.none()
+				);
 			}
 		}
 			
@@ -116,7 +124,7 @@ class EmbeddingEditorManager
 		if(this.current_dag.is_none()) { return Option.none() }
 		let dag = this.current_dag.unwrap().bake();
 		
-		for(let i = 0; i < dag.edges.length; i++)
+		for(let i = dag.edges.length - 1; i >= 0; i--)
 		{
 			let bez = dag.edges[i].transform
 				((v: Vector) => this.local_trans(v));
@@ -229,28 +237,24 @@ class EmbeddingEditorManager
 
 	draw_selection_vert(data: BakedDAGEmbedding, ctx: DrawCtx)
 	{
-		if(this.selected.type == "edge")
+		if(this.selected.type == "vertex")
 		{
-			let edge = this.selected.inner as number;
-			if(0 > edge || edge >= data.edges.length)
+			let vert = this.selected.inner as number;
+			if(0 > vert || vert >= data.verts.length)
 			{
 				this.change_selection(Selection.none());
 				return;
 			}
-			let bez = data.edges[edge].transform
-				((v: Vector) => this.local_trans(v));
-
+			let vpos = this.local_trans(data.verts[vert]);
+			ctx.fillStyle = this.selection_color;
 			ctx.beginPath();
-			ctx.moveTo(bez.start_point.x, bez.start_point.y);
-			ctx.bezierCurveTo(
-				bez.cp1.x, bez.cp1.y,
-				bez.cp2.x, bez.cp2.y,
-				bez.end_point.x, bez.end_point.y
+			ctx.arc(
+				vpos.x,
+				vpos.y,
+				this.node_radius + 4,
+				0, 2*Math.PI
 			);
-
-			ctx.strokeStyle = this.selection_color;
-			ctx.lineWidth = this.stroke_weight + 5;
-			ctx.stroke()
+			ctx.fill();
 		}
 	}
 
