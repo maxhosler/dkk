@@ -210,14 +210,15 @@ class EmbeddingEditorManager
 				e.end_point.y
 			);
 			let trans_bk = this.background_color + "00"; //Assumes in hex form. 
-			grad.addColorStop(0, trans_bk);
-			grad.addColorStop(0.095, trans_bk);
-			grad.addColorStop(0.1, this.background_color);
-			grad.addColorStop(0.9, this.background_color);
-			grad.addColorStop(0.0905, trans_bk);
-			grad.addColorStop(1.0, trans_bk);
+			let bk = this.background_color;
+			grad.addColorStop(0.0,   trans_bk);
+			grad.addColorStop(0.2,   trans_bk);
+			grad.addColorStop(0.201, bk);
+			grad.addColorStop(0.8,   bk);
+			grad.addColorStop(0.801, trans_bk);
+			grad.addColorStop(1.0,   trans_bk);
 
-			ctx.strokeStyle = this.background_color;
+			ctx.strokeStyle = grad;
 			ctx.lineWidth = this.stroke_weight + this.stroke_halo;
 			ctx.stroke()
 		}
@@ -296,4 +297,7 @@ class EmbeddingEditorManager
 }
 
 const layout = prebuilt_dag_embedding(1);
-const pm = new EmbeddingEditorManager(layout);
+let pm = new EmbeddingEditorManager(layout);
+
+const layout2 = prebuilt_dag_embedding(2);
+const pm2 = new EmbeddingEditorManager(layout2);
