@@ -16,7 +16,7 @@ type DrawCtx = CanvasRenderingContext2D;
 export class DAGCanvas
 {
 	canvas: HTMLCanvasElement;
-	draw_options: DrawOptions;
+	readonly draw_options: DrawOptions;
 
 	static create(draw_options: DrawOptions): { canvas: DAGCanvas, element: HTMLCanvasElement }
 	{
@@ -33,7 +33,7 @@ export class DAGCanvas
 	{
 		this.canvas = canvas;
 		this.draw_options = draw_options;
-
+		
 		this.resize_canvas();
 		addEventListener("resize", (event) => {
 			if(this)

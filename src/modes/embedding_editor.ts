@@ -4,6 +4,7 @@ import { Option } from "../result";
 import { FramedDAGEmbedding } from "../dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
 import { DAGCanvas, DrawOptions } from "../subelements/dag_canvas";
+import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 
 type SelectionType = "none" | "vertex" | "edge";
 class Selection
@@ -37,6 +38,7 @@ type DrawCtx = CanvasRenderingContext2D;
 export class EmbeddingEditor
 {
 	readonly draw_options: DrawOptions;
+	readonly draw_options_box: DrawOptionsBox;
 
 	canvas: DAGCanvas;
 	dag: FramedDAGEmbedding;
@@ -84,9 +86,9 @@ export class EmbeddingEditor
 
 		sidebar_head.innerText = "Embedding Editor";
 		
-		let display_settings = document.createElement("div");
-		display_settings.className = "sb-subsection";
-		sidebar_contents.appendChild(display_settings);
+		let {box, element: box_element} = DrawOptionsBox.create(draw_options);
+		sidebar_contents.appendChild(box_element);
+		this.draw_options_box = box;
 
 		//TODO: Scale slider
 
@@ -101,6 +103,7 @@ export class EmbeddingEditor
 				this.canvas_click(new Vector(ev.layerX, ev.layerY))
 			}
 		)
+		canvas.resize_canvas();
 		this.canvas = canvas;
 
 		this.draw();
@@ -182,7 +185,7 @@ export class EmbeddingEditor
 
 
 	draw()
-	{		
+	{	
 		let ctx = this.canvas.get_ctx();
 		let data = this.dag.bake();
 

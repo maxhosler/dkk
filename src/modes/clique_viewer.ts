@@ -2,10 +2,12 @@ import { DAGCanvas, DrawOptions } from "../subelements/dag_canvas";
 import { FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
+import { DrawOptionBox } from "../subelements/draw_option_box";
 
 export class CliqueViewer
 {
     readonly draw_options: DrawOptions;
+    readonly draw_options_box: DrawOptionBox;
 
     canvas: DAGCanvas;
     dag: FramedDAGEmbedding;
@@ -51,23 +53,18 @@ export class CliqueViewer
 
         sidebar_head.innerText = "Clique Viewer";
         
-        let display_settings = document.createElement("div");
-        display_settings.className = "sb-subsection";
-        sidebar_contents.appendChild(display_settings);
+        let {box, element: box_element} = DrawOptionBox.create(draw_options);
+        sidebar_contents.appendChild(box_element);
+        this.draw_options_box = box;
 
-        //TODO: Scale slider
-
-        //TODO: Node editor
-
-        //TODO: Edge editor
-
-        let {canvas, element} = DAGCanvas.create(draw_options);
-		right_area.appendChild(element);
-		element.addEventListener("click",
+        let {canvas, element: canvas_element} = DAGCanvas.create(draw_options);
+		right_area.appendChild(canvas_element);
+		canvas_element.addEventListener("click",
 			(ev) => {
 				this.canvas_click(new Vector(ev.layerX, ev.layerY))
 			}
 		)
+        canvas.resize_canvas();
 		this.canvas = canvas;
 
         this.draw();
