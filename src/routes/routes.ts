@@ -27,6 +27,8 @@ export type SharedSubroute =
 	in_edges: Option<[number, number]>,
 	out_edges: Option<[number, number]>,
 
+	edges: number[],
+
 	in_order: 1 | 0 | -1,
 	out_order: 1 | 0 | -1
 };
@@ -37,6 +39,8 @@ export class DAGRoutes
 	readonly cliques: Clique[];
 	readonly clique_size: number;
 	readonly clique_transforms: number[][]; //clique index, and route index in clique
+
+	private cached_subroutes: (SharedSubroute[] | undefined)[][];
 
 	constructor(dag: FramedDAG)
 	{
@@ -72,6 +76,15 @@ export class DAGRoutes
 			incomplete_routes = new_paths;
 		}
 		this.routes = routes;
+		this.cached_subroutes = [];
+		for(let i = 0; i < routes.length; i++)
+		{
+			this.cached_subroutes.push([])
+			for(let j = 0; j < routes.length; j++)
+			{
+				this.cached_subroutes[i].push(undefined);
+			}
+		}
 	
 		//Compute cliques
 		let extend: (arr: number[]) => number[][] = (arr: number[]) => {
@@ -161,9 +174,6 @@ export class DAGRoutes
 
 	compatible(route_idx_1: number, route_idx_2: number): boolean
 	{
-		let r1 = this.routes[route_idx_1];
-		let r2 = this.routes[route_idx_2];
-
 		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
 		for(let sub of shared_subroutes)
 		{
@@ -175,6 +185,11 @@ export class DAGRoutes
 
 	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
+		if(typeof this.cached_subroutes[route_idx_1][route_idx_2] != "undefined")
+		{
+			return this.cached_subroutes[route_idx_1][route_idx_2];
+		}
+
 		let r1_e = this.routes[route_idx_1].edges;
 		let r2_e = this.routes[route_idx_2].edges;
 
@@ -192,6 +207,8 @@ export class DAGRoutes
 			let start1 = i;
 			let start2 = j;
 
+			let edges = [];
+			
 			//Reuse of 'i' here is not a mistake
 			while(
 				i < r1_e.length &&
@@ -201,6 +218,7 @@ export class DAGRoutes
 			{
 				i += 1;
 				j += 1;
+				edges.push(r1_e[i]);
 			}
 
 			let end1 = i;
@@ -254,11 +272,13 @@ export class DAGRoutes
 				in_edges,
 				out_edges,
 				in_order,
-				out_order
+				out_order,
+				edges
 			}
 
 			shared_subsequences.push(shared);
 		}
+		this.cached_subroutes[route_idx_1][route_idx_2] = structuredClone(shared_subsequences);
 		return shared_subsequences;
 	}
 
