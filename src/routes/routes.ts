@@ -216,9 +216,9 @@ export class DAGRoutes
 				r1_e[i] == r2_e[j]
 			)
 			{
+				edges.push(r1_e[i]);
 				i += 1;
 				j += 1;
-				edges.push(r1_e[i]);
 			}
 
 			let end1 = i;
@@ -331,6 +331,10 @@ export class DAGRoutes
 						return shared.out_order;
 					return shared.in_order;
 				}
+			}
+			for(let shared of ssr)
+			{
+				let in_edges = shared.in_edges.unwrap_or([-1,-1])
 			}
 			return 1
 		} 
