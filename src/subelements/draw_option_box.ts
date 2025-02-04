@@ -3,6 +3,7 @@ import { DrawOptions } from "./dag_canvas";
 const SCALE_LOWER: number = 80;
 const SCALE_UPPER: number = 300;
 
+
 export class DrawOptionBox
 {
     draw_options: DrawOptions;

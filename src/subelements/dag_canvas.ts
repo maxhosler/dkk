@@ -1,6 +1,15 @@
 import { BakedDAGEmbedding } from "../dag_layout";
 import { Bezier, Vector } from "../util";
 
+const ROUTE_RAINBOW: string[] = [
+    "#5b4db7",
+    "#42adc7",
+    "#81d152",
+    "#f5f263",
+    "#ff9d4f",
+    "#ff5347",
+];
+
 export class DrawOptions
 {
 	scale: number = 200;
@@ -9,12 +18,18 @@ export class DrawOptions
 	stroke_halo: number = 6;
 
 	route_weight: number = 8;
+	route_colors: string[] = ROUTE_RAINBOW;
 
 
 	background_color: string = "#b0b0b0";
 	selection_color: string = "#2160c487";
 	edge_color: string = "#222222";
 	node_color: string = "#000000";
+
+	get_route_color(i: number): string
+	{
+		return this.route_colors[i % this.route_colors.length];
+	}
 }
 
 type DrawCtx = CanvasRenderingContext2D;

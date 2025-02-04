@@ -5,20 +5,6 @@ import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGRoutes } from "../routes/routes";
 
-const ROUTE_RAINBOW: string[] = [
-    "#5b4db7",
-    "#42adc7",
-    "#81d152",
-    "#f5f263",
-    "#ff9d4f",
-    "#ff5347",
-    "red",
-    "red",
-    "red",
-    "red",
-    "red",
-]
-
 export class CliqueViewer
 {
     readonly draw_options: DrawOptions;
@@ -138,7 +124,7 @@ export class CliqueViewer
             for(let i = 0; i < routes.length; i++)
             {
                 let r = routes[i];
-                let color = ROUTE_RAINBOW[r];
+                let color = this.draw_options.get_route_color(r);
                 let offset = Vector.zero();
                 if(routes.length > 1)
                 {
