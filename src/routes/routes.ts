@@ -211,6 +211,22 @@ export class DAGRoutes
 		return out;
 	}
 
+	routes_at_by_clique_idx(edge_num: number, clique_num: number): number[]
+	{
+		let out: number[] = [];
+
+		let clique = this.cliques[clique_num];
+		for(let i = 0; i < clique.routes.length; i++)
+		{
+			let r = clique.routes[i];
+			let route = this.routes[r];
+			if(route.edges.includes(edge_num))
+				out.push(i);
+		}
+
+		return out;
+	}
+
 	private get_verts(route: Route): number[]
 	{
 		let verts: number[] = [this.dag.get_edge(route.edges[0]).unwrap().start];

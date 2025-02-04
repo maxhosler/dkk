@@ -11,7 +11,12 @@ const ROUTE_RAINBOW: string[] = [
     "#81d152",
     "#f5f263",
     "#ff9d4f",
-    "#ff5347"
+    "#ff5347",
+    "red",
+    "red",
+    "red",
+    "red",
+    "red",
 ]
 
 export class CliqueViewer
@@ -125,7 +130,7 @@ export class CliqueViewer
             );
 
             //routes
-            let routes = this.routes.routes_at(edge_idx, this.current_clique);
+            let routes = this.routes.routes_at_by_clique_idx(edge_idx, this.current_clique);
             if(routes.length == 0)
                 continue;
             let full_width = this.draw_options.stroke_weight * Math.pow(routes.length, 0.9);
