@@ -188,18 +188,23 @@ export class DAGRoutes
 			if(!r2_v.includes(vert))
 				continue;
 			
-			let end1 = i;
-			let end2 = r2_v.indexOf(vert);
-			let start1 = end1;
-			let start2 = end2;
+			let j = r2_v.indexOf(vert);
+			let start1 = i;
+			let start2 = j;
 
-			let length = 0;
-			while(end1 < r1_e.length && end2 < r2_e.length && r1_e[end1] == r2_e[end2])
+			//Reuse of 'i' here is not a mistake
+			while(
+				i < r1_e.length &&
+				j < r2_e.length &&
+				r1_e[i] == r2_e[j]
+			)
 			{
-				end1 += 1;
-				end2 += 1;
-				length += 1;
+				i += 1;
+				j += 1;
 			}
+
+			let end1 = i;
+			let end2 = j;
 
 			let in_edges: Option<[number,number]> = Option.none();
 			let out_edges: Option<[number, number]> = Option.none();
@@ -217,9 +222,6 @@ export class DAGRoutes
 				let in_edge_list = this.dag.get_in_edges(vert).unwrap();
 				let pos1 = in_edge_list.indexOf(edge1);
 				let pos2 = in_edge_list.indexOf(edge2);
-
-				if(pos1 == -1 || pos2 == -1)
-					throw Error("How did this happen?");
 
 				if (pos1 > pos2)
 					in_order = 1;
@@ -240,9 +242,6 @@ export class DAGRoutes
 				let pos1 = out_edge_list.indexOf(edge1);
 				let pos2 = out_edge_list.indexOf(edge2);
 
-				if(pos1 == -1 || pos2 == -1)
-					throw Error("How did this happen?");
-
 				if (pos1 > pos2)
 					out_order = 1;
 				else
@@ -257,6 +256,7 @@ export class DAGRoutes
 				in_order,
 				out_order
 			}
+
 			shared_subsequences.push(shared);
 		}
 		return shared_subsequences;
