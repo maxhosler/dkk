@@ -66,7 +66,7 @@ export class CliqueViewer
         let {box, element: box_element} = DrawOptionBox.create(draw_options);
         sidebar_contents.appendChild(box_element);
         box.add_on_change(
-            () => {if(this) this.draw()}
+            () => {if(this) { this.draw(); this.swap_box.recolor(); } }
         )
         this.draw_options_box = box;
 
