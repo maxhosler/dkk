@@ -71,27 +71,17 @@ export class DAGRoutes
 			for(let j = start; j < this.routes.length; j++)
 			{
 				let compat = true;
-				let below = [];
-				let above = [];
+
 				for(let e of arr)
 				{
-					let relation = this.compatible(e,j);
-					if(relation == "incompatible")
+					if(!this.compatible(e,j))
 					{
 						compat = false;
 						break;
 					}
-					if(relation == "greater")
-					{
-						above.push(e);
-					}
-					else
-					{
-						below.push(e);
-					}
 				}
 				if(compat)
-					out.push([...below,j,...above])
+					out.push([...arr,j]) 
 			}
 
 			return out;
@@ -159,76 +149,71 @@ export class DAGRoutes
 		this.clique_transforms = clique_transforms;
 	}
 
-	compatible(route_idx_1: number, route_idx_2: number): "incompatible" | "greater" | "less"
+	compatible(route_idx_1: number, route_idx_2: number): boolean
 	{
 		let r1 = this.routes[route_idx_1];
 		let r2 = this.routes[route_idx_2];
 
-		let ordering = 0;
-		let v1 = this.get_verts(r1);
-		let v2 = this.get_verts(r2);
-
-		for(let i = 0; i < v1.length; i++)
+		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
+		for(let sub of shared_subroutes)
 		{
-			let vertex = v1[i];
-			if(!v2.includes(vertex))
+			if(sub.start1 == 0) continue; //starts at beginning
+			if(sub.start1 + sub.length == r1.edges.length) continue; //ends at end
+
+			console.log(sub)
+
+			let in_edge_1 = r1.edges[sub.start1-1];
+			let in_edge_2 = r2.edges[sub.start2-1];
+			let start_vert = this.dag.get_edge(in_edge_1).unwrap().end;
+			let in_order = this.dag.get_in_edges(start_vert).unwrap();
+			let in_sign = in_order.indexOf(in_edge_1) - in_order.indexOf(in_edge_2);
+
+			let out_edge_1 = r1.edges[sub.start1+sub.length];
+			let out_edge_2 = r2.edges[sub.start2+sub.length];
+			let end_vert = this.dag.get_edge(out_edge_1).unwrap().start;
+			let out_order = this.dag.get_out_edges(end_vert).unwrap();
+			let out_sign = out_order.indexOf(out_edge_1) - out_order.indexOf(out_edge_2);
+
+			if(in_sign * out_sign < -0.01) return false;
+		}
+
+		return true;
+	}
+
+	shared_subroutes(route_idx_1: number, route_idx_2: number): {start1: number, start2: number, length: number}[]
+	{
+		let r1 = this.routes[route_idx_1];
+		let r2 = this.routes[route_idx_2];
+
+		let shared_subsequences: {start1: number, start2: number, length: number}[] = [];
+		for(let i = 0; i < r1.edges.length; i++)
+		{
+			let edge = r1.edges[i];
+			if(!r2.edges.includes(edge))
 				continue;
-			let j = v2.indexOf(vertex);
-
-			let in_ordering = 0;
-			let out_ordering = 0;
-
-			if(i > 0)
+			let j = r2.edges.indexOf(edge);
+			let start1 = i;
+			let start2 = j;
+			let length = 0;
+			while(i < r1.edges.length && j < r2.edges.length && r1.edges[i] == r2.edges[j])
 			{
-				let edge_in_1 = r1.edges[i-1];
-				let edge_in_2 = r2.edges[j-1];
-				let order = this.dag.get_in_edges(vertex).unwrap();
-				let e1_idx = order.indexOf(edge_in_1);
-				let e2_idx = order.indexOf(edge_in_2);
-
-				if(e1_idx > e2_idx)
-					in_ordering = 1
-				if(e2_idx > e1_idx)
-					in_ordering = -1
+				i += 1;
+				j += 1;
+				length += 1;
 			}
-
-			if(i < v1.length-1)
-			{
-				let edge_out_1 = r1.edges[i];
-				let edge_out_2 = r2.edges[j];
-				let order = this.dag.get_out_edges(vertex).unwrap();
-				let e1_idx = order.indexOf(edge_out_1);
-				let e2_idx = order.indexOf(edge_out_2);
-
-				if(e1_idx > e2_idx)
-					out_ordering = 1
-				if(e2_idx > e1_idx)
-					out_ordering = -1
-			}
-			
-			if(out_ordering * in_ordering < -0.1)
-				return "incompatible";
-			
-			if(ordering == 0)
-			{
-				if(in_ordering != 0) ordering = in_ordering;
-				if(out_ordering != 0) ordering = out_ordering;
-			}
-			else
-			{
-				if(in_ordering * ordering < -0.1) return "incompatible";
-				if(out_ordering * ordering < -0.1) return "incompatible";
-			}
+			shared_subsequences.push(
+				{start1:start1, start2:start2, length:length}
+			)
 		}
+		return shared_subsequences;
+	}
 
-		if(ordering == 1)
-		{
-			return "greater"
-		}
-		else
-		{
-			return "less"
-		}
+	route_vertices(route_idx: number): number[]
+	{
+		let out: number[] = [this.dag.get_edge(this.routes[route_idx].edges[0]).unwrap().start];
+		for(let edge_idx of this.routes[route_idx].edges)
+			out.push(this.dag.get_edge(edge_idx).unwrap().end);
+		return out;
 	}
 
 	routes_at(edge_num: number, clique_num: number): number[]
