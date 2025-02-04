@@ -1,5 +1,5 @@
 import { FramedDAG } from "../dag";
-
+import { Option } from "../result";
 class Route
 {
 	readonly edges: number[];
@@ -19,7 +19,17 @@ class Clique
 	}
 }
 
-export type Rel = -1 | 0 | 1;
+export type SharedSubroute = 
+{
+	in_vert: number,
+	out_vert: number,
+
+	in_edges: Option<[number, number]>,
+	out_edges: Option<[number, number]>,
+
+	in_order: 1 | 0 | -1,
+	out_order: 1 | 0 | -1
+};
 export class DAGRoutes
 {
 	readonly dag: FramedDAG;
@@ -157,53 +167,97 @@ export class DAGRoutes
 		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
 		for(let sub of shared_subroutes)
 		{
-			if(sub.start1 == 0) continue; //starts at beginning
-			if(sub.start1 + sub.length == r1.edges.length) continue; //ends at end
-
-			console.log(sub)
-
-			let in_edge_1 = r1.edges[sub.start1-1];
-			let in_edge_2 = r2.edges[sub.start2-1];
-			let start_vert = this.dag.get_edge(in_edge_1).unwrap().end;
-			let in_order = this.dag.get_in_edges(start_vert).unwrap();
-			let in_sign = in_order.indexOf(in_edge_1) - in_order.indexOf(in_edge_2);
-
-			let out_edge_1 = r1.edges[sub.start1+sub.length];
-			let out_edge_2 = r2.edges[sub.start2+sub.length];
-			let end_vert = this.dag.get_edge(out_edge_1).unwrap().start;
-			let out_order = this.dag.get_out_edges(end_vert).unwrap();
-			let out_sign = out_order.indexOf(out_edge_1) - out_order.indexOf(out_edge_2);
-
-			if(in_sign * out_sign < -0.01) return false;
+			if(sub.in_order * sub.out_order <= -0.01) return false;
 		}
 
 		return true;
 	}
 
-	shared_subroutes(route_idx_1: number, route_idx_2: number): {start1: number, start2: number, length: number}[]
+	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
-		let r1 = this.routes[route_idx_1];
-		let r2 = this.routes[route_idx_2];
+		let r1_e = this.routes[route_idx_1].edges;
+		let r2_e = this.routes[route_idx_2].edges;
 
-		let shared_subsequences: {start1: number, start2: number, length: number}[] = [];
-		for(let i = 0; i < r1.edges.length; i++)
+		let r1_v = this.route_vertices(route_idx_1);
+		let r2_v = this.route_vertices(route_idx_2);
+
+		let shared_subsequences: SharedSubroute[] = [];
+		for(let i = 0; i < r1_v.length; i++)
 		{
-			let edge = r1.edges[i];
-			if(!r2.edges.includes(edge))
+			let vert = r1_v[i];
+			if(!r2_v.includes(vert))
 				continue;
-			let j = r2.edges.indexOf(edge);
-			let start1 = i;
-			let start2 = j;
+			
+			let end1 = i;
+			let end2 = r2_v.indexOf(vert);
+			let start1 = end1;
+			let start2 = end2;
+
 			let length = 0;
-			while(i < r1.edges.length && j < r2.edges.length && r1.edges[i] == r2.edges[j])
+			while(end1 < r1_e.length && end2 < r2_e.length && r1_e[end1] == r2_e[end2])
 			{
-				i += 1;
-				j += 1;
+				end1 += 1;
+				end2 += 1;
 				length += 1;
 			}
-			shared_subsequences.push(
-				{start1:start1, start2:start2, length:length}
-			)
+
+			let in_edges: Option<[number,number]> = Option.none();
+			let out_edges: Option<[number, number]> = Option.none();
+
+			let in_order:  1 | 0 | -1 = 0;
+			let out_order: 1 | 0 | -1 = 0;
+
+			if(start1 != 0)
+			{
+				let edge1 = r1_e[start1-1];
+				let edge2 = r2_e[start2-1];
+
+				in_edges = Option.some([edge1, edge2])
+
+				let in_edge_list = this.dag.get_in_edges(vert).unwrap();
+				let pos1 = in_edge_list.indexOf(edge1);
+				let pos2 = in_edge_list.indexOf(edge2);
+
+				if(pos1 == -1 || pos2 == -1)
+					throw Error("How did this happen?");
+
+				if (pos1 > pos2)
+					in_order = 1;
+				else
+					in_order = -1;
+			}
+			if(end1 < r1_e.length)
+			{
+
+				let edge1 = r1_e[end1];
+				let edge2 = r2_e[end2];
+
+				out_edges = Option.some([edge1, edge2])
+
+				let vert = r1_v[end1];
+
+				let out_edge_list = this.dag.get_out_edges(vert).unwrap();
+				let pos1 = out_edge_list.indexOf(edge1);
+				let pos2 = out_edge_list.indexOf(edge2);
+
+				if(pos1 == -1 || pos2 == -1)
+					throw Error("How did this happen?");
+
+				if (pos1 > pos2)
+					out_order = 1;
+				else
+					out_order = -1;
+			}
+			
+			let shared: SharedSubroute = {
+				in_vert: r1_v[start1],
+				out_vert: r1_v[i-1],
+				in_edges,
+				out_edges,
+				in_order,
+				out_order
+			}
+			shared_subsequences.push(shared);
 		}
 		return shared_subsequences;
 	}
