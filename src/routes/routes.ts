@@ -100,11 +100,8 @@ export class DAGRoutes
 		{
 			nonmaximal.push([i]);
 		}
-		let _dbg = 0;
 		while(true)
 		{
-			_dbg += 1;
-			if(_dbg > 100) { break; }
 			let new_nm: number[][] = [];
 			for(let base of nonmaximal)
 			{
