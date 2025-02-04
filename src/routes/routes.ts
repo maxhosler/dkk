@@ -109,7 +109,23 @@ export class DAGRoutes
 		}
 		this.cliques = cliques;
 
-		console.log(cliques)
+		for(let cql of this.cliques)
+		{
+			console.log("CLQ")
+			for(let rout of cql.routes)
+			{
+				let out = "";
+				for(let edge of this.routes[rout].edges)
+				{
+					let vert = this.dag.get_edge(edge).unwrap().start;
+					let v_order = this.dag.get_out_edges(vert).unwrap();
+					let position = v_order.indexOf(edge);
+					out += position.toString();
+				}
+				console.log(out);
+			}
+			
+		}
 	}
 
 	compatible(route_idx_1: number, route_idx_2: number): boolean
