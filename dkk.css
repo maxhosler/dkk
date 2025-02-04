@@ -60,7 +60,8 @@ html, body {
     border-style: solid;
     border-color: #b0b0b0;
     border-width: 1pt;
-    padding: 10pt;
+    padding: 8pt;
+    margin-bottom: 10pt;
 
     min-height: 12pt;
 }

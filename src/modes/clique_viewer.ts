@@ -4,11 +4,14 @@ import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGRoutes } from "../routes/routes";
+import { SwapBox } from "../subelements/swap_box";
 
 export class CliqueViewer
 {
     readonly draw_options: DrawOptions;
+
     readonly draw_options_box: DrawOptionBox;
+    readonly swap_box: SwapBox;
 
     canvas: DAGCanvas;
     dag: FramedDAGEmbedding;
@@ -67,6 +70,17 @@ export class CliqueViewer
         )
         this.draw_options_box = box;
 
+        //Swap box
+        let {box: swap_box, element: swap_box_element} = SwapBox.create(
+            (idx: number) => {
+                this.route_swap(idx);
+            },
+            draw_options
+        );
+        sidebar_contents.appendChild(swap_box_element);
+        this.swap_box = swap_box;
+
+
         //Graph Canvas
         let {canvas, element: canvas_element} = DAGCanvas.create(draw_options);
 		right_area.appendChild(canvas_element);
@@ -89,11 +103,17 @@ export class CliqueViewer
 
     canvas_click(position: Vector)
     {
-        this.current_clique = this.routes.route_swap(
-            this.current_clique,
-            random_int(this.routes.clique_size)
-        )
         this.draw()
+    }
+
+    route_swap(idx: number)
+    {
+        this.current_clique = 
+            this.routes.route_swap(
+                this.current_clique,
+                idx
+            );
+        this.draw();
     }
 
     /*
