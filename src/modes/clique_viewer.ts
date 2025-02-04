@@ -75,7 +75,8 @@ export class CliqueViewer
             (idx: number) => {
                 this.route_swap(idx);
             },
-            draw_options
+            draw_options,
+            this.routes.clique_size
         );
         sidebar_contents.appendChild(swap_box_element);
         this.swap_box = swap_box;
