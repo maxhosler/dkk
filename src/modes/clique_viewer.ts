@@ -5,6 +5,15 @@ import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGRoutes } from "../routes/routes";
 
+const ROUTE_RAINBOW: string[] = [
+    "#5b4db7",
+    "#42adc7",
+    "#81d152",
+    "#f5f263",
+    "#ff9d4f",
+    "#ff5347"
+]
+
 export class CliqueViewer
 {
     readonly draw_options: DrawOptions;
@@ -14,7 +23,7 @@ export class CliqueViewer
     dag: FramedDAGEmbedding;
     routes: DAGRoutes;
 
-    _dbg_current_route: number = 0;
+    current_clique: number = 0;
 
     static destructive_new(
         dag: FramedDAGEmbedding,
@@ -89,9 +98,6 @@ export class CliqueViewer
 
     canvas_click(position: Vector)
     {
-        this._dbg_current_route += 1;
-        this._dbg_current_route = this._dbg_current_route % this.routes.routes.length;
-        console.debug(this._dbg_current_route);
         this.draw()
     }
 
@@ -107,18 +113,48 @@ export class CliqueViewer
 
         ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
 
-        for(let edge of data.edges)
-        { this.canvas.draw_bez(edge, this.draw_options.edge_color, ctx, true); }
+        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++)
+        {
+            let edge = data.edges[edge_idx];
+            this.canvas.draw_bez(
+                edge, 
+                this.draw_options.edge_color + "22",
+                this.draw_options.stroke_weight,
+                ctx,
+                true
+            );
+
+            //routes
+            let routes = this.routes.routes_at(edge_idx, this.current_clique);
+            if(routes.length == 0)
+                continue;
+            let full_width = this.draw_options.stroke_weight * Math.pow(routes.length, 0.9);
+            let width = full_width / routes.length * 1.01;
+            for(let i = 0; i < routes.length; i++)
+            {
+                let r = routes[i];
+                let color = ROUTE_RAINBOW[r];
+                let offset = Vector.zero();
+                if(routes.length > 1)
+                {
+                    let percent = i / (routes.length - 1) - 0.5;
+                    offset = new Vector(0, percent * width).scale(1/this.draw_options.scale);
+                }
+                this.canvas.draw_bez(
+                    edge.transform((v) => v.add(offset)),
+                    color,
+                    width,
+                    ctx,
+                    false
+                )
+            }
+        }
+
+
 
         for(let vert of data.verts)
         { this.canvas.draw_node(vert, ctx); }
 
-        let route = this.routes.routes[this._dbg_current_route];
-        for(let e_idx of route.edges)
-        {
-            let e_bez = data.edges[e_idx];
-            this.canvas.draw_bez(e_bez, "red", ctx, false);
-        }
     }
 
 }

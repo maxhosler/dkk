@@ -70,7 +70,7 @@ export class DAGCanvas
 		ctx.fill();
 	}
 
-	draw_bez(edge: Bezier, color: string, ctx: DrawCtx, halo: boolean)
+	draw_bez(edge: Bezier, color: string, weight: number, ctx: DrawCtx, halo: boolean)
 	{
 		let e = edge.transform
 			((v: Vector) => this.local_trans(v));
@@ -101,12 +101,12 @@ export class DAGCanvas
 			grad.addColorStop(1.0,   trans_bk);
 
 			ctx.strokeStyle = grad;
-			ctx.lineWidth = this.draw_options.stroke_weight + this.draw_options.stroke_halo;
+			ctx.lineWidth = weight + this.draw_options.stroke_halo;
 			ctx.stroke()
 		}
 
 		ctx.strokeStyle = color;
-		ctx.lineWidth = this.draw_options.stroke_weight;
+		ctx.lineWidth = weight;
 		ctx.stroke()
 	}
 

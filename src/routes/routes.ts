@@ -63,22 +63,33 @@ export class DAGRoutes
 	
 		//Compute cliques
 		let extend: (arr: number[]) => number[][] = (arr: number[]) => {
-			let start = arr[arr.length-1]+1;
+			let start = Math.max.apply(null, arr)+1;
 			let out: number[][] = [];
 
 			for(let j = start; j < this.routes.length; j++)
 			{
 				let compat = true;
+				let below = [];
+				let above = [];
 				for(let e of arr)
 				{
-					if(!this.compatible(e,j))
+					let relation = this.compatible(e,j);
+					if(relation == "incompatible")
 					{
 						compat = false;
 						break;
 					}
+					if(relation == "greater")
+					{
+						above.push(e);
+					}
+					else
+					{
+						below.push(e);
+					}
 				}
 				if(compat)
-					out.push([...arr,j])
+					out.push([...below,j,...above])
 			}
 
 			return out;
@@ -89,8 +100,11 @@ export class DAGRoutes
 		{
 			nonmaximal.push([i]);
 		}
+		let _dbg = 0;
 		while(true)
 		{
+			_dbg += 1;
+			if(_dbg > 100) { break; }
 			let new_nm: number[][] = [];
 			for(let base of nonmaximal)
 			{
@@ -108,27 +122,9 @@ export class DAGRoutes
 			}
 		}
 		this.cliques = cliques;
-
-		for(let cql of this.cliques)
-		{
-			console.log("CLQ")
-			for(let rout of cql.routes)
-			{
-				let out = "";
-				for(let edge of this.routes[rout].edges)
-				{
-					let vert = this.dag.get_edge(edge).unwrap().start;
-					let v_order = this.dag.get_out_edges(vert).unwrap();
-					let position = v_order.indexOf(edge);
-					out += position.toString();
-				}
-				console.log(out);
-			}
-			
-		}
 	}
 
-	compatible(route_idx_1: number, route_idx_2: number): boolean
+	compatible(route_idx_1: number, route_idx_2: number): "incompatible" | "greater" | "less"
 	{
 		let r1 = this.routes[route_idx_1];
 		let r2 = this.routes[route_idx_2];
@@ -176,7 +172,7 @@ export class DAGRoutes
 			}
 			
 			if(out_ordering * in_ordering < -0.1)
-				return false;
+				return "incompatible";
 			
 			if(ordering == 0)
 			{
@@ -185,12 +181,34 @@ export class DAGRoutes
 			}
 			else
 			{
-				if(in_ordering * ordering < -0.1) return false;
-				if(out_ordering * ordering < -0.1) return false;
+				if(in_ordering * ordering < -0.1) return "incompatible";
+				if(out_ordering * ordering < -0.1) return "incompatible";
 			}
 		}
 
-		return true;
+		if(ordering == 1)
+		{
+			return "greater"
+		}
+		else
+		{
+			return "less"
+		}
+	}
+
+	routes_at(edge_num: number, clique_num: number): number[]
+	{
+		let out: number[] = [];
+
+		let clique = this.cliques[clique_num];
+		for(let r of clique.routes)
+		{
+			let route = this.routes[r];
+			if(route.edges.includes(edge_num))
+				out.push(r);
+		}
+
+		return out;
 	}
 
 	private get_verts(route: Route): number[]

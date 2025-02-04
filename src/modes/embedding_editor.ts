@@ -195,7 +195,7 @@ export class EmbeddingEditor
 		ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
 
 		for(let edge of data.edges)
-		{ this.canvas.draw_bez(edge, this.draw_options.edge_color, ctx, true); }
+		{ this.canvas.draw_bez(edge, this.draw_options.edge_color, this.draw_options.stroke_weight, ctx, true); }
 
 		this.draw_selection_edge(data, ctx);
 
