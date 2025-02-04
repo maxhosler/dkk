@@ -278,7 +278,7 @@ export class DAGRoutes
 
 			shared_subsequences.push(shared);
 		}
-		this.cached_subroutes[route_idx_1][route_idx_2] = structuredClone(shared_subsequences);
+		this.cached_subroutes[route_idx_1][route_idx_2] = shared_subsequences;
 		return shared_subsequences;
 	}
 
@@ -317,6 +317,24 @@ export class DAGRoutes
 			if(route.edges.includes(edge_num))
 				out.push(i);
 		}
+
+		let sort = (a: number, b: number) =>
+		{
+			let r1 = clique.routes[a];
+			let r2 = clique.routes[b];
+			let ssr = this.shared_subroutes(r1,r2);
+			for(let shared of ssr)
+			{
+				if(shared.edges.includes(edge_num))
+				{
+					if(shared.in_order == 0)
+						return shared.out_order;
+					return shared.in_order;
+				}
+			}
+			return 1
+		} 
+		out.sort(sort);
 
 		return out;
 	}

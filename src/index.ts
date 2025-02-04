@@ -5,5 +5,5 @@ import { EmbeddingEditor } from "./modes/embedding_editor";
 import { DAGRoutes } from "./routes/routes";
 
 const draw_options = new DrawOptions();
-const layout = prebuilt_dag_embedding(1);
+const layout = prebuilt_dag_embedding(2);
 const pm = CliqueViewer.destructive_new(layout, draw_options);
