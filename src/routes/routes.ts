@@ -25,6 +25,8 @@ export class DAGRoutes
 	readonly dag: FramedDAG;
 	readonly routes: Route[];
 	readonly cliques: Clique[];
+	readonly clique_size: number;
+	readonly clique_transforms: number[][]; //clique index, and route index in clique
 
 	constructor(dag: FramedDAG)
 	{
@@ -119,6 +121,42 @@ export class DAGRoutes
 			}
 		}
 		this.cliques = cliques;
+		this.clique_size = cliques[0].routes.length;
+
+		let clique_transforms: number[][] = [];
+		for(let i = 0; i < this.cliques.length; i++)
+		{
+			clique_transforms.push([]);
+			for(let j = 0; j < this.clique_size; j++)
+			{
+				clique_transforms[i].push(i);
+			}
+		}
+
+		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
+			for(let clq2 = clq1+1; clq2 < this.cliques.length; clq2++)
+			{
+				let c1 = this.cliques[clq1];
+				let c2 = this.cliques[clq2];
+
+				let disagree_at = -1;
+				let disagree_count = 0;
+				for(let i = 0; i < this.clique_size; i++)
+					if(c1.routes[i] != c2.routes[i])
+					{
+						disagree_at = i;
+						disagree_count += 1;
+					}
+				
+				if(disagree_count == 1)
+				{
+					clique_transforms[clq1][disagree_at] = clq2;
+					clique_transforms[clq2][disagree_at] = clq1;
+				}
+			}
+		}
+		
+		this.clique_transforms = clique_transforms;
 	}
 
 	compatible(route_idx_1: number, route_idx_2: number): "incompatible" | "greater" | "less"
@@ -222,6 +260,11 @@ export class DAGRoutes
 		}
 
 		return out;
+	}
+
+	route_swap(clique_idx: number, route_idx: number): number
+	{
+		return this.clique_transforms[clique_idx][route_idx];
 	}
 
 	private get_verts(route: Route): number[]

@@ -89,6 +89,10 @@ export class CliqueViewer
 
     canvas_click(position: Vector)
     {
+        this.current_clique = this.routes.route_swap(
+            this.current_clique,
+            random_int(this.routes.clique_size)
+        )
         this.draw()
     }
 
@@ -149,3 +153,12 @@ export class CliqueViewer
     }
 
 }
+
+function random_int(max: number): number
+{
+    return Math.min(
+        Math.floor(Math.random() * max),
+        max-1
+    );
+}
+  
