@@ -133,7 +133,7 @@ export class CliqueViewer
             let routes = this.routes.routes_at_by_clique_idx(edge_idx, this.current_clique);
             if(routes.length == 0)
                 continue;
-            let full_width = this.draw_options.stroke_weight * Math.pow(routes.length, 0.9);
+            let full_width = this.draw_options.route_weight * Math.pow(routes.length, 0.8);
             let width = full_width / routes.length * 1.01;
             for(let i = 0; i < routes.length; i++)
             {
@@ -143,7 +143,7 @@ export class CliqueViewer
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = new Vector(0, percent * width).scale(1/this.draw_options.scale);
+                    offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale);
                 }
                 this.canvas.draw_bez(
                     edge.transform((v) => v.add(offset)),

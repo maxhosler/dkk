@@ -8,6 +8,9 @@ export class DrawOptions
 	stroke_weight: number = 6;
 	stroke_halo: number = 6;
 
+	route_weight: number = 8;
+
+
 	background_color: string = "#b0b0b0";
 	selection_color: string = "#2160c487";
 	edge_color: string = "#222222";
