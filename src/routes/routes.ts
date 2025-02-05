@@ -152,20 +152,11 @@ export class DAGRoutes
 				let c1 = this.cliques[clq1];
 				let c2 = this.cliques[clq2];
 
-				let disagree_at = -1;
-				let disagree_count = 0;
-				for(let i = 0; i < this.clique_size; i++)
-					if(c1.routes[i] != c2.routes[i])
-					{
-						disagree_at = i;
-						disagree_count += 1;
-					}
+				let intersection =  c1.routes.filter(value => c2.routes.includes(value));
+				if(intersection.length != c1.routes.length-1) continue;
 				
-				if(disagree_count == 1)
-				{
-					clique_transforms[clq1][disagree_at] = clq2;
-					clique_transforms[clq2][disagree_at] = clq1;
-				}
+				
+
 			}
 		}
 		
