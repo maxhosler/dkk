@@ -3,7 +3,7 @@ import { FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
-import { DAGRoutes } from "../routes/routes";
+import { DAGCliques } from "../routes/routes";
 import { SwapBox } from "../subelements/swap_box";
 
 export class CliqueViewer
@@ -15,7 +15,7 @@ export class CliqueViewer
 
     canvas: DAGCanvas;
     dag: FramedDAGEmbedding;
-    routes: DAGRoutes;
+    routes: DAGCliques;
 
     current_clique: number = 0;
 
@@ -57,7 +57,7 @@ export class CliqueViewer
     {
         this.dag = dag;
         this.draw_options = draw_options;
-        this.routes = new DAGRoutes(dag.base_dag);
+        this.routes = new DAGCliques(dag.base_dag);
 
         //sidebar
         sidebar_head.innerText = "Clique Viewer";

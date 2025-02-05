@@ -12,10 +12,53 @@ class Route
 
 class Clique
 {
+	static build_with_order(routes: number[], dag_context: DAGCliques): Clique
+	{
+		let routes_per_edge: number[][] = [];
+		for(let edge_num = 0; edge_num < dag_context.dag.num_edges(); edge_num++)
+		{
+			let routes_on_edge = [];
+			for(let i = 0; i < routes.length; i++)
+			{
+				let r = routes[i];
+				let route = dag_context.routes[r];
+				if(route.edges.includes(edge_num))
+					routes_on_edge.push(i);
+			}
+			let sort = (a: number, b: number) =>
+			{
+				let r1 = routes[a];
+				let r2 = routes[b];
+				let ssr = dag_context.shared_subroutes(r1,r2);
+				for(let shared of ssr)
+				{
+					if(shared.edges.includes(edge_num))
+					{
+						if(shared.in_order == 0)
+							return shared.out_order;
+						return shared.in_order;
+					}
+				}
+				return 1
+			} 
+			routes_on_edge.sort(sort);
+			routes_per_edge.push(routes_on_edge);
+		}
+		let source_edges = dag_context.dag.get_out_edges(dag_context.dag.source().unwrap()).unwrap();
+		let new_routes: number[] = [];
+		for(let edge of source_edges)
+			for(let route_idx of routes_per_edge[edge])
+				new_routes.push(routes[route_idx]);
+
+		return new Clique(new_routes, routes_per_edge);
+		
+	}
 	readonly routes: number[];
-	constructor(routes: number[])
+	readonly routes_per_edge: number[][];
+	constructor(routes: number[], routes_per_edge: number[][])
 	{
 		this.routes = routes;
+		this.routes_per_edge = routes_per_edge;
 	}
 }
 
@@ -32,7 +75,7 @@ export type SharedSubroute =
 	in_order: 1 | 0 | -1,
 	out_order: 1 | 0 | -1
 };
-export class DAGRoutes
+export class DAGCliques
 {
 	readonly dag: FramedDAG;
 	readonly routes: Route[];
@@ -125,7 +168,7 @@ export class DAGRoutes
 			if(new_nm.length == 0)
 			{
 				for(let arr of nonmaximal)
-					cliques.push(new Clique(arr))
+					cliques.push(Clique.build_with_order(arr, this))
 				break;
 			}
 			else
@@ -155,7 +198,17 @@ export class DAGRoutes
 				let intersection =  c1.routes.filter(value => c2.routes.includes(value));
 				if(intersection.length != c1.routes.length-1) continue;
 				
+				let i_r1 = -1;
+				for(let r1 of c1.routes)
+					if(!c2.routes.includes(r1))
+						i_r1 = c1.routes.indexOf(r1);
+				let i_r2 = -1;
+				for(let r2 of c2.routes)
+					if(!c1.routes.includes(r2))
+						i_r2 = c2.routes.indexOf(r2);
 				
+				clique_transforms[clq1][i_r1] = clq2;
+				clique_transforms[clq2][i_r2] = clq1;
 
 			}
 		}
