@@ -3,6 +3,13 @@ import { prebuilt_dag_embedding } from "./dag_layout";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 
+type PresetOption = {name: string, idx: number};
+const PRESETS: PresetOption[] = [
+    {name: "cube", idx: 0},
+    {name: "cube-twist", idx: 1},
+    {name: "caracol-4", idx: 2},
+];
+
 abstract class Popup
 {
     close_callback: () => void;
@@ -10,6 +17,7 @@ abstract class Popup
     base: HTMLDivElement;
     window: HTMLDivElement;
     top_bar: HTMLDivElement;
+    popup_body: HTMLDivElement;
     xout: HTMLDivElement;
     constructor(body: HTMLElement, title_name: string, close_callback: () => void)
     {
@@ -43,6 +51,12 @@ abstract class Popup
         };
         top_bar.appendChild(xout);
         this.xout = xout;
+
+        let popup_body = document.createElement("div");
+        popup_body.className = "popup-body";
+        this.window.appendChild(popup_body);
+        this.popup_body = popup_body;
+        
     }
 
     close()
@@ -54,9 +68,48 @@ abstract class Popup
 
 class OpenPopup extends Popup
 {
-    constructor(base: HTMLElement, close_callback: () => void)
+    table: HTMLTableElement;
+    parent: DKKProgram
+    constructor(base: HTMLElement, parent: DKKProgram)
     {
-        super(base, "Open", close_callback);
+        super(base, "Open", () => parent.popup_open = false);
+        this.parent = parent;
+
+        let table = document.createElement("table");
+        this.popup_body.appendChild(table);
+        this.table = table;
+
+        let preset_dropdown = document.createElement("select");
+        for(let preset of PRESETS)
+        {
+            let opt = document.createElement("option");
+            opt.value = preset.idx.toString();
+            opt.innerText = preset.name;
+            preset_dropdown.appendChild(opt);
+        }
+
+        let preset_button = document.createElement("button");
+        preset_button.innerText = "Open";
+        this.add_row("From preset", preset_dropdown, preset_button)
+    }
+
+    add_row(text: string, element1: HTMLElement, element2: HTMLElement)
+    {
+        let row = document.createElement("tr");
+        
+        let name = document.createElement("td");
+        name.innerText = text;
+        row.appendChild(name);
+
+        let control1 = document.createElement("td");
+        control1.appendChild(element1);
+        row.appendChild(control1);
+
+        let control2 = document.createElement("td");
+        control2.appendChild(element2);
+        row.appendChild(control2);
+
+        this.table.appendChild(row);
     }
 }
 
@@ -86,7 +139,7 @@ class DKKProgram
         this.popup_open = true;
         let popup = new OpenPopup(
             this.body,
-            () => this.popup_open = false
+            this
         );
     }
 

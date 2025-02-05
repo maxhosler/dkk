@@ -153,11 +153,11 @@ html, body {
 {
     border: var(--default-border);
     background-color: #d8d8d8;
-    width: 50%;
+    width: fit-content;
     min-width: 4in;
     
-    height: 75%;
-    min-height: 4in;
+    height: fit-content;
+    min-height: 2in;
 }
 
 .popup-top-bar
@@ -196,4 +196,11 @@ html, body {
 {
     background-color: #00000022;
     
+}
+
+.popup-body
+{
+    width: 100%;
+    height: fit-content;
+    padding: 10pt;
 }
