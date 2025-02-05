@@ -16,9 +16,38 @@ html, body {
     margin: 0;
 }
 
+#top-bar
+{
+    height: 20pt;
+    width: 100%;
+
+    background-color: #f0f0f0;
+    border-bottom: 1pt solid #b0b0b0;
+}
+
+.top-bar-button
+{
+    height: 100%;
+    max-width: 30pt;
+    border-right: 1pt solid #b0b0b0;
+    padding-top: 2pt;
+    padding-bottom: 2pt;
+    padding-left: 10pt;
+    padding-right: 10pt;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+
+}
+.top-bar-button:hover
+{
+    background-color: #00000022;
+}
+
 #complete
 {
-    background-color: rgb(216, 216, 216);
+    background-color: #d8d8d8;
     flex-grow: 1;
 
     display: flex;
