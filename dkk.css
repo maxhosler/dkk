@@ -144,6 +144,9 @@ html, body {
 #shadow
 {
     background-color:rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .popup-window
@@ -155,4 +158,42 @@ html, body {
     
     height: 75%;
     min-height: 4in;
+}
+
+.popup-top-bar
+{
+    width: 100%;
+    height: 23pt;
+    border-bottom: var(--default-border);
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+}
+
+.popup-top-bar h3
+{
+    margin: 0;
+    margin-top: 2pt;
+    margin-left: 4pt;
+}
+
+.popup-xout
+{
+    width: 10pt;
+    border-left: var(--default-border);
+    justify-content: space-between;
+
+    padding-top: 2pt;
+    padding-bottom: 2pt;
+    padding-left: 5pt;
+    padding-right: 5pt;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+.popup-xout:hover
+{
+    background-color: #00000022;
+    
 }

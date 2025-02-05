@@ -5,10 +5,16 @@ import { EmbeddingEditor } from "./modes/embedding_editor";
 
 abstract class Popup
 {
+    close_callback: () => void;
+
     base: HTMLDivElement;
     window: HTMLDivElement;
-    constructor(body: HTMLElement)
+    top_bar: HTMLDivElement;
+    xout: HTMLDivElement;
+    constructor(body: HTMLElement, title_name: string, close_callback: () => void)
     {
+        this.close_callback = close_callback;
+
         let base = document.createElement("div");
         base.id = "shadow"
         base.className = "fullscreen"
@@ -19,19 +25,38 @@ abstract class Popup
         window.className = "popup-window";
         base.appendChild(window);
         this.window = window;
+
+        let top_bar = document.createElement("div");
+        top_bar.className = "popup-top-bar";
+        window.appendChild(top_bar);
+        this.top_bar = top_bar;
+
+        let title = document.createElement("h3");
+        title.innerText = title_name;
+        top_bar.appendChild(title);
+
+        let xout = document.createElement("div");
+        xout.className = "popup-xout";
+        xout.innerText = "X";
+        xout.onclick = () => {
+            this.close()
+        };
+        top_bar.appendChild(xout);
+        this.xout = xout;
     }
 
     close()
     {
         this.base.remove();
+        this.close_callback();
     }
 }
 
 class OpenPopup extends Popup
 {
-    constructor(base: HTMLElement)
+    constructor(base: HTMLElement, close_callback: () => void)
     {
-        super(base);
+        super(base, "Open", close_callback);
     }
 }
 
@@ -59,7 +84,10 @@ class DKKProgram
         if(this.popup_open) { return; }
 
         this.popup_open = true;
-        let popup = new OpenPopup(this.body);
+        let popup = new OpenPopup(
+            this.body,
+            () => this.popup_open = false
+        );
     }
 
 	set_clique_viewer(idx: number)
