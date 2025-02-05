@@ -2,6 +2,11 @@ html {
     font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+:root {
+    --default-border: 1pt solid #b0b0b0;
+}
+  
+
 body
 {
     
@@ -22,14 +27,14 @@ html, body {
     width: 100%;
 
     background-color: #f0f0f0;
-    border-bottom: 1pt solid #b0b0b0;
+    border-bottom: var(--default-border);
 }
 
 .top-bar-button
 {
     height: 100%;
-    max-width: 30pt;
-    border-right: 1pt solid #b0b0b0;
+    max-width: fit-content;
+    border-right: var(--default-border);
     padding-top: 2pt;
     padding-bottom: 2pt;
     padding-left: 10pt;
@@ -121,4 +126,33 @@ html, body {
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
+}
+
+.fullscreen
+{
+    position:fixed;
+    padding:0;
+    margin:0;
+
+    top:0;
+    left:0;
+
+    width: 100%;
+    height: 100%;
+}
+
+#shadow
+{
+    background-color:rgba(0, 0, 0, 0.5);
+}
+
+.popup-window
+{
+    border: var(--default-border);
+    background-color: #d8d8d8;
+    width: 50%;
+    min-width: 4in;
+    
+    height: 75%;
+    min-height: 4in;
 }
