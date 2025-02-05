@@ -69,7 +69,9 @@ abstract class Popup
 class OpenPopup extends Popup
 {
     table: HTMLTableElement;
-    parent: DKKProgram
+    preset_dropdown: HTMLSelectElement;
+
+    parent: DKKProgram;
     constructor(base: HTMLElement, parent: DKKProgram)
     {
         super(base, "Open", () => parent.popup_open = false);
@@ -87,26 +89,46 @@ class OpenPopup extends Popup
             opt.innerText = preset.name;
             preset_dropdown.appendChild(opt);
         }
+        this.preset_dropdown = preset_dropdown;
 
         let preset_button = document.createElement("button");
         preset_button.innerText = "Open";
+        preset_button.onclick = () => this.load_preset();
         this.add_row("From preset", preset_dropdown, preset_button)
     }
 
-    add_row(text: string, element1: HTMLElement, element2: HTMLElement)
+    load_preset()
+    {
+        let idx = Number.parseInt(this.preset_dropdown.value);
+        this.parent.set_clique_viewer(idx);
+        this.close();
+    }
+
+    add_row(text: string, element1: HTMLElement | null, element2: HTMLElement | null)
     {
         let row = document.createElement("tr");
         
+        let id = "option-"+text;
+
         let name = document.createElement("td");
-        name.innerText = text;
+        let name_label = document.createElement("label");
+        name_label.htmlFor = id;
+        name_label.innerText = text;
+        name.appendChild(name_label);
         row.appendChild(name);
 
         let control1 = document.createElement("td");
-        control1.appendChild(element1);
+        if(element1) {
+            element1.id = id;
+            control1.appendChild(element1);
+        }
         row.appendChild(control1);
 
         let control2 = document.createElement("td");
-        control2.appendChild(element2);
+        if(element2)
+        {
+            control2.appendChild(element2);
+        }
         row.appendChild(control2);
 
         this.table.appendChild(row);

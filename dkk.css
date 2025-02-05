@@ -154,7 +154,7 @@ html, body {
     border: var(--default-border);
     background-color: #d8d8d8;
     width: fit-content;
-    min-width: 4in;
+    min-width: 2in;
     
     height: fit-content;
     min-height: 2in;
