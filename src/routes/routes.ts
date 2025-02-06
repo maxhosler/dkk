@@ -12,7 +12,11 @@ class Route
 
 class Clique
 {
-	static local_edge_order(edge_num: number, routes: number[], dag_context: DAGCliques): (a: number, b: number) => number
+	static indexed_local_edge_order(
+		edge_num: number,
+		routes: number[],
+		dag_context: DAGCliques
+	): (a: number, b: number) => number
 	{
 		return (a: number, b: number) =>
 		{
@@ -45,7 +49,7 @@ class Clique
 				if(route.edges.includes(edge_num))
 					routes_on_edge.push(i);
 			}
-			let sort = Clique.local_edge_order(edge_num, routes, dag_context);
+			let sort = Clique.indexed_local_edge_order(edge_num, routes, dag_context);
 			routes_on_edge.sort(sort);
 			routes_per_edge.push(routes_on_edge);
 		}
@@ -78,6 +82,15 @@ export type SharedSubroute =
 	in_order: 1 | 0 | -1,
 	out_order: 1 | 0 | -1
 };
+class SharedSubrouteCollection
+{
+	readonly subroutes: SharedSubroute[];
+	constructor(subroutes: SharedSubroute[])
+	{
+		this.subroutes = subroutes;
+	}
+}
+
 export class DAGCliques
 {
 	readonly dag: FramedDAG;
@@ -85,11 +98,10 @@ export class DAGCliques
 	readonly cliques: Clique[];
 	readonly clique_size: number;
 
-	readonly clique_transforms: number[][]; //clique index, and route index in clique
+	readonly route_swaps: number[][]; //clique index, and route index in clique
 	readonly clique_leq_matrix: boolean[][];
 	readonly clique_cover_matrix: boolean[][];
-
-	private cached_subroutes: (SharedSubroute[] | undefined)[][];
+	readonly shared_subroutes_arr: SharedSubrouteCollection[][];
 
 	constructor(dag: FramedDAG)
 	{
@@ -125,15 +137,20 @@ export class DAGCliques
 			incomplete_routes = new_paths;
 		}
 		this.routes = routes;
-		this.cached_subroutes = [];
+
+		//Compute shared subroutes
+		let shared_subroutes_arr: SharedSubrouteCollection[][] = [];
 		for(let i = 0; i < routes.length; i++)
 		{
-			this.cached_subroutes.push([])
+			shared_subroutes_arr.push([])
 			for(let j = 0; j < routes.length; j++)
 			{
-				this.cached_subroutes[i].push(undefined);
+				shared_subroutes_arr[i].push(
+					new SharedSubrouteCollection(this.inner_shared_subroutes(i, j))
+				);
 			}
 		}
+		this.shared_subroutes_arr = shared_subroutes_arr;
 	
 		//Compute cliques
 		let extend: (arr: number[]) => number[][] = (arr: number[]) => {
@@ -146,7 +163,7 @@ export class DAGCliques
 
 				for(let e of arr)
 				{
-					if(!this.compatible(e,j))
+					if(!this.inner_compatible(e,j))
 					{
 						compat = false;
 						break;
@@ -218,7 +235,7 @@ export class DAGCliques
 
 			}
 		}
-		this.clique_transforms = clique_transforms;
+		this.route_swaps = clique_transforms;
 		
 		let clique_leq_matrix: boolean[][] = [];
 		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
@@ -226,7 +243,7 @@ export class DAGCliques
 			for(let clq2 = 0; clq2 < this.cliques.length; clq2++)
 			{
 				clique_leq_matrix[clq1].push(
-					this.clique_leq_inner(clq1, clq2)
+					this.inner_clique_leq(clq1, clq2)
 				);
 			}
 		}
@@ -256,56 +273,17 @@ export class DAGCliques
 		this.clique_cover_matrix = clique_cover_matrix;
 	}
 
-	compatible(route_idx_1: number, route_idx_2: number): boolean
+	/*
+	These 'inner' functions are used during the constructor to compute data
+	that is then stored to be read later. There is no need to call them anywhere
+	besides the constructor.
+	Be careful when editing! These do should not assume the object is fully constructed.
+	*/
+
+	//Computes shared subroutes between two routes
+	//Only assumes this.dag and this.routes have been initialized.
+	private inner_shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
-		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
-		for(let sub of shared_subroutes)
-		{
-			if(sub.in_order * sub.out_order < -0.01) return false;
-		}
-
-		return true;
-	}
-
-	up_incompatible(route_idx_1: number, route_idx_2: number): boolean
-	{
-		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
-		for(let sub of shared_subroutes)
-		{
-			if(sub.in_order > 0 && sub.out_order < 0)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private clique_leq_inner(clq_idx_1: number, clq_idx_2: number): boolean
-	{
-		if(clq_idx_1 == clq_idx_2) return true;
-		let c1 = this.cliques[clq_idx_1];
-		let c2 = this.cliques[clq_idx_2];
-
-		for(let r1 of c1.routes)
-			for(let r2 of c2.routes)
-				if(this.up_incompatible(r1,r2))
-					return false;
-
-		return true;
-	}
-
-	clique_leq(clq_idx_1: number, clq_idx_2: number): boolean
-	{
-		return this.clique_leq_matrix[clq_idx_1][clq_idx_2];
-	}
-
-	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
-	{
-		if(typeof this.cached_subroutes[route_idx_1][route_idx_2] != "undefined")
-		{
-			return this.cached_subroutes[route_idx_1][route_idx_2];
-		}
 
 		let r1_e = this.routes[route_idx_1].edges;
 		let r2_e = this.routes[route_idx_2].edges;
@@ -395,8 +373,62 @@ export class DAGCliques
 
 			shared_subsequences.push(shared);
 		}
-		this.cached_subroutes[route_idx_1][route_idx_2] = shared_subsequences;
 		return shared_subsequences;
+	}
+
+	//Computes poset relation
+	//Only assumes this.dag, this.routes, and this.cliques have been initialized.
+	private inner_clique_leq(clq_idx_1: number, clq_idx_2: number): boolean
+	{
+		if(clq_idx_1 == clq_idx_2) return true;
+		let c1 = this.cliques[clq_idx_1];
+		let c2 = this.cliques[clq_idx_2];
+
+		for(let r1 of c1.routes)
+			for(let r2 of c2.routes)
+				if(this.inner_up_incompatible(r1,r2))
+					return false;
+
+		return true;
+	}
+
+	//Computes compatibility between two routes.
+	//Only assumes this.dag and this.routes have been initialized.
+	private inner_compatible(route_idx_1: number, route_idx_2: number): boolean
+	{
+		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
+		for(let sub of shared_subroutes)
+		{
+			if(sub.in_order * sub.out_order < -0.01) return false;
+		}
+
+		return true;
+	}
+
+	//Computes compatibility between two routes.
+	//Only assumes this.dag and this.routes have been initialized.
+	private inner_up_incompatible(route_idx_1: number, route_idx_2: number): boolean
+	{
+		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
+		for(let sub of shared_subroutes)
+		{
+			if(sub.in_order > 0 && sub.out_order < 0)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	clique_leq(clq_idx_1: number, clq_idx_2: number): boolean
+	{
+		return this.clique_leq_matrix[clq_idx_1][clq_idx_2];
+	}
+
+	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
+	{
+		return this.shared_subroutes_arr[route_idx_1][route_idx_2].subroutes
 	}
 
 	route_vertices(route_idx: number): number[]
@@ -404,21 +436,6 @@ export class DAGCliques
 		let out: number[] = [this.dag.get_edge(this.routes[route_idx].edges[0]).unwrap().start];
 		for(let edge_idx of this.routes[route_idx].edges)
 			out.push(this.dag.get_edge(edge_idx).unwrap().end);
-		return out;
-	}
-
-	routes_at(edge_num: number, clique_num: number): number[]
-	{
-		let out: number[] = [];
-
-		let clique = this.cliques[clique_num];
-		for(let r of clique.routes)
-		{
-			let route = this.routes[r];
-			if(route.edges.includes(edge_num))
-				out.push(r);
-		}
-
 		return out;
 	}
 
@@ -435,7 +452,7 @@ export class DAGCliques
 				out.push(i);
 		}
 
-		let edge_ordering = Clique.local_edge_order(edge_num, clique.routes, this);
+		let edge_ordering = Clique.indexed_local_edge_order(edge_num, clique.routes, this);
 		out.sort(edge_ordering);
 
 		return out;
@@ -443,18 +460,6 @@ export class DAGCliques
 
 	route_swap(clique_idx: number, route_idx: number): number
 	{
-		return this.clique_transforms[clique_idx][route_idx];
-	}
-
-	private get_verts(route: Route): number[]
-	{
-		let verts: number[] = [this.dag.get_edge(route.edges[0]).unwrap().start];
-
-		for(let e of route.edges)
-		{
-			verts.push(this.dag.get_edge(e).unwrap().end)
-		}
-
-		return verts;
+		return this.route_swaps[clique_idx][route_idx];
 	}
 }
