@@ -175,12 +175,3 @@ export class CliqueViewer
     }
 
 }
-
-function random_int(max: number): number
-{
-    return Math.min(
-        Math.floor(Math.random() * max),
-        max-1
-    );
-}
-  

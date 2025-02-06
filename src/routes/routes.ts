@@ -12,6 +12,26 @@ class Route
 
 class Clique
 {
+	static local_edge_order(edge_num: number, routes: number[], dag_context: DAGCliques): (a: number, b: number) => number
+	{
+		return (a: number, b: number) =>
+		{
+			let r1 = routes[a];
+			let r2 = routes[b];
+			let ssr = dag_context.shared_subroutes(r1,r2);
+			for(let shared of ssr)
+			{
+				if(shared.edges.includes(edge_num))
+				{
+					if(shared.in_order == 0)
+						return shared.out_order;
+					return shared.in_order;
+				}
+			}
+			return 1
+		} 
+	}
+
 	static build_with_order(routes: number[], dag_context: DAGCliques): Clique
 	{
 		let routes_per_edge: number[][] = [];
@@ -25,22 +45,7 @@ class Clique
 				if(route.edges.includes(edge_num))
 					routes_on_edge.push(i);
 			}
-			let sort = (a: number, b: number) =>
-			{
-				let r1 = routes[a];
-				let r2 = routes[b];
-				let ssr = dag_context.shared_subroutes(r1,r2);
-				for(let shared of ssr)
-				{
-					if(shared.edges.includes(edge_num))
-					{
-						if(shared.in_order == 0)
-							return shared.out_order;
-						return shared.in_order;
-					}
-				}
-				return 1
-			} 
+			let sort = Clique.local_edge_order(edge_num, routes, dag_context);
 			routes_on_edge.sort(sort);
 			routes_per_edge.push(routes_on_edge);
 		}
@@ -430,27 +435,8 @@ export class DAGCliques
 				out.push(i);
 		}
 
-		let sort = (a: number, b: number) =>
-		{
-			let r1 = clique.routes[a];
-			let r2 = clique.routes[b];
-			let ssr = this.shared_subroutes(r1,r2);
-			for(let shared of ssr)
-			{
-				if(shared.edges.includes(edge_num))
-				{
-					if(shared.in_order == 0)
-						return shared.out_order;
-					return shared.in_order;
-				}
-			}
-			for(let shared of ssr)
-			{
-				let in_edges = shared.in_edges.unwrap_or([-1,-1])
-			}
-			return 1
-		} 
-		out.sort(sort);
+		let edge_ordering = Clique.local_edge_order(edge_num, clique.routes, this);
+		out.sort(edge_ordering);
 
 		return out;
 	}
