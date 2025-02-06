@@ -3,6 +3,7 @@ export class HasseDiagram
     private readonly poset_size: number;
     private readonly poset_relation: boolean[][];
     private readonly covering_relation: boolean[][];
+    private readonly layout_rows: number[][];
 
     readonly minimal_elt: number;
     readonly maximal_elt: number;
@@ -51,23 +52,23 @@ export class HasseDiagram
                 this.minimal_elt = i;
         }
 
-        let psuedograding = HasseDiagram.compute_psuedograding(
+        this.layout_rows = HasseDiagram.compute_layout_rows(
             this.minimal_elt,
             this.maximal_elt,
             this.covering_relation
         )
     }
 
-    private static compute_psuedograding(
+    private static compute_layout_rows(
         min: number,
         max: number,
         covering_relation: boolean[][]
-    )
+    ): number[][]
     {
-        let depths: number[][] = [];
+        let max_depths: number[] = [];
         for(let i = 0; i < covering_relation.length; i++)
         {
-            depths.push([]);
+            max_depths.push(0);
         }
 
         let srch = [min];
@@ -77,8 +78,7 @@ export class HasseDiagram
             let next_row: number[] = [];
             for(let s of srch)
             {
-                if(!depths[s].includes(cur_depth))
-                    depths[s].push(cur_depth);
+                max_depths[s] = cur_depth;
                 for(let i = 0; i < covering_relation.length; i++)
                     if(covering_relation[s][i])
                         next_row.push(i)
@@ -88,53 +88,133 @@ export class HasseDiagram
             srch = next_row;
         }
 
-        let integer_scale = 1;
-        for(let d of depths)
-        {
-            integer_scale = lcm(integer_scale, d.length)
-        }
-
-        let scaled_depths = depths.map(
-            (ls: number[]) => {
-                let unscaled = ls.reduce((s, a) => s + a, 0);
-                return unscaled * (integer_scale / ls.length)
-            }
-        )
-
-        let max_depth = scaled_depths.reduce((a,b) => Math.max(a,b), 0);
+        let max_depth = max_depths.reduce((a,b) => Math.max(a,b), 0);
         let rows: number[][] = [];
         for(let d = 0; d <= max_depth; d++)
         {
             let next_row: number[] = [];
-            for(let j = 0; j < scaled_depths.length; j++)
-                if(scaled_depths[j] == d)
+            for(let j = 0; j < max_depths.length; j++)
+                if(max_depths[j] == d)
                     next_row.push(j)
             if(next_row.length > 0)
                 rows.push(next_row);
+        }        
+
+        let edges: [number, number][] = [];
+        for(let i = 0; i < covering_relation.length; i++)
+            for(let j = 0; j < covering_relation.length; j++)
+                if(covering_relation[i][j])
+                    edges.push([i,j]);
+
+        let row_of: {[key: number]: number} = {}
+        for(let i = 0; i < rows.length; i++)
+            for(let e of rows[i])
+                row_of[e] = i;
+
+        let dummy = -1;
+        let get_dummy = () => {
+            dummy -= 1;
+            return dummy;
+        }
+        let extended_edges = []
+        let extended_rows = structuredClone(rows);
+        for(let edge of edges)
+        {
+            let [i,j] = edge;
+            let row_i = row_of[i];
+            let row_j = row_of[j];
+            if(row_of[j] - row_of[i] == 1)
+                extended_edges.push([i,j])
+            else
+            {
+                let dummies = [];
+                for(let r = row_i + 1; r < row_j; i++)
+                {
+                    let d = get_dummy();
+                    dummies.push(d);
+                    row_of[d] = r;
+                    extended_rows[d].push(r);
+                }
+                extended_edges.push([i, dummies[0]]);
+                for(let d_idx = 0; d_idx < dummies.length-1; d_idx++)
+                {
+                    extended_edges.push([
+                        dummies[d_idx],
+                        dummies[d_idx+1]
+                    ])
+                }
+                extended_edges.push([dummies[dummies.length-1], j])
+            }
+        }
+        for(let row of extended_rows)
+        {
+            row.sort();
         }
         
-        //Do some permutations to try to minimize crossings
-        //Make deterministic
+        let badness = () => HasseDiagram.comp_badness(extended_rows, edges, row_of);
+
+        while(true)
+        {
+            let start_val = badness();
+            for(let depth = 0; depth < extended_rows.length; depth++)
+            {
+                let swap = (x: number, y: number) => {
+                    [ extended_rows[depth][x], extended_rows[depth][y] ]
+                        = [ extended_rows[depth][y], extended_rows[depth][x] ];
+                }
+
+                if(extended_rows[depth].length == 0)
+                    continue;
+                let depth_start_val = badness();
+
+                for(let i = 0; i < extended_rows[depth].length; i++)
+                {
+                    let do_break = false;
+                    for(let j = i+1; j < extended_rows[depth].length; j++)
+                    {
+                        swap(i,j);
+                        if(badness() < depth_start_val)
+                        {
+                            do_break = true;
+                            break;
+                        }
+                        swap(i,j);
+                    }
+                    if(do_break) break;
+                }
+
+            }
+            let end_val = badness();
+
+            if(start_val - end_val < 0.1)
+                break;
+        }
+
+        return extended_rows;
     }
 
-    static compute_crossings(rows: number[][]): number
+    private static comp_badness(
+        extended_rows: number[][], 
+        edges: [number,number][], 
+        row_of: {[key: number]: number}
+    ): number
     {
-        throw new Error("Not implemented!")
+        let badness = 0;
+
+        for(let e of edges)
+        {
+            let pos: [number, number] = [0,0]
+            for(let i of [0,1])
+            {
+                let row = row_of[i];
+                let rpos = extended_rows[row].indexOf(e[i]);
+                let row_len = extended_rows[row].length;
+                pos[i] = rpos - (row_len-1)/2;
+            }
+            badness += Math.abs(pos[0] - pos[1]);
+        }
+
+        return badness;
     }
+
 }
-
-
-//More juked code.
-function gcd(a:number, b:number) { 
-    for (let temp = b; b !== 0;) { 
-        b = a % b; 
-        a = temp; 
-        temp = b; 
-    } 
-    return a; 
-} 
-  
-function lcm(a:number, b:number) { 
-    return (a * b) / gcd(a, b); 
-} 
-  
