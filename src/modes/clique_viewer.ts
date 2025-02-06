@@ -57,6 +57,10 @@ export class CliqueViewer
     {
         this.dag = dag;
         this.draw_options = draw_options;
+        draw_options.add_change_listener(() => {
+            if(this) this.draw();
+            if(this.swap_box) this.swap_box.recolor();
+        })
         this.routes = new DAGCliques(dag.base_dag);
 
         //sidebar
@@ -65,9 +69,6 @@ export class CliqueViewer
         //Settings box
         let {box, element: box_element} = DrawOptionBox.create(draw_options);
         sidebar_contents.appendChild(box_element);
-        box.add_on_change(
-            () => {if(this) { this.draw(); this.swap_box.recolor(); } }
-        )
         this.draw_options_box = box;
 
         //Swap box
@@ -134,8 +135,8 @@ export class CliqueViewer
             let edge = data.edges[edge_idx];
             this.canvas.draw_bez(
                 edge, 
-                this.draw_options.edge_color + "22",
-                this.draw_options.stroke_weight,
+                this.draw_options.edge_color() + "22",
+                this.draw_options.stroke_weight(),
                 ctx,
                 true
             );
@@ -144,7 +145,7 @@ export class CliqueViewer
             let routes = this.routes.routes_at_by_clique_idx(edge_idx, this.current_clique);
             if(routes.length == 0)
                 continue;
-            let full_width = this.draw_options.route_weight * Math.pow(routes.length, 0.8);
+            let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
             let width = full_width / routes.length * 1.01;
             for(let i = 0; i < routes.length; i++)
             {
@@ -154,7 +155,7 @@ export class CliqueViewer
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale);
+                    offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
                 }
                 this.canvas.draw_bez(
                     edge.transform((v) => v.add(offset)),

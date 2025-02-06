@@ -12,23 +12,80 @@ const ROUTE_RAINBOW: string[] = [
 
 export class DrawOptions
 {
-	scale: number = 200;
-	node_radius: number = 12;
-	stroke_weight: number = 6;
-	stroke_halo: number = 6;
+	private f_scale: number = 200;
+	private f_node_radius: number = 12;
+	private f_stroke_weight: number = 6;
+	private f_stroke_halo: number = 6;
+	private f_route_weight: number = 8;
+	private f_route_colors: string[] = ROUTE_RAINBOW;
+	private f_background_color: string = "#b0b0b0";
+	private f_selection_color: string = "#2160c487";
+	private f_edge_color: string = "#222222";
+	private f_node_color: string = "#000000";
 
-	route_weight: number = 8;
-	route_colors: string[] = ROUTE_RAINBOW;
+	private change_listeners: (()=>void)[] = [];
 
+	add_change_listener(listener: () => void)
+	{
+		this.change_listeners.push(listener);
+	}
 
-	background_color: string = "#b0b0b0";
-	selection_color: string = "#2160c487";
-	edge_color: string = "#222222";
-	node_color: string = "#000000";
+	fire_change_listeners()
+	{
+		for(let f of this.change_listeners)
+		{ try{ f(); } catch {  } }
+	}
+	clear_change_listeners()
+	{
+		this.change_listeners = [];
+	}
+
+	set_scale(scale: number)
+	{
+		this.f_scale = scale;
+		this.fire_change_listeners();
+	}
 
 	get_route_color(i: number): string
 	{
-		return this.route_colors[i % this.route_colors.length];
+		return this.f_route_colors[i % this.f_route_colors.length];
+	}
+	scale(): number
+	{
+		return this.f_scale;
+	}
+	node_radius(): number
+	{
+		return this.f_node_radius;
+	}
+	stroke_weight(): number
+	{
+		return this.f_stroke_weight;
+	}
+	stroke_halo(): number
+	{
+		return this.f_stroke_halo;
+	}
+	route_weight(): number
+	{
+		return this.f_route_weight;
+	}
+
+	background_color(): string
+	{
+		return this.f_background_color;
+	}
+	selection_color(): string
+	{
+		return this.f_selection_color;
+	}
+	edge_color(): string
+	{
+		return this.f_edge_color;
+	}
+	node_color(): string
+	{
+		return this.f_node_color;
 	}
 }
 
@@ -76,13 +133,13 @@ export class DAGCanvas
 	{
 		let scaled = this.local_trans(pos);
 
-		ctx.fillStyle = this.draw_options.node_color;
+		ctx.fillStyle = this.draw_options.node_color();
 
 		ctx.beginPath();
 		ctx.arc(
 			scaled.x,
 			scaled.y,
-			this.draw_options.node_radius,
+			this.draw_options.node_radius(),
 			0, 2*Math.PI
 		);
 		ctx.fill();
@@ -109,8 +166,8 @@ export class DAGCanvas
 				e.end_point.x,
 				e.end_point.y
 			);
-			let trans_bk = this.draw_options.background_color + "00"; //Assumes in hex form. 
-			let bk = this.draw_options.background_color;
+			let trans_bk = this.draw_options.background_color() + "00"; //Assumes in hex form. 
+			let bk = this.draw_options.background_color();
 			grad.addColorStop(0.0,   trans_bk);
 			grad.addColorStop(0.3,   trans_bk);
 			grad.addColorStop(0.301, bk);
@@ -119,7 +176,7 @@ export class DAGCanvas
 			grad.addColorStop(1.0,   trans_bk);
 
 			ctx.strokeStyle = grad;
-			ctx.lineWidth = weight + this.draw_options.stroke_halo;
+			ctx.lineWidth = weight + this.draw_options.stroke_halo();
 			ctx.stroke()
 		}
 
@@ -130,13 +187,13 @@ export class DAGCanvas
 
 	get_offset(): Vector
 	{
-		return new Vector( this.draw_options.scale/2, this.canvas.height/2 );
+		return new Vector( this.draw_options.scale()/2, this.canvas.height/2 );
 	}
 
 	local_trans(vec: Vector)
 	{
 		return vec
-			.scale(this.draw_options.scale)
+			.scale(this.draw_options.scale())
 			.add(this.get_offset());
 	}
 
@@ -144,6 +201,6 @@ export class DAGCanvas
 	{
 		return vec
 			.sub(this.get_offset())
-			.scale(1/this.draw_options.scale);
+			.scale(1/this.draw_options.scale());
 	}
 }
