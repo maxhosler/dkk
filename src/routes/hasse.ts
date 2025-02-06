@@ -30,6 +30,5 @@ export class HasseDiagram
             }
         }
         this.covering_relation = covering_relation;
-        console.log(covering_relation);
     }
 }
