@@ -81,7 +81,9 @@ export class DAGCliques
 	readonly routes: Route[];
 	readonly cliques: Clique[];
 	readonly clique_size: number;
+
 	readonly clique_transforms: number[][]; //clique index, and route index in clique
+	readonly clique_leq_matrix: boolean[][];
 
 	private cached_subroutes: (SharedSubroute[] | undefined)[][];
 
@@ -214,6 +216,19 @@ export class DAGCliques
 		}
 		
 		this.clique_transforms = clique_transforms;
+		
+		let clique_leq_matrix: boolean[][] = [];
+		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
+			clique_leq_matrix.push([]);
+			for(let clq2 = 0; clq2 < this.cliques.length; clq2++)
+			{
+				clique_leq_matrix[clq1].push(
+					this.clique_leq_inner(clq1, clq2)
+				);
+			}
+		}
+		this.clique_leq_matrix = clique_leq_matrix;
+		
 	}
 
 	compatible(route_idx_1: number, route_idx_2: number): boolean
@@ -221,10 +236,43 @@ export class DAGCliques
 		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
 		for(let sub of shared_subroutes)
 		{
-			if(sub.in_order * sub.out_order <= -0.01) return false;
+			if(sub.in_order * sub.out_order < -0.01) return false;
 		}
 
 		return true;
+	}
+
+	up_incompatible(route_idx_1: number, route_idx_2: number): boolean
+	{
+		let shared_subroutes = this.shared_subroutes(route_idx_1, route_idx_2);
+		for(let sub of shared_subroutes)
+		{
+			if(sub.in_order > 0 && sub.out_order < 0)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private clique_leq_inner(clq_idx_1: number, clq_idx_2: number): boolean
+	{
+		if(clq_idx_1 == clq_idx_2) return true;
+		let c1 = this.cliques[clq_idx_1];
+		let c2 = this.cliques[clq_idx_2];
+
+		for(let r1 of c1.routes)
+			for(let r2 of c2.routes)
+				if(this.up_incompatible(r1,r2))
+					return false;
+
+		return true;
+	}
+
+	clique_leq(clq_idx_1: number, clq_idx_2: number): boolean
+	{
+		return this.clique_leq_matrix[clq_idx_1][clq_idx_2];
 	}
 
 	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]

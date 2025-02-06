@@ -121,19 +121,6 @@ export class DrawOptions
 		} catch(e)
 		{ console.warn("Failed to parse draw options cookie.", e); return; }
 
-		/*
-		private f_scale: number = 200;
-		private f_node_radius: number = 12;
-		private f_stroke_weight: number = 6;
-		private f_stroke_halo: number = 6;
-		private f_route_weight: number = 8;
-		private f_route_colors: string[] = ROUTE_RAINBOW;
-		private f_background_color: string = "#b0b0b0";
-		private f_selection_color: string = "#2160c487";
-		private f_edge_color: string = "#222222";
-		private f_node_color: string = "#000000";
-		*/
-
 		if(typeof json_ob.f_scale == "number")
 			this.f_scale = json_ob.f_scale;
 
