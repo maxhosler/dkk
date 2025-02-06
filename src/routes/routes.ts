@@ -50,15 +50,13 @@ class Clique
 			for(let route_idx of routes_per_edge[edge])
 				new_routes.push(routes[route_idx]);
 
-		return new Clique(new_routes, routes_per_edge);
+		return new Clique(new_routes);
 		
 	}
 	readonly routes: number[];
-	readonly routes_per_edge: number[][];
-	constructor(routes: number[], routes_per_edge: number[][])
+	constructor(routes: number[])
 	{
 		this.routes = routes;
-		this.routes_per_edge = routes_per_edge;
 	}
 }
 
