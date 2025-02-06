@@ -174,8 +174,6 @@ export class DrawOptions
 
 		if(typeof json_ob.f_node_color == "string")
 			this.f_node_color = json_ob.f_node_color;
-	
-		console.log(this);
 	}
 }
 
