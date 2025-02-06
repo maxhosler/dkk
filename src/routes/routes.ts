@@ -84,6 +84,7 @@ export class DAGCliques
 
 	readonly clique_transforms: number[][]; //clique index, and route index in clique
 	readonly clique_leq_matrix: boolean[][];
+	readonly clique_cover_matrix: boolean[][];
 
 	private cached_subroutes: (SharedSubroute[] | undefined)[][];
 
@@ -214,7 +215,6 @@ export class DAGCliques
 
 			}
 		}
-		
 		this.clique_transforms = clique_transforms;
 		
 		let clique_leq_matrix: boolean[][] = [];
@@ -229,6 +229,28 @@ export class DAGCliques
 		}
 		this.clique_leq_matrix = clique_leq_matrix;
 		
+		let clique_cover_matrix: boolean[][] = structuredClone(clique_leq_matrix);
+		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
+			for(let clq2 = 0; clq2 < this.cliques.length; clq2++)
+			{
+				if(clq1 == clq2)
+				{
+					clique_cover_matrix[clq1][clq2] = false;
+					continue;
+				}
+				if(!clique_leq_matrix[clq1][clq2]) continue;
+				for(let clq_mid = 0; clq_mid < this.cliques.length; clq_mid++)
+				{
+					if(clq_mid == clq1 || clq_mid == clq2) continue;
+					if(clique_leq_matrix[clq1][clq_mid] && clique_leq_matrix[clq_mid][clq2])
+					{
+						clique_cover_matrix[clq1][clq2] = false;
+						break;
+					}
+				}
+			}
+		}
+		this.clique_cover_matrix = clique_cover_matrix;
 	}
 
 	compatible(route_idx_1: number, route_idx_2: number): boolean
