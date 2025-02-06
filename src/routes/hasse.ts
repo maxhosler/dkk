@@ -112,6 +112,14 @@ export class HasseDiagram
             if(next_row.length > 0)
                 rows.push(next_row);
         }
+        
+        //Do some permutations to try to minimize crossings
+        //Make deterministic
+    }
+
+    static compute_crossings(rows: number[][]): number
+    {
+        throw new Error("Not implemented!")
     }
 }
 
