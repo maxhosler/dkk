@@ -101,7 +101,17 @@ export class HasseDiagram
             }
         )
 
-        console.log(scaled_depths);
+        let max_depth = scaled_depths.reduce((a,b) => Math.max(a,b), 0);
+        let rows: number[][] = [];
+        for(let d = 0; d <= max_depth; d++)
+        {
+            let next_row: number[] = [];
+            for(let j = 0; j < scaled_depths.length; j++)
+                if(scaled_depths[j] == d)
+                    next_row.push(j)
+            if(next_row.length > 0)
+                rows.push(next_row);
+        }
     }
 }
 
