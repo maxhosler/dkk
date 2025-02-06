@@ -42,7 +42,7 @@ export class DrawOptionBox
         scale_slider.className = "slider";
         scale_slider.min = SCALE_LOWER.toString();
         scale_slider.max = SCALE_UPPER.toString();
-        scale_slider.value = draw_options.scale.toString();
+        scale_slider.value = draw_options.scale().toString();
         scale_slider.oninput = (ev) => {
             let as_num = Number(scale_slider.value);
             draw_options.set_scale(as_num);
