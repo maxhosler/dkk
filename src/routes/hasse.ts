@@ -54,17 +54,16 @@ export class HasseDiagram
 
         this.layout_rows = HasseDiagram.compute_layout_rows(
             this.minimal_elt,
-            this.maximal_elt,
             this.covering_relation
         )
     }
 
     private static compute_layout_rows(
         min: number,
-        max: number,
         covering_relation: boolean[][]
     ): number[][]
     {
+    
         let max_depths: number[] = [];
         for(let i = 0; i < covering_relation.length; i++)
         {
@@ -133,7 +132,7 @@ export class HasseDiagram
                     let d = get_dummy();
                     dummies.push(d);
                     row_of[d] = r;
-                    extended_rows[d].push(r);
+                    extended_rows[r].push(d);
                 }
                 extended_edges.push([i, dummies[0]]);
                 for(let d_idx = 0; d_idx < dummies.length-1; d_idx++)
