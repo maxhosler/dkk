@@ -1,5 +1,6 @@
 import { FramedDAG } from "../dag";
 import { Option } from "../result";
+import { HasseDiagram } from "./hasse";
 class Route
 {
 	readonly edges: number[];
@@ -100,8 +101,8 @@ export class DAGCliques
 
 	readonly route_swaps: number[][]; //clique index, and route index in clique
 	readonly clique_leq_matrix: boolean[][];
-	readonly clique_cover_matrix: boolean[][];
 	readonly shared_subroutes_arr: SharedSubrouteCollection[][];
+	readonly hasse: HasseDiagram;
 
 	constructor(dag: FramedDAG)
 	{
@@ -202,16 +203,17 @@ export class DAGCliques
 		this.cliques = cliques;
 		this.clique_size = cliques[0].routes.length;
 
-		let clique_transforms: number[][] = [];
+		//Computes the result of trying to 'swap' a given
+		//route
+		let clique_route_swaps: number[][] = [];
 		for(let i = 0; i < this.cliques.length; i++)
 		{
-			clique_transforms.push([]);
+			clique_route_swaps.push([]);
 			for(let j = 0; j < this.clique_size; j++)
 			{
-				clique_transforms[i].push(i);
+				clique_route_swaps[i].push(i);
 			}
 		}
-
 		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
 			for(let clq2 = clq1+1; clq2 < this.cliques.length; clq2++)
 			{
@@ -230,13 +232,14 @@ export class DAGCliques
 					if(!c1.routes.includes(r2))
 						i_r2 = c2.routes.indexOf(r2);
 				
-				clique_transforms[clq1][i_r1] = clq2;
-				clique_transforms[clq2][i_r2] = clq1;
+				clique_route_swaps[clq1][i_r1] = clq2;
+				clique_route_swaps[clq2][i_r2] = clq1;
 
 			}
 		}
-		this.route_swaps = clique_transforms;
+		this.route_swaps = clique_route_swaps;
 		
+		//Computes the poset relation
 		let clique_leq_matrix: boolean[][] = [];
 		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
 			clique_leq_matrix.push([]);
@@ -249,28 +252,7 @@ export class DAGCliques
 		}
 		this.clique_leq_matrix = clique_leq_matrix;
 		
-		let clique_cover_matrix: boolean[][] = structuredClone(clique_leq_matrix);
-		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
-			for(let clq2 = 0; clq2 < this.cliques.length; clq2++)
-			{
-				if(clq1 == clq2)
-				{
-					clique_cover_matrix[clq1][clq2] = false;
-					continue;
-				}
-				if(!clique_leq_matrix[clq1][clq2]) continue;
-				for(let clq_mid = 0; clq_mid < this.cliques.length; clq_mid++)
-				{
-					if(clq_mid == clq1 || clq_mid == clq2) continue;
-					if(clique_leq_matrix[clq1][clq_mid] && clique_leq_matrix[clq_mid][clq2])
-					{
-						clique_cover_matrix[clq1][clq2] = false;
-						break;
-					}
-				}
-			}
-		}
-		this.clique_cover_matrix = clique_cover_matrix;
+		this.hasse = new HasseDiagram(clique_leq_matrix);
 	}
 
 	/*
@@ -288,8 +270,8 @@ export class DAGCliques
 		let r1_e = this.routes[route_idx_1].edges;
 		let r2_e = this.routes[route_idx_2].edges;
 
-		let r1_v = this.route_vertices(route_idx_1);
-		let r2_v = this.route_vertices(route_idx_2);
+		let r1_v = this.inner_route_vertices(route_idx_1);
+		let r2_v = this.inner_route_vertices(route_idx_2);
 
 		let shared_subsequences: SharedSubroute[] = [];
 		for(let i = 0; i < r1_v.length; i++)
@@ -405,7 +387,7 @@ export class DAGCliques
 		return true;
 	}
 
-	//Computes compatibility between two routes.
+	//Computes up-compatibility between two routes.
 	//Only assumes this.dag and this.routes have been initialized.
 	private inner_up_incompatible(route_idx_1: number, route_idx_2: number): boolean
 	{
@@ -421,6 +403,23 @@ export class DAGCliques
 		return false;
 	}
 
+	//Computes vertices of route
+	//Only assumes this.dag and this.routes have been initialized.
+	private inner_route_vertices(route_idx: number): number[]
+	{
+		let out: number[] = [this.dag.get_edge(this.routes[route_idx].edges[0]).unwrap().start];
+		for(let edge_idx of this.routes[route_idx].edges)
+			out.push(this.dag.get_edge(edge_idx).unwrap().end);
+		return out;
+	}
+
+	//Normal methods
+	/*
+	These mostly access data computed in the constructor, with names
+	of function arguments that are a tad more suggestive than just
+	blindly indexing into a list.
+	*/
+
 	clique_leq(clq_idx_1: number, clq_idx_2: number): boolean
 	{
 		return this.clique_leq_matrix[clq_idx_1][clq_idx_2];
@@ -429,14 +428,6 @@ export class DAGCliques
 	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
 		return this.shared_subroutes_arr[route_idx_1][route_idx_2].subroutes
-	}
-
-	route_vertices(route_idx: number): number[]
-	{
-		let out: number[] = [this.dag.get_edge(this.routes[route_idx].edges[0]).unwrap().start];
-		for(let edge_idx of this.routes[route_idx].edges)
-			out.push(this.dag.get_edge(edge_idx).unwrap().end);
-		return out;
 	}
 
 	routes_at_by_clique_idx(edge_num: number, clique_num: number): number[]
