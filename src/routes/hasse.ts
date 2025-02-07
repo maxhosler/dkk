@@ -1,9 +1,11 @@
+import { Vector } from "../util";
+
 export class HasseDiagram
 {
     private readonly poset_size: number;
     private readonly poset_relation: boolean[][];
     private readonly covering_relation: boolean[][];
-    private readonly layout_rows: number[][];
+    private readonly layout_rows: Vector[];
 
     readonly minimal_elt: number;
     readonly maximal_elt: number;
@@ -61,7 +63,7 @@ export class HasseDiagram
     private static compute_layout_rows(
         min: number,
         covering_relation: boolean[][]
-    ): number[][]
+    ): Vector[]
     {
     
         let max_depths: number[] = [];
@@ -191,11 +193,25 @@ export class HasseDiagram
                 break;
         }
 
-        let final_rows = [];
-        for(let row of extended_rows)
-            final_rows.push( row.map((x) => { if(x >= 0) return x; else return -1;}) )
+        let positions: Vector[] = [];
+        for(let i = 0; i < covering_relation.length; i++)
+        {
+            positions.push(Vector.zero())
+        }
+        for(let row_depth = 0; row_depth < extended_rows.length; row_depth++)
+        {
+            let row = extended_rows[row_depth];
+            for(let j = 0; j < row.length; j++)
+            {
+                let idx = row[j];
+                if(idx < 0) continue;
+                let y = row_depth;
+                let x = j - (row.length - 1)/2;
+                positions[idx] = new Vector(x,y);
+            }
+        }
 
-        return final_rows;
+        return positions;
     }
 
     private static comp_badness(

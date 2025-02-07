@@ -253,17 +253,6 @@ export class DAGCliques
 		this.clique_leq_matrix = clique_leq_matrix;
 		
 		this.hasse = new HasseDiagram(clique_leq_matrix);
-
-		let test_hasse = new HasseDiagram(
-			[
-				[true,  true,  true,  true,  true],
-				[false, true,  true,  true,  false],
-				[false, false, true,  true,  false],
-				[false, false, false, true,  false],
-				[false, false, false, true,  true],
-			]
-		);
-		console.log(test_hasse);
 	}
 
 	/*
