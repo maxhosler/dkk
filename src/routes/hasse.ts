@@ -115,6 +115,7 @@ export class HasseDiagram
             dummy -= 1;
             return dummy;
         }
+
         let extended_edges = []
         let extended_rows = structuredClone(rows);
         for(let edge of edges)
@@ -127,7 +128,7 @@ export class HasseDiagram
             else
             {
                 let dummies = [];
-                for(let r = row_i + 1; r < row_j; i++)
+                for(let r = row_i + 1; r < row_j; r++)
                 {
                     let d = get_dummy();
                     dummies.push(d);
@@ -145,6 +146,7 @@ export class HasseDiagram
                 extended_edges.push([dummies[dummies.length-1], j])
             }
         }
+
         for(let row of extended_rows)
         {
             row.sort();
@@ -189,7 +191,11 @@ export class HasseDiagram
                 break;
         }
 
-        return extended_rows;
+        let final_rows = [];
+        for(let row of extended_rows)
+            final_rows.push( row.map((x) => { if(x >= 0) return x; else return -1;}) )
+
+        return final_rows;
     }
 
     private static comp_badness(
