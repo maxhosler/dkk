@@ -5,6 +5,7 @@ import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGCliques } from "../routes/routes";
 import { SwapBox } from "../subelements/swap_box";
+import { FlowPolytope } from "../routes/polytope";
 
 export class CliqueViewer
 {
@@ -12,10 +13,12 @@ export class CliqueViewer
 
     readonly draw_options_box: DrawOptionBox;
     readonly swap_box: SwapBox;
+    
+    readonly dag: FramedDAGEmbedding;
+    readonly polytope: FlowPolytope;
+    readonly routes: DAGCliques;
 
     canvas: DAGCanvas;
-    dag: FramedDAGEmbedding;
-    routes: DAGCliques;
 
     current_clique: number = 0;
 
@@ -62,6 +65,7 @@ export class CliqueViewer
             if(this.swap_box) this.swap_box.recolor();
         })
         this.routes = new DAGCliques(dag.base_dag);
+        this.polytope = new FlowPolytope(this.routes);
 
         //sidebar
         sidebar_head.innerText = "Clique Viewer";
