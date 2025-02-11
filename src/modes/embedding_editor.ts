@@ -91,8 +91,6 @@ export class EmbeddingEditor
 		sidebar_contents.appendChild(box_element);
 		this.draw_options_box = box;
 
-		//TODO: Scale slider
-
 		//TODO: Node editor
 
 		//TODO: Edge editor

@@ -8,6 +8,7 @@ const PRESETS: PresetOption[] = [
     {name: "cube", idx: 0},
     {name: "cube-twist", idx: 1},
     {name: "caracol-4", idx: 2},
+    {name: "test-c-4", idx: 3}
 ];
 
 abstract class Popup

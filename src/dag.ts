@@ -271,6 +271,17 @@ export function prebuilt_dag(num: number): FramedDAG
         out.add_edge(1,3);
         return out;
     }
+    else if (num == 3)
+    {
+        let out = new FramedDAG(4);
+        out.add_edge(0,2);
+        out.add_edge(0,1);
+        out.add_edge(0,1);
+        out.add_edge(1,2);
+        out.add_edge(2,3);
+        out.add_edge(1,3);
+        return out;
+    }
     console.warn("Invalid test_dag number, returning (0).")
     return prebuilt_dag(0);
 }
