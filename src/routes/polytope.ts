@@ -486,6 +486,7 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
 
     while(err > tolerance)
     {
+        //TODO: Check if is d+1 x d+1
         let X = Q.mul(Matrix.diag(u)).mul(Q.t());
         let M = Q.t()
             .mul(X.inv())
