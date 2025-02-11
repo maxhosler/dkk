@@ -13,6 +13,21 @@ class NVector
         return new NVector(new Array<number>(dim).fill(0));
     }
 
+    static one(dim: number): NVector
+    {
+        return new NVector(new Array<number>(dim).fill(1));
+    }
+
+    norm()
+    {
+        let out = 0;
+
+        for(let c of this.coordinates)
+            out += c*c;
+
+        return Math.sqrt(out);
+    }
+
     dim(): number
     {
         return this.coordinates.length;
@@ -57,6 +72,17 @@ class NVector
             out.push(this.coordinates[i])
         return new NVector( out );
     }
+
+    dot(vec: NVector): number
+    {
+        if(vec.dim() != this.dim()) throw new Error("Dimensions don't match.")
+        let out = 0;
+        
+        for(let i = 0; i < this.dim(); i++)
+            out += this.coordinates[i] * vec.coordinates[i];
+
+        return out;
+    }
     
     static linearly_independent(vectors: NVector[]): boolean
     {
@@ -70,7 +96,7 @@ class Matrix
     height: number;
     inner: number[][];
 
-    private constructor(width: number, height: number, inner: number[][])
+    constructor(width: number, height: number, inner: number[][])
     {
         this.inner = inner;
         this.height = height;
@@ -85,6 +111,16 @@ class Matrix
             inner.push(new Array<number>(dim).fill(0));
         }
         return new Matrix(dim, dim, inner);
+    }
+
+    static zero_rect(width: number, height: number)
+    {
+        let inner: number[][] = [];
+        for(let i = 0; i < height; i++)
+        {
+            inner.push(new Array<number>(width).fill(0));
+        }
+        return new Matrix(width, height, inner);
     }
 
     static id(dim: number): Matrix
@@ -111,6 +147,14 @@ class Matrix
             inner.push(row);
         }
         return new Matrix(columns.length, col_dum, inner);
+    }
+
+    static diag(vec: NVector): Matrix
+    {
+        let mat = Matrix.zero(vec.dim())
+        for(let i = 0; i < vec.dim(); i++)
+            mat.inner[i][i] = vec.coordinates[i];
+        return mat;
     }
 
     swap_rows(i: number, j: number)
@@ -146,6 +190,14 @@ class Matrix
         return new NVector(out);
     }
 
+    get_row_vec(row: number): NVector
+    {
+        let out: number[] = [];
+        for(let c = 0; c < this.width; c++)
+            out.push(this.get_entry(row,c))
+        return new NVector(out);
+    }
+
     get_entry(row: number, col: number): number
     {
         return this.inner[row][col];
@@ -161,6 +213,101 @@ class Matrix
             out = out.add( this.get_col_vec(i).scale( vec.coordinates[i] ))
         }
 
+        return out;
+    }
+
+    t(): Matrix
+    {
+        let out: number[][] = [];
+        for(let c = 0; c < this.width; c++)
+        {
+            let row = [];
+            for(let r = 0; r < this.height; r++)
+                row.push(this.get_entry(r,c));
+            out.push(row);
+        }
+
+        return new Matrix(this.height, this.width, out);
+    }
+
+    det(): number
+    {
+        if(this.width != this.height) throw new Error("Only square matrices have determinants.");
+        if(this.width == 1) return this.inner[0][0];
+        if(this.width == 2) {
+            let a = this.inner[0][0];
+            let b = this.inner[1][0];
+            let c = this.inner[0][1];
+            let d = this.inner[1][1];
+            return a * d - b * c;
+        }
+        let out = 0;
+        for(let r=0; r < this.height; r++)
+        {
+            let v = Math.pow(-1, r) * this.get_entry(r,0);
+            let m = this.minor(r,0);
+            out += v * m.det();
+        }
+        return out;
+    }
+
+    inv(): Matrix
+    {
+        if(this.width != this.height) throw new Error("Only square matrices have inverses.");
+        let det = this.det();
+        if(det == 0) throw new Error("Matrix not invertible.");
+
+        let inverse = Matrix.zero(this.width);
+        for(let r = 0; r < this.height; r++)
+        {
+            for(let c=0; c < this.width; c++)
+            {
+                inverse.inner[r][c] = Math.pow(-1, r+c) * this.minor(c,r).det() / det;
+            }
+        }
+        return inverse;
+    }
+
+    diag_vector(): NVector
+    {
+        let out = [];
+        let d = Math.min(this.height, this.width);
+        for(let i = 0; i < d; i++)
+            out.push(this.get_entry(i,i));
+        return new NVector(out);
+    }
+
+    minor(rem_row: number, rem_col: number): Matrix
+    {
+        let out = [];
+        for(let r = 0; r < this.height; r++)
+        {
+            if(r==rem_row)continue;
+
+            let row = []
+            for(let c = 0; c < this.width; c++)
+            {
+                if(c==rem_col)continue;
+
+                row.push(this.get_entry(r,c))
+            }
+            out.push(row);
+
+        }
+
+        return new Matrix(this.width-1, this.height-1, out);
+    }
+
+    mul(rhs: Matrix): Matrix
+    {
+        let out = Matrix.zero_rect(rhs.width, this.height);
+        for(let c = 0; c < out.width; c++)
+            for(let r = 0; r < out.height; r++)
+            {
+                let rv = this.get_row_vec(r);
+                let cv = rhs.get_col_vec(c);
+                out.inner[r][c] = rv.dot(cv);
+            }
         return out;
     }
 
@@ -255,10 +402,69 @@ export class FlowPolytope
 
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v).trunc(this.dim));
-        let mid = projected_vertices.reduce(
-            (acc, val) => acc.add(val.scale(1/projected_vertices.length)),
-            NVector.zero(this.dim)
-        )
-        console.log(mid);
+        if(this.dim == 3)
+        {
+            let mbe = min_bounding_ellipsoid(projected_vertices);
+        }
+        
     }
+}
+
+function append_1_row(matrix: Matrix): Matrix
+{
+    let inner = structuredClone(matrix.inner);
+    inner.push(new Array<number>(matrix.width).fill(1))
+    return new Matrix(matrix.width, matrix.height+1, inner);
+}
+
+//https://stackoverflow.com/questions/1768197/bounding-ellipse/1768440#1768440
+function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01)
+{
+    let N = points.length;
+    let P = Matrix.from_columns(points);
+    let d = 3;
+
+    let Q = append_1_row(P);
+    let u = NVector.one(N).scale(1/N);
+
+    let count = 1;
+    let err = 1;
+
+    while(err > tolerance)
+    {
+        let X = Q.mul(Matrix.diag(u)).mul(Q.t());
+        let M = Q.t()
+            .mul(X.inv())
+            .mul(Q)
+            .diag_vector();
+        
+        let max_loc = 0;
+        let max = M.coordinates[0];
+        for(let i = 1; i < M.dim(); i++)
+        {
+            if(M.coordinates[i] > max)
+            {
+                max = M.coordinates[i];
+                max_loc = i;
+            }
+        }
+
+        let step_size = (max - d - 1) / ((d+1) * (max-1));
+        let new_u = u.scale(1-step_size);
+
+        new_u.coordinates[max_loc] += step_size;
+
+        err = new_u.sub(u).norm();
+
+        count += 1;
+        u = new_u;
+    
+        console.log(err);
+    }
+
+    let U = Matrix.diag(u);
+    
+    //A = (1/d) * inv(P * U * P' - (P * u)*(P*u)' );
+    //c = P * u;
+
 }
