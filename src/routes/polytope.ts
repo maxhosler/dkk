@@ -376,7 +376,7 @@ class Matrix
 export class FlowPolytope
 {
     readonly dim: number;
-    //readonly vertices: NVector[]
+    readonly vertices: NVector[]
 
     constructor(dag_cliques: DAGCliques)
     {
@@ -449,14 +449,25 @@ export class FlowPolytope
 
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v).trunc(this.dim));
-        console.log(projected_vertices);
+        
+        
         if(this.dim == 3)
         {
             let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
-            //TODO: Find B such that B^TAB = I
-            //Taking x -> B(x-center) projects onto a sphere.
+
+            let B = cholesky_decomposition(A.inv());
+            //This has the property that B^T A B = I
+            //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
+            //(x-c)^TA(x-c)=1 to the unit sphere.
+
+            this.vertices = projected_vertices
+                .map((v) => B.inv().apply_to( v.sub(center) ));
         }
-        
+        else
+        {
+            this.vertices = projected_vertices;
+        }
+    
     }
 }
 
@@ -468,6 +479,7 @@ function append_1_row(matrix: Matrix): Matrix
 }
 
 //https://stackoverflow.com/questions/1768197/bounding-ellipse/1768440#1768440
+//https://people.orie.cornell.edu/miketodd/TYKhach.pdf
 
 //M matrix, C center
 //Ellipse is
@@ -476,7 +488,9 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
 {
     let N = points.length;
     let P = Matrix.from_columns(points);
-    let d = 3;
+    
+    const d = 3;
+    const n = d+1;
 
     let Q = append_1_row(P);
     let u = NVector.one(N).scale(1/N);
@@ -504,7 +518,7 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
             }
         }
 
-        let step_size = (max - d - 1) / ((d+1) * (max-1));
+        let step_size = (max - n) / (n * (max-1));
         let new_u = u.scale(1-step_size);
 
         new_u.coordinates[max_loc] += step_size;
@@ -513,7 +527,6 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
 
         count += 1;
         u = new_u;
-    
     }
 
     let U = Matrix.diag(u);
@@ -524,7 +537,7 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
     let pupu = center.as_column_matrix()
         .mul(center.as_row_matrix());
     
-    let A = pup.sub(pupu).scale(1/d);
+    let A = pup.sub(pupu).inv().scale(1/d);
 
     //A = (1/d) * inv(P * U * P' - (P * u)*(P*u)' );
     //c = P * u;
@@ -533,4 +546,26 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
         matrix: A,
         center
     };
+}
+
+function cholesky_decomposition(A: Matrix): Matrix
+{
+    //TODO: Verify symmetric
+    let L = Matrix.zero(A.width).inner;
+    let n = A.width;
+
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j <= i; j++) {
+            let sum = 0;
+            for (let k = 0; k < j; k++)
+                sum += L[i][k] * L[j][k];
+    
+            if (i == j)
+                L[i][j] = Math.sqrt(A.inner[i][i] - sum);
+            else
+                L[i][j] = (1.0 / L[j][j] * (A.inner[i][j] - sum));
+        }
+    }
+
+    return new Matrix(n,n,L);
 }
