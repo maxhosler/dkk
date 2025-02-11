@@ -83,6 +83,20 @@ class NVector
 
         return out;
     }
+
+    as_row_matrix(): Matrix
+    {
+        let inner = structuredClone(this.coordinates);
+        return new Matrix(this.dim(), 1, [inner])
+    }
+
+    as_column_matrix(): Matrix
+    {
+        let inner: number[][] = [];
+        for(let x of this.coordinates)
+            inner.push([x])
+        return new Matrix(1, this.dim(), inner);
+    }
     
     static linearly_independent(vectors: NVector[]): boolean
     {
@@ -206,7 +220,7 @@ class Matrix
     apply_to(vec: NVector): NVector
     {
         if(vec.dim() != this.width) throw new Error("Dimensions don't match!")
-        let out = NVector.zero(this.width);
+        let out = NVector.zero(this.height);
 
         for(let i = 0; i < this.width; i++)
         {
@@ -300,6 +314,7 @@ class Matrix
 
     mul(rhs: Matrix): Matrix
     {
+        if(this.width != rhs.height) throw new Error("Dimensions don't match for matrix multiplication.")
         let out = Matrix.zero_rect(rhs.width, this.height);
         for(let c = 0; c < out.width; c++)
             for(let r = 0; r < out.height; r++)
@@ -309,6 +324,38 @@ class Matrix
                 out.inner[r][c] = rv.dot(cv);
             }
         return out;
+    }
+
+    add(rhs: Matrix): Matrix
+    {
+        if(this.width != rhs.width || this.height != rhs.height) throw new Error("Dimensions don't match!");
+        let out = Matrix.zero_rect(this.width, this.height);
+        for(let c = 0; c < this.width; c++)
+        {
+            for(let r = 0; r < this.height; r++)
+            {
+                out.inner[r][c] = this.inner[r][c] + rhs.inner[r][c];
+            }
+        }
+        return out;
+    }
+
+    scale(k: number): Matrix
+    {
+        let out = Matrix.zero_rect(this.width, this.height);
+        for(let c = 0; c < this.width; c++)
+        {
+            for(let r = 0; r < this.height; r++)
+            {
+                out.inner[r][c] = this.inner[r][c] * k;
+            }
+        }
+        return out;
+    }
+
+    sub(rhs: Matrix): Matrix
+    {
+        return this.add(rhs.scale(-1));
     }
 
     log_str(): string
@@ -402,9 +449,12 @@ export class FlowPolytope
 
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v).trunc(this.dim));
+        console.log(projected_vertices);
         if(this.dim == 3)
         {
-            let mbe = min_bounding_ellipsoid(projected_vertices);
+            let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
+            //TODO: Find B such that B^TAB = I
+            //Taking x -> B(x-center) projects onto a sphere.
         }
         
     }
@@ -418,7 +468,11 @@ function append_1_row(matrix: Matrix): Matrix
 }
 
 //https://stackoverflow.com/questions/1768197/bounding-ellipse/1768440#1768440
-function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01)
+
+//M matrix, C center
+//Ellipse is
+//(x-C)^T M (x-C) = 1
+function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {center: NVector, matrix: Matrix}
 {
     let N = points.length;
     let P = Matrix.from_columns(points);
@@ -459,12 +513,23 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01)
         count += 1;
         u = new_u;
     
-        console.log(err);
     }
 
     let U = Matrix.diag(u);
     
+    let pup = P.mul(U).mul(P.t());
+
+    let center = P.apply_to(u);
+    let pupu = center.as_column_matrix()
+        .mul(center.as_row_matrix());
+    
+    let A = pup.sub(pupu).scale(1/d);
+
     //A = (1/d) * inv(P * U * P' - (P * u)*(P*u)' );
     //c = P * u;
 
+    return {
+        matrix: A,
+        center
+    };
 }
