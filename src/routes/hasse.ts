@@ -191,8 +191,6 @@ export class HasseDiagram
             }
             let end_val = badness();
 
-            console.log(start_val, end_val);
-
             if(start_val - end_val < 0.01)
                 break;
         }
@@ -237,7 +235,7 @@ export class HasseDiagram
             let pos: [number, number] = [0,0]
             for(let i of [0,1])
             {
-                let row = row_of[i];
+                let row = row_of[e[i]];
                 let rpos = extended_rows[row].indexOf(e[i]);
                 let row_len = extended_rows[row].length;
                 pos[i] = rpos - (row_len-1)/2;
