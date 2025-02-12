@@ -266,11 +266,6 @@ export class DAGCanvas
 		ctx.stroke()
 	}
 
-	draw_routes_at_edge()
-	{
-		
-	}
-
 	get_offset(): Vector
 	{
 		return new Vector( this.canvas.width/2, this.canvas.height/2 );
@@ -288,5 +283,83 @@ export class DAGCanvas
 		return vec
 			.sub(this.get_offset())
 			.scale(1/this.draw_options.scale());
+	}
+
+	width(): number
+	{
+		return this.canvas.width
+	}
+
+	height(): number
+	{
+		return this.canvas.height
+	}
+}
+
+export class DAGCanvasContext
+{
+	private parent: DAGCanvas;
+	private ctx: CanvasRenderingContext2D;
+
+	constructor(dc: DAGCanvas)
+	{
+		this.parent = dc;
+		this.ctx = dc.canvas.getContext("2d") as CanvasRenderingContext2D;
+	}
+
+	draw_node(pos: Vector)
+	{
+		let scaled = this.parent.local_trans(pos);
+
+		this.ctx.fillStyle = this.parent.draw_options.node_color();
+
+		this.ctx.beginPath();
+		this.ctx.arc(
+			scaled.x,
+			scaled.y,
+			this.parent.draw_options.node_radius(),
+			0, 2*Math.PI
+		);
+		this.ctx.fill();
+	}
+
+	draw_bez(edge: Bezier, color: string, weight: number, halo: boolean)
+	{
+		let e = edge.transform
+			((v: Vector) => this.parent.local_trans(v));
+
+		this.ctx.beginPath();
+		this.ctx.moveTo(e.start_point.x, e.start_point.y);
+		this.ctx.bezierCurveTo(
+			e.cp1.x, e.cp1.y,
+			e.cp2.x, e.cp2.y,
+			e.end_point.x, e.end_point.y
+		);
+
+		if (halo)
+		{
+			let grad=this.ctx.createLinearGradient(
+				e.start_point.x,
+				e.start_point.y,
+				e.end_point.x,
+				e.end_point.y
+			);
+			let trans_bk = this.parent.draw_options.background_color() + "00"; //Assumes in hex form. 
+			let bk = this.parent.draw_options.background_color();
+			grad.addColorStop(0.0,   trans_bk);
+			grad.addColorStop(0.3,   trans_bk);
+			grad.addColorStop(0.301, bk);
+			grad.addColorStop(0.7,   bk);
+			grad.addColorStop(0.701, trans_bk);
+			grad.addColorStop(1.0,   trans_bk);
+
+			this.ctx.strokeStyle = grad;
+			this.ctx.lineWidth = weight + this.parent.draw_options.stroke_halo();
+			this.ctx.stroke()
+		}
+
+		this.ctx.strokeStyle = color;
+		this.ctx.lineWidth = weight;
+		this.ctx.stroke()
 	}
 }

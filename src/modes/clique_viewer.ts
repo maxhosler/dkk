@@ -109,10 +109,10 @@ export class CliqueViewer
         this.hasse_canvas = hasse_canvas;
 
         //Draw and setup redraw
-        this.draw_clique();
+        this.draw();
         addEventListener("resize", (event) => {
             if(this)
-            this.draw_clique();
+            this.draw();
         });
     }
 
@@ -129,13 +129,19 @@ export class CliqueViewer
                 this.current_clique,
                 idx
             );
-        this.draw_clique();
+        this.draw();
     }
 
     /*
     Code for drawing
     */
 
+
+    draw()
+    {
+        this.draw_clique();
+        this.draw_hasse();
+    }
 
     draw_clique()
     {		
@@ -190,7 +196,31 @@ export class CliqueViewer
 
     draw_hasse()
     {
+        let ctx = this.hasse_canvas.get_ctx();
+        const PADDING: number = 2;
 
+        let v_width = Math.max(1,
+            this.hasse_canvas.width() - 2*PADDING
+        );
+        let v_height = Math.max(1,
+            this.hasse_canvas.height() - 2*PADDING
+        );
+
+        let hasse_ext = this.cliques.hasse.bounding_box.extent().scale(2);
+
+        let w_scale = v_width / hasse_ext.x ;
+        let h_scale = v_height / hasse_ext.y;
+        let scale = Math.min(w_scale, h_scale);
+
+        for(let pos of this.cliques.hasse.layout_rows)
+        {
+            let p = pos.scale(scale);
+            console.log(p);
+            this.hasse_canvas.draw_node(
+                p, 
+                ctx
+            );
+        }
     }
 
 }

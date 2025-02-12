@@ -1,17 +1,17 @@
-import { Vector } from "../util";
+import { BoundingBox, Vector } from "../util";
 
 export class HasseDiagram
 {
-    private readonly poset_size: number;
-    private readonly poset_relation: boolean[][];
-    private readonly covering_relation: boolean[][];
-    private readonly layout_rows: Vector[];
-
+    readonly poset_size: number;
+    readonly covering_relation: boolean[][];
+    
+    readonly layout_rows: Vector[];
+    readonly bounding_box: BoundingBox;
+    
     readonly minimal_elt: number;
     readonly maximal_elt: number;
     constructor(poset_relation: boolean[][])
     {
-        this.poset_relation = poset_relation;
         //Extracts the covering relation from the poset relation.
         let covering_relation: boolean[][] = structuredClone(poset_relation);
         this.poset_size = covering_relation.length;
@@ -58,6 +58,8 @@ export class HasseDiagram
             this.minimal_elt,
             this.covering_relation
         )
+
+        this.bounding_box = new BoundingBox(this.layout_rows);
     }
 
     private static compute_layout_rows(
@@ -211,7 +213,13 @@ export class HasseDiagram
             }
         }
 
-        return positions;
+        let avg = positions.reduce(
+            (acc, nw) => acc.add(nw),
+            Vector.zero()
+        ).scale(1/positions.length);
+
+        return positions
+            .map(v => v.sub(avg));
     }
 
     private static comp_badness(
