@@ -1,6 +1,6 @@
 import { caracol, Edge, FramedDAG, prebuilt_dag } from "./dag";
 import { Option } from "./result";
-import { Bezier, Vector } from "./util";
+import { Bezier, clamp, Vector } from "./util";
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
@@ -207,6 +207,29 @@ export function caracol_emb(num_verts: number): FramedDAGEmbedding
 {
     let dag = caracol(num_verts);
     let emb = new FramedDAGEmbedding(dag);
+
+	let excess = clamp(num_verts-4, 0, 4);
+	let ang_max = Math.PI/4 + excess * Math.PI/16;
+
+	for(let i = 0; i < num_verts-2; i++)
+	{
+		let ang = -ang_max * ( 1 - i/(num_verts-2) );
+		emb.edge_data[i].start_ang_override = Option.some(ang);
+	}
+
+	//spine: [num_verts-2..2*num_verts-3]
+	for(let i = num_verts-2; i < 2 * num_verts-3; i++)
+	{
+		emb.edge_data[i].start_ang_override = Option.some(0);
+		emb.edge_data[i].end_ang_override = Option.some(0);
+	}
+
+	for(let i = 0; i < num_verts-2; i++)
+	{
+		let j = i + 2 * num_verts-3;
+		let ang = -ang_max * ( i/(num_verts-2) );
+		emb.edge_data[j].end_ang_override = Option.some(ang);
+	}
 
     return emb;
 }

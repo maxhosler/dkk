@@ -231,5 +231,5 @@ export class BoundingBox
 	}
 }
 
-const clamp: (num: number, min: number, max: number) => number
+export const clamp: (num: number, min: number, max: number) => number
 	= (num: number, min: number, max: number) => Math.min(Math.max(num, min), max)

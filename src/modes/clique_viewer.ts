@@ -195,6 +195,7 @@ export class CliqueViewer
     draw_hasse()
     {
         let ctx = this.hasse_canvas.get_ctx();
+        ctx.clear();
         const PADDING: number = 100;
 
         let v_width = Math.max(1,
