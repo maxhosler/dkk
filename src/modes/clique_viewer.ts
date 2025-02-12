@@ -114,6 +114,7 @@ export class CliqueViewer
         let {canvas: poly_canvas, element: p_canvas_element} = PolytopeCanvas.create(draw_options);
         segments.poly.appendChild(p_canvas_element);
         poly_canvas.resize_canvas();
+        poly_canvas.comp_polytope(this.polytope);
         this.poly_canvas = poly_canvas;
 
         //Draw and setup redraw
@@ -149,6 +150,7 @@ export class CliqueViewer
     {
         this.draw_clique();
         this.draw_hasse();
+        this.draw_polytope();
     }
 
     draw_clique()
@@ -241,6 +243,11 @@ export class CliqueViewer
         {            
             ctx.draw_node(pos);
         }
+    }
+
+    draw_polytope()
+    {
+        this.poly_canvas.draw();
     }
 
 }

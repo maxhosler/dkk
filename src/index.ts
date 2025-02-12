@@ -141,7 +141,7 @@ class DKKProgram
     body: HTMLBodyElement;
 	draw_options = new DrawOptions();
 	mode: CliqueViewer | EmbeddingEditor = CliqueViewer.destructive_new(
-		caracol_emb(6),
+		prebuilt_dag_embedding(0),
 		this.draw_options
 	);
     popup_open: boolean = false;
