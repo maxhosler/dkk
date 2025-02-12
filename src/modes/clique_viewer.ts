@@ -6,6 +6,7 @@ import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGCliques } from "../routes/routes";
 import { SwapBox } from "../subelements/swap_box";
 import { FlowPolytope } from "../routes/polytope";
+import { PolytopeCanvas } from "../subelements/polytope_canvas";
 
 export class CliqueViewer
 {
@@ -20,6 +21,7 @@ export class CliqueViewer
 
     readonly clique_canvas: DAGCanvas;
     readonly hasse_canvas: DAGCanvas;
+    readonly poly_canvas: PolytopeCanvas;
 
     current_clique: number = 0;
 
@@ -107,6 +109,12 @@ export class CliqueViewer
         segments.hasse.appendChild(h_canvas_element);
         hasse_canvas.resize_canvas();
         this.hasse_canvas = hasse_canvas;
+
+        //Polytope canvas
+        let {canvas: poly_canvas, element: p_canvas_element} = PolytopeCanvas.create(draw_options);
+        segments.poly.appendChild(p_canvas_element);
+        poly_canvas.resize_canvas();
+        this.poly_canvas = poly_canvas;
 
         //Draw and setup redraw
         this.draw();

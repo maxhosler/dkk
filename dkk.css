@@ -85,6 +85,17 @@ html, body {
 
 }
 
+#poly-draw-zone
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+
+    background-color: #000000;
+
+}
+
 .sb-subsection
 {
     border-style: solid;
@@ -238,6 +249,7 @@ html, body {
     flex-direction: column;
     align-items: stretch;
     justify-content: stretch;
+    position: relative;
 }
 
 #clq-root canvas
