@@ -16,9 +16,10 @@ export class CliqueViewer
     
     readonly dag: FramedDAGEmbedding;
     readonly polytope: FlowPolytope;
-    readonly routes: DAGCliques;
+    readonly cliques: DAGCliques;
 
-    canvas: DAGCanvas;
+    readonly clique_canvas: DAGCanvas;
+    readonly hasse_canvas: DAGCanvas;
 
     current_clique: number = 0;
 
@@ -61,11 +62,11 @@ export class CliqueViewer
         this.dag = dag;
         this.draw_options = draw_options;
         draw_options.add_change_listener(() => {
-            if(this) this.draw();
+            if(this) this.draw_clique();
             if(this.swap_box) this.swap_box.recolor();
         })
-        this.routes = new DAGCliques(dag.base_dag);
-        this.polytope = new FlowPolytope(this.routes);
+        this.cliques = new DAGCliques(dag.base_dag);
+        this.polytope = new FlowPolytope(this.cliques);
 
         //sidebar
         sidebar_head.innerText = "Clique Viewer";
@@ -75,57 +76,60 @@ export class CliqueViewer
         sidebar_contents.appendChild(box_element);
         this.draw_options_box = box;
 
-        //Right area dividers
-        let segments = build_right_area_zones();
-        right_area.appendChild(segments.root);
-
-
         //Swap box
         let {box: swap_box, element: swap_box_element} = SwapBox.create(
             (idx: number) => {
                 this.route_swap(idx);
             },
             draw_options,
-            this.routes.clique_size
+            this.cliques.clique_size
         );
         sidebar_contents.appendChild(swap_box_element);
         this.swap_box = swap_box;
 
-        //Regions
+        //Right area dividers
+        let segments = build_right_area_zones();
+        right_area.appendChild(segments.root);
 
         //Graph Canvas
-        let {canvas, element: canvas_element} = DAGCanvas.create(draw_options);
-		segments.clique.appendChild(canvas_element);
-		canvas_element.addEventListener("click",
+        let {canvas: clique_canvas, element: c_canvas_element} = DAGCanvas.create(draw_options);
+		segments.clique.appendChild(c_canvas_element);
+		c_canvas_element.addEventListener("click",
 			(ev) => {
-				this.canvas_click(new Vector(ev.layerX, ev.layerY))
+				this.clique_canvas_click(new Vector(ev.layerX, ev.layerY))
 			}
 		)
-        canvas.resize_canvas();
-		this.canvas = canvas;
+        clique_canvas.resize_canvas();
+		this.clique_canvas = clique_canvas;
+
+        //Hasse Canvas
+        let {canvas: hasse_canvas, element: h_canvas_element} = DAGCanvas.create(draw_options);
+        segments.hasse.appendChild(h_canvas_element);
+        hasse_canvas.resize_canvas();
+        this.hasse_canvas = hasse_canvas;
 
         //Draw and setup redraw
-        this.draw();
+        this.draw_clique();
         addEventListener("resize", (event) => {
             if(this)
-            this.draw();
+            this.draw_clique();
         });
     }
 
 
-    canvas_click(position: Vector)
+    clique_canvas_click(position: Vector)
     {
-        this.draw()
+        this.draw_clique()
     }
 
     route_swap(idx: number)
     {
         this.current_clique = 
-            this.routes.route_swap(
+            this.cliques.route_swap(
                 this.current_clique,
                 idx
             );
-        this.draw();
+        this.draw_clique();
     }
 
     /*
@@ -133,17 +137,17 @@ export class CliqueViewer
     */
 
 
-    draw()
+    draw_clique()
     {		
-        let ctx = this.canvas.get_ctx();
+        let ctx = this.clique_canvas.get_ctx();
         let data = this.dag.bake();
 
-        ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
+        ctx.clearRect(0, 0, this.clique_canvas.canvas.width, this.clique_canvas.canvas.height);
 
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++)
         {
             let edge = data.edges[edge_idx];
-            this.canvas.draw_bez(
+            this.clique_canvas.draw_bez(
                 edge, 
                 this.draw_options.edge_color() + "22",
                 this.draw_options.stroke_weight(),
@@ -152,7 +156,7 @@ export class CliqueViewer
             );
 
             //routes
-            let routes = this.routes.routes_at_by_clique_idx(edge_idx, this.current_clique);
+            let routes = this.cliques.routes_at_by_clique_idx(edge_idx, this.current_clique);
             if(routes.length == 0)
                 continue;
             let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
@@ -167,7 +171,7 @@ export class CliqueViewer
                     let percent = i / (routes.length - 1) - 0.5;
                     offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
                 }
-                this.canvas.draw_bez(
+                this.clique_canvas.draw_bez(
                     edge.transform((v) => v.add(offset)),
                     color,
                     width,
@@ -180,7 +184,12 @@ export class CliqueViewer
 
 
         for(let vert of data.verts)
-        { this.canvas.draw_node(vert, ctx); }
+        { this.clique_canvas.draw_node(vert, ctx); }
+
+    }
+
+    draw_hasse()
+    {
 
     }
 

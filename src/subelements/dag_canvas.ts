@@ -195,14 +195,14 @@ export class DAGCanvas
 
 	resize_canvas()
 	{
-		let pheight = this.canvas.parentElement?.clientHeight || 10;
-		let pwidth  =this.canvas.parentElement?.clientWidth || 10;
+		let pheight = (this.canvas.parentElement?.clientHeight || 2);
+		let pwidth  = (this.canvas.parentElement?.clientWidth || 2);
 
 		this.canvas.style.height = pheight.toString() + "px";
 		this.canvas.style.width = pwidth.toString() + "px";
 
-		this.canvas.height = pheight;
-		this.canvas.width = pwidth;
+		this.canvas.height = pheight - 2; //-2 to account for border
+		this.canvas.width = pwidth - 2;
 	}
 
 	get_ctx(): DrawCtx
@@ -264,6 +264,11 @@ export class DAGCanvas
 		ctx.strokeStyle = color;
 		ctx.lineWidth = weight;
 		ctx.stroke()
+	}
+
+	draw_routes_at_edge()
+	{
+		
 	}
 
 	get_offset(): Vector
