@@ -25,6 +25,7 @@ export class PolytopeCanvas
     readonly program: WebGLProgram;
 
     position_buffer: WebGLBuffer;
+    ex_tri_index_buffer: WebGLBuffer;
 
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
     {
@@ -45,9 +46,8 @@ export class PolytopeCanvas
         this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext; //TODO: Handle fail.
         this.program = init_shader_prog(this.ctx);
         
-        this.position_buffer = this.ctx.createBuffer();
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.position_buffer);
-        this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Float32Array([]), this.ctx.STATIC_DRAW);
+        this.position_buffer = this.new_position_buffer([]);
+        this.ex_tri_index_buffer = this.new_index_buffer([]);
 
         this.resize_canvas();
         addEventListener("resize", (event) => {
@@ -68,18 +68,42 @@ export class PolytopeCanvas
 		this.canvas.width = pwidth - 2;
 	}
 
-    comp_polytope(poly: FlowPolytope)
+    set_polytope(poly: FlowPolytope)
     {
-        if(poly.dim != 3) throw new Error("") //TODO: Handle
+        if(poly.dim != 3) return; //TODO: Handle
+        
         let positions: number[] = [];
         for(let pos of poly.vertices)
         {
             positions = [...positions, ...pos.coordinates];
         }
 
-        this.position_buffer = this.ctx.createBuffer();
+        this.position_buffer = this.new_position_buffer(positions)
+        
+        let ex_indices: number[] = [];
+        for(let external_tri of poly.external_simplices)
+        {
+            ex_indices = [...ex_indices, ...external_tri];
+        }
+
+        this.ex_tri_index_buffer = this.new_index_buffer(ex_indices);
+
+    }
+
+    new_position_buffer(arr: number[]): WebGLBuffer
+    {
+        let buf = this.ctx.createBuffer();
         this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.position_buffer);
-        this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Float32Array(positions), this.ctx.STATIC_DRAW);
+        this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Float32Array(arr), this.ctx.STATIC_DRAW);
+        return buf;
+    }
+
+    new_index_buffer(arr: number[])
+    {
+        let buf = this.ctx.createBuffer();
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_tri_index_buffer);
+        this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Int32Array(arr), this.ctx.STATIC_DRAW); //TODO: Right enum?
+        return buf;
     }
 
     draw()
