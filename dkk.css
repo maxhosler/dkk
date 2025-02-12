@@ -14,6 +14,7 @@ body
     margin: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 html, body {
@@ -68,22 +69,17 @@ html, body {
 
 #right_area
 {
-    flex-grow: 1;
-    padding: 12pt;
+    flex: 100%;
+    padding: 0pt;
     position: relative;
 }
 
 #draw_zone
 {
-    height: 95%;
-    width: 95%;
-    min-height: 15cm;
-
-    margin: 0;
     position: absolute;
-    top: 50%;
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
+    top: 0;
+    left: 0;
+    margin: 0;
 
     background-color: #b0b0b0;
 
@@ -203,4 +199,48 @@ html, body {
     width: 100%;
     height: fit-content;
     padding: 10pt;
+}
+
+#clq-root
+{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: stretch;
+
+    margin: 0;
+    padding: 0;
+}
+
+#clq-root div
+{
+    flex: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#clq-root div:nth-child(1)
+{
+    display: flex;
+    flex-direction: column;
+}
+
+#clq-root div:nth-child(1) div
+{
+    flex: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+#clq-root div:nth-child(1) div canvas
+{
+    flex: 100%;
+    width: 100%;
 }

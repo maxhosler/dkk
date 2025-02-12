@@ -195,8 +195,14 @@ export class DAGCanvas
 
 	resize_canvas()
 	{
-		this.canvas.height = this.canvas.clientHeight;
-		this.canvas.width = this.canvas.clientWidth;
+		let pheight = this.canvas.parentElement?.clientHeight || 10;
+		let pwidth  =this.canvas.parentElement?.clientWidth || 10;
+
+		this.canvas.style.height = pheight.toString() + "px";
+		this.canvas.style.width = pwidth.toString() + "px";
+
+		this.canvas.height = pheight;
+		this.canvas.width = pwidth;
 	}
 
 	get_ctx(): DrawCtx

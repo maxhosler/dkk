@@ -75,6 +75,11 @@ export class CliqueViewer
         sidebar_contents.appendChild(box_element);
         this.draw_options_box = box;
 
+        //Right area dividers
+        let segments = build_right_area_zones();
+        right_area.appendChild(segments.root);
+
+
         //Swap box
         let {box: swap_box, element: swap_box_element} = SwapBox.create(
             (idx: number) => {
@@ -86,10 +91,11 @@ export class CliqueViewer
         sidebar_contents.appendChild(swap_box_element);
         this.swap_box = swap_box;
 
+        //Regions
 
         //Graph Canvas
         let {canvas, element: canvas_element} = DAGCanvas.create(draw_options);
-		right_area.appendChild(canvas_element);
+		segments.clique.appendChild(canvas_element);
 		canvas_element.addEventListener("click",
 			(ev) => {
 				this.canvas_click(new Vector(ev.layerX, ev.layerY))
@@ -178,4 +184,28 @@ export class CliqueViewer
 
     }
 
+}
+
+function build_right_area_zones(): {
+    root: HTMLDivElement,
+    poly: HTMLDivElement,
+    hasse: HTMLDivElement,
+    clique: HTMLDivElement
+}
+{
+    let root = document.createElement("div");
+    root.id = "clq-root";
+
+    let lft = document.createElement("div");
+    let right = document.createElement("div");
+    root.appendChild(lft);
+    root.appendChild(right);
+
+    let top = document.createElement("div");
+    let bot = document.createElement("div");
+
+    lft.appendChild(top);
+    lft.appendChild(bot);
+
+    return {root, poly: bot, hasse: right, clique: top};
 }
