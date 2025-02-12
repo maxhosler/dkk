@@ -10,7 +10,7 @@ const VERT_SHADER: string = `
     attribute vec4 vertex_pos;
     uniform mat4 view_matrix;
     void main() {
-      gl_Position = proj_matrix * view_matrix * vertex_pos;
+      gl_Position = view_matrix * vertex_pos;
     }
 `;
 
@@ -21,7 +21,7 @@ type ProgramData =
         vertex_pos: number
     },
     uniforms: {
-        view_matrix: number
+        view_matrix: WebGLUniformLocation 
     }
 }
 
@@ -35,6 +35,7 @@ export class PolytopeCanvas
 
     position_buffer: WebGLBuffer;
     ex_tri_index_buffer: WebGLBuffer;
+    num_vertices = 0;
 
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
     {
@@ -96,6 +97,7 @@ export class PolytopeCanvas
         }
 
         this.ex_tri_index_buffer = this.new_index_buffer(ex_indices);
+        this.num_vertices = ex_indices.length;
 
     }
 
@@ -124,6 +126,16 @@ export class PolytopeCanvas
 
         this.bind_pos_buffer();
         this.bind_uniforms();
+
+        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_tri_index_buffer);
+
+
+        {
+            const vertexCount = this.num_vertices;
+            const type = this.ctx.UNSIGNED_SHORT;
+            const offset = 0;
+            this.ctx.drawElements(this.ctx.TRIANGLES, vertexCount, type, offset);
+        }
     }
 
     bind_pos_buffer()
@@ -202,7 +214,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
             vertex_pos: ctx.getAttribLocation(shader_program, "vertex_pos"),
         },
         uniforms: {
-            view_matrix: ctx.getAttribLocation(shader_program, "view_matrix"),
+            view_matrix: ctx.getUniformLocation(shader_program, "view_matrix") as WebGLUniformLocation,
         }
     };
 }
