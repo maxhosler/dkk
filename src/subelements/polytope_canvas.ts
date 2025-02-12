@@ -9,12 +9,21 @@ void main() {
 const VERT_SHADER: string = `
     attribute vec4 vertex_pos;
     uniform mat4 view_matrix;
-    uniform mat4 proj_matrix;
     void main() {
       gl_Position = proj_matrix * view_matrix * vertex_pos;
     }
 `;
 
+type ProgramData =
+{
+    program: WebGLProgram,
+    attribs: {
+        vertex_pos: number
+    },
+    uniforms: {
+        view_matrix: number
+    }
+}
 
 export class PolytopeCanvas
 {
@@ -22,7 +31,7 @@ export class PolytopeCanvas
     readonly draw_options: DrawOptions;
 
     readonly ctx: WebGLRenderingContext;
-    readonly program: WebGLProgram;
+    readonly program: ProgramData;
 
     position_buffer: WebGLBuffer;
     ex_tri_index_buffer: WebGLBuffer;
@@ -112,6 +121,35 @@ export class PolytopeCanvas
         this.ctx.clearDepth(1.0);
         this.ctx.enable(this.ctx.DEPTH_TEST);
         this.ctx.depthFunc(this.ctx.LEQUAL);
+
+        this.bind_pos_buffer();
+        this.bind_uniforms();
+    }
+
+    bind_pos_buffer()
+    {
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.position_buffer);
+        this.ctx.vertexAttribPointer(
+            this.program.attribs.vertex_pos,
+            3,
+            this.ctx.FLOAT,
+            false,
+            0, 0
+        );
+        this.ctx.enableVertexAttribArray(this.program.attribs.vertex_pos);
+    }
+
+    bind_uniforms()
+    {
+        this.ctx.uniform4fv(
+            this.program.uniforms.view_matrix,
+            [
+                1,0,0,0,
+                0,1,0,0,
+                0,0,1,0,
+                0,0,0,1
+            ]
+        );
     }
 }
 
@@ -136,7 +174,7 @@ function load_shader(ctx: WebGLRenderingContext, type: GLenum, src: string): Web
     return shader;
 }
 
-function init_shader_prog(ctx: WebGLRenderingContext): WebGLProgram
+function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
 {
     const vert_shader = load_shader(ctx, ctx.VERTEX_SHADER, VERT_SHADER);
     const frag_shader = load_shader(ctx, ctx.FRAGMENT_SHADER, FRAG_SHADER);
@@ -158,5 +196,13 @@ function init_shader_prog(ctx: WebGLRenderingContext): WebGLProgram
     }
     */
     
-    return shader_program;
+    return {
+        program: shader_program,
+        attribs: {
+            vertex_pos: ctx.getAttribLocation(shader_program, "vertex_pos"),
+        },
+        uniforms: {
+            view_matrix: ctx.getAttribLocation(shader_program, "view_matrix"),
+        }
+    };
 }
