@@ -1,5 +1,5 @@
 import { DrawOptions } from "./subelements/dag_canvas";
-import { prebuilt_dag_embedding } from "./dag_layout";
+import { caracol_emb, prebuilt_dag_embedding } from "./dag_layout";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 
@@ -141,7 +141,7 @@ class DKKProgram
     body: HTMLBodyElement;
 	draw_options = new DrawOptions();
 	mode: CliqueViewer | EmbeddingEditor = CliqueViewer.destructive_new(
-		prebuilt_dag_embedding(0),
+		caracol_emb(5),
 		this.draw_options
 	);
     popup_open: boolean = false;

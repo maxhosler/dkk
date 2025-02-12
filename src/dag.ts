@@ -285,3 +285,17 @@ export function prebuilt_dag(num: number): FramedDAG
     console.warn("Invalid test_dag number, returning (0).")
     return prebuilt_dag(0);
 }
+
+export function caracol(num_verts: number): FramedDAG
+{
+    let dag = new FramedDAG(num_verts);
+    
+    for(let i = num_verts-2; i > 0; i--)
+        dag.add_edge(0,i);
+    for(let i = 0; i < num_verts-1; i++)
+        dag.add_edge(i,i+1);
+    for(let i = num_verts-2; i > 0; i--)
+        dag.add_edge(i, num_verts-1);
+
+    return dag;
+}
