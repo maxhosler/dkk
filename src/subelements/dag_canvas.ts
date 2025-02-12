@@ -164,7 +164,6 @@ export class DrawOptions
 	}
 }
 
-type DrawCtx = CanvasRenderingContext2D;
 export class DAGCanvas
 {
 	canvas: HTMLCanvasElement;
@@ -205,65 +204,9 @@ export class DAGCanvas
 		this.canvas.width = pwidth - 2;
 	}
 
-	get_ctx(): DrawCtx
+	get_ctx(): DAGCanvasContext
 	{
-		return this.canvas.getContext("2d") as DrawCtx;
-	}
-
-	draw_node(pos: Vector, ctx: DrawCtx)
-	{
-		let scaled = this.local_trans(pos);
-
-		ctx.fillStyle = this.draw_options.node_color();
-
-		ctx.beginPath();
-		ctx.arc(
-			scaled.x,
-			scaled.y,
-			this.draw_options.node_radius(),
-			0, 2*Math.PI
-		);
-		ctx.fill();
-	}
-
-	draw_bez(edge: Bezier, color: string, weight: number, ctx: DrawCtx, halo: boolean)
-	{
-		let e = edge.transform
-			((v: Vector) => this.local_trans(v));
-
-		ctx.beginPath();
-		ctx.moveTo(e.start_point.x, e.start_point.y);
-		ctx.bezierCurveTo(
-			e.cp1.x, e.cp1.y,
-			e.cp2.x, e.cp2.y,
-			e.end_point.x, e.end_point.y
-		);
-
-		if (halo)
-		{
-			let grad=ctx.createLinearGradient(
-				e.start_point.x,
-				e.start_point.y,
-				e.end_point.x,
-				e.end_point.y
-			);
-			let trans_bk = this.draw_options.background_color() + "00"; //Assumes in hex form. 
-			let bk = this.draw_options.background_color();
-			grad.addColorStop(0.0,   trans_bk);
-			grad.addColorStop(0.3,   trans_bk);
-			grad.addColorStop(0.301, bk);
-			grad.addColorStop(0.7,   bk);
-			grad.addColorStop(0.701, trans_bk);
-			grad.addColorStop(1.0,   trans_bk);
-
-			ctx.strokeStyle = grad;
-			ctx.lineWidth = weight + this.draw_options.stroke_halo();
-			ctx.stroke()
-		}
-
-		ctx.strokeStyle = color;
-		ctx.lineWidth = weight;
-		ctx.stroke()
+		return new DAGCanvasContext(this);
 	}
 
 	get_offset(): Vector
@@ -307,17 +250,30 @@ export class DAGCanvasContext
 		this.ctx = dc.canvas.getContext("2d") as CanvasRenderingContext2D;
 	}
 
+	clear()
+	{
+		this.ctx.clearRect(0, 0, this.parent.canvas.width, this.parent.canvas.height)
+	}
+
 	draw_node(pos: Vector)
+	{
+		this.draw_circ(pos,
+			this.parent.draw_options.node_color(),
+			this.parent.draw_options.node_radius()
+		);
+	}
+
+	draw_circ(pos: Vector, color: string, size: number)
 	{
 		let scaled = this.parent.local_trans(pos);
 
-		this.ctx.fillStyle = this.parent.draw_options.node_color();
+		this.ctx.fillStyle = color;
 
 		this.ctx.beginPath();
 		this.ctx.arc(
 			scaled.x,
 			scaled.y,
-			this.parent.draw_options.node_radius(),
+			size,
 			0, 2*Math.PI
 		);
 		this.ctx.fill();

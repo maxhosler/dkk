@@ -3,7 +3,7 @@ import { Vector } from "../util";
 import { Option } from "../result";
 import { FramedDAGEmbedding } from "../dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
-import { DAGCanvas, DrawOptions } from "../subelements/dag_canvas";
+import { DAGCanvas, DAGCanvasContext, DrawOptions } from "../subelements/dag_canvas";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 
 type SelectionType = "none" | "vertex" | "edge";
@@ -188,26 +188,26 @@ export class EmbeddingEditor
 		let ctx = this.canvas.get_ctx();
 		let data = this.dag.bake();
 
-		ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
+		ctx.clear();
 
 		for(let edge of data.edges)
-		{ this.canvas.draw_bez(
+		{ ctx.draw_bez(
 			edge, 
 			this.draw_options.edge_color(), 
 			this.draw_options.stroke_weight(), 
-			ctx, true
+			true
 		); }
 
 		this.draw_selection_edge(data, ctx);
 
 		for(let vert of data.verts)
-		{ this.canvas.draw_node(vert, ctx); }
+		{ ctx.draw_node(vert); }
 
 		this.draw_selection_vert(data, ctx);
 
 	}
 
-	draw_selection_vert(data: BakedDAGEmbedding, ctx: DrawCtx)
+	draw_selection_vert(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
 	{
 		if(this.selected.type == "vertex")
 		{
@@ -217,20 +217,15 @@ export class EmbeddingEditor
 				this.change_selection(Selection.none());
 				return;
 			}
-			let vpos = this.canvas.local_trans(data.verts[vert]);
-			ctx.fillStyle = this.draw_options.selection_color();
-			ctx.beginPath();
-			ctx.arc(
-				vpos.x,
-				vpos.y,
-				this.draw_options.node_radius() + 4,
-				0, 2*Math.PI
-			);
-			ctx.fill();
+			let vpos = data.verts[vert];
+			ctx.draw_circ(vpos,
+				this.draw_options.selection_color(),
+				this.draw_options.node_radius() + 4
+			)
 		}
 	}
 
-	draw_selection_edge(data: BakedDAGEmbedding, ctx: DrawCtx)
+	draw_selection_edge(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
 	{
 		if(this.selected.type == "edge")
 		{
@@ -240,20 +235,14 @@ export class EmbeddingEditor
 				this.change_selection(Selection.none());
 				return;
 			}
-			let bez = data.edges[edge].transform
-				((v: Vector) => this.canvas.local_trans(v));
+			let bez = data.edges[edge]
 
-			ctx.beginPath();
-			ctx.moveTo(bez.start_point.x, bez.start_point.y);
-			ctx.bezierCurveTo(
-				bez.cp1.x, bez.cp1.y,
-				bez.cp2.x, bez.cp2.y,
-				bez.end_point.x, bez.end_point.y
-			);
-
-			ctx.strokeStyle = this.draw_options.selection_color();
-			ctx.lineWidth = this.draw_options.stroke_weight() + 5;
-			ctx.stroke()
+			ctx.draw_bez(
+				bez,
+				this.draw_options.selection_color(),
+				this.draw_options.stroke_weight() + 5,
+				false
+			)
 		}
 	}
 }

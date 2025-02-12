@@ -148,16 +148,15 @@ export class CliqueViewer
         let ctx = this.clique_canvas.get_ctx();
         let data = this.dag.bake();
 
-        ctx.clearRect(0, 0, this.clique_canvas.canvas.width, this.clique_canvas.canvas.height);
+        ctx.clear();
 
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++)
         {
             let edge = data.edges[edge_idx];
-            this.clique_canvas.draw_bez(
+            ctx.draw_bez(
                 edge, 
                 this.draw_options.edge_color() + "22",
                 this.draw_options.stroke_weight(),
-                ctx,
                 true
             );
 
@@ -177,11 +176,10 @@ export class CliqueViewer
                     let percent = i / (routes.length - 1) - 0.5;
                     offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
                 }
-                this.clique_canvas.draw_bez(
+                ctx.draw_bez(
                     edge.transform((v) => v.add(offset)),
                     color,
                     width,
-                    ctx,
                     false
                 )
             }
@@ -190,7 +188,7 @@ export class CliqueViewer
 
 
         for(let vert of data.verts)
-        { this.clique_canvas.draw_node(vert, ctx); }
+        { ctx.draw_node(vert); }
 
     }
 
@@ -216,10 +214,7 @@ export class CliqueViewer
         {
             let p = pos.scale(scale);
             console.log(p);
-            this.hasse_canvas.draw_node(
-                p, 
-                ctx
-            );
+            ctx.draw_node(p);
         }
     }
 
