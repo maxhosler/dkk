@@ -273,7 +273,7 @@ export class DAGCanvas
 
 	get_offset(): Vector
 	{
-		return new Vector( this.draw_options.scale()/2, this.canvas.height/2 );
+		return new Vector( this.canvas.width/2, this.canvas.height/2 );
 	}
 
 	local_trans(vec: Vector)

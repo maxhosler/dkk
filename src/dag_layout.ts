@@ -92,7 +92,7 @@ export class FramedDAGEmbedding
 		{
 			let index = depths_arr[j][1];
 			let vd = this.vert_data[index];
-			vd.position = new Vector(j,0);
+			vd.position = new Vector(j - (depths_arr.length-1)/2,0);
 		}
 	}
 
