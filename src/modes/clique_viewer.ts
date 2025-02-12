@@ -195,7 +195,7 @@ export class CliqueViewer
     draw_hasse()
     {
         let ctx = this.hasse_canvas.get_ctx();
-        const PADDING: number = 2;
+        const PADDING: number = 100;
 
         let v_width = Math.max(1,
             this.hasse_canvas.width() - 2*PADDING
@@ -204,17 +204,33 @@ export class CliqueViewer
             this.hasse_canvas.height() - 2*PADDING
         );
 
-        let hasse_ext = this.cliques.hasse.bounding_box.extent().scale(2);
+        let hasse = this.cliques.hasse;
+        let hasse_ext = hasse.bounding_box.extent().scale(2);
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
-        let scale = Math.min(w_scale, h_scale);
+        let scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
 
-        for(let pos of this.cliques.hasse.layout_rows)
+        let positions = hasse.layout_rows
+            .map(v => v.scale(scale));
+
+        for(let i = 0; i < hasse.covering_relation.length; i++)
+        for(let j = 0; j < hasse.covering_relation.length; j++)
         {
-            let p = pos.scale(scale);
-            console.log(p);
-            ctx.draw_node(p);
+            if(hasse.covering_relation[i][j])
+            {
+                ctx.draw_line(
+                    positions[i],
+                    positions[j],
+                    "#000000",
+                    5
+                );
+            }
+        }
+
+        for(let pos of positions)
+        {            
+            ctx.draw_node(pos);
         }
     }
 

@@ -191,7 +191,9 @@ export class HasseDiagram
             }
             let end_val = badness();
 
-            if(start_val - end_val < 0.1)
+            console.log(start_val, end_val);
+
+            if(start_val - end_val < 0.01)
                 break;
         }
 

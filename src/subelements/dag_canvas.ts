@@ -318,4 +318,23 @@ export class DAGCanvasContext
 		this.ctx.lineWidth = weight;
 		this.ctx.stroke()
 	}
+
+	draw_line(
+		start: Vector,
+		end: Vector,
+		color: string,
+		weight: number
+	)
+	{
+		let s = this.parent.local_trans(start);
+		let e = this.parent.local_trans(end);
+
+		this.ctx.beginPath();
+		this.ctx.moveTo(s.x, s.y);
+		this.ctx.lineTo(e.x, e.y);
+
+		this.ctx.strokeStyle = color;
+		this.ctx.lineWidth = weight;
+		this.ctx.stroke()
+	}
 }
