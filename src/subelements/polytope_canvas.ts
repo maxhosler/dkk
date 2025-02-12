@@ -101,14 +101,17 @@ export class PolytopeCanvas
     new_index_buffer(arr: number[])
     {
         let buf = this.ctx.createBuffer();
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_tri_index_buffer);
-        this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Int32Array(arr), this.ctx.STATIC_DRAW); //TODO: Right enum?
+        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_tri_index_buffer);
+        this.ctx.bufferData(this.ctx.ELEMENT_ARRAY_BUFFER, new Uint16Array(arr), this.ctx.STATIC_DRAW);
         return buf;
     }
 
     draw()
     {
-        
+        this.ctx.clearColor(0,0,0,1);
+        this.ctx.clearDepth(1.0);
+        this.ctx.enable(this.ctx.DEPTH_TEST);
+        this.ctx.depthFunc(this.ctx.LEQUAL);
     }
 }
 
