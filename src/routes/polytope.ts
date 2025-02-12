@@ -377,6 +377,7 @@ export class FlowPolytope
 {
     readonly dim: number;
     readonly vertices: NVector[]
+    readonly external_simplices: number[][];
 
     constructor(dag_cliques: DAGCliques)
     {
@@ -450,7 +451,6 @@ export class FlowPolytope
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v).trunc(this.dim));
         
-        
         if(this.dim == 3)
         {
             let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
@@ -467,7 +467,33 @@ export class FlowPolytope
         {
             this.vertices = projected_vertices;
         }
-    
+
+        let external_simplices: number[][] = [];
+        for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
+        {
+            let clq = dag_cliques.cliques[clq_idx];
+            let no_flip: number[] = [];
+            for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
+            {
+                if(dag_cliques.route_swap(clq_idx, route_idx) == clq_idx)
+                {
+                    no_flip.push(route_idx);
+                }
+            }
+
+            for(let skip of no_flip)
+            {
+                let simpl: number[] = [];
+                for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
+                {
+                    if(route_idx == skip) continue;
+                    simpl.push(clq.routes[route_idx]);
+                }
+                external_simplices.push(simpl);
+            }
+            
+        }
+        this.external_simplices = external_simplices;
     }
 }
 
