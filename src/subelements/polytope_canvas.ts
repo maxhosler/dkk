@@ -104,7 +104,7 @@ export class PolytopeCanvas
     new_position_buffer(arr: number[]): WebGLBuffer
     {
         let buf = this.ctx.createBuffer();
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.position_buffer);
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, buf);
         this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Float32Array(arr), this.ctx.STATIC_DRAW);
         return buf;
     }
@@ -112,7 +112,7 @@ export class PolytopeCanvas
     new_index_buffer(arr: number[])
     {
         let buf = this.ctx.createBuffer();
-        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_tri_index_buffer);
+        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, buf);
         this.ctx.bufferData(this.ctx.ELEMENT_ARRAY_BUFFER, new Uint16Array(arr), this.ctx.STATIC_DRAW);
         return buf;
     }
@@ -124,6 +124,8 @@ export class PolytopeCanvas
         this.ctx.enable(this.ctx.DEPTH_TEST);
         this.ctx.depthFunc(this.ctx.LEQUAL);
 
+        this.ctx.useProgram(this.program.program);
+
         this.bind_pos_buffer();
         this.bind_uniforms();
 
@@ -131,10 +133,10 @@ export class PolytopeCanvas
 
 
         {
-            const vertexCount = this.num_vertices;
+            const triangle_count = this.num_vertices;
             const type = this.ctx.UNSIGNED_SHORT;
             const offset = 0;
-            this.ctx.drawElements(this.ctx.TRIANGLES, vertexCount, type, offset);
+            this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
         }
     }
 
@@ -153,8 +155,9 @@ export class PolytopeCanvas
 
     bind_uniforms()
     {
-        this.ctx.uniform4fv(
+        this.ctx.uniformMatrix4fv(
             this.program.uniforms.view_matrix,
+            false,
             [
                 1,0,0,0,
                 0,1,0,0,
