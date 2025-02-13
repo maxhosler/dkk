@@ -2,10 +2,21 @@ import { FlowPolytope } from "../routes/polytope";
 import { DrawOptions } from "./dag_canvas";
 
 const FRAG_SHADER: string = `
+precision mediump float;
+
 varying highp vec3 v_normal;
 varying highp vec3 v_pos;
+
+const highp vec3 LIGHT_DIR = normalize(vec3(-1,1,-1));
+
 void main() {
-    gl_FragColor = vec4(v_normal, 1.0);
+    vec3 color = vec3(1,1,1);
+    float light_direct = 0.7 * clamp(-dot(LIGHT_DIR, v_normal), 0.0, 1.0);
+    float light_ambient = 0.3;
+
+    vec3 light = (light_direct + light_ambient) * color;
+
+    gl_FragColor = vec4(light, 1.0);
 }
 `;
 const VERT_SHADER: string = `
