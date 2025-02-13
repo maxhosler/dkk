@@ -3,20 +3,23 @@ import { DrawOptions } from "./dag_canvas";
 
 const FRAG_SHADER: string = `
 varying highp vec3 v_normal;
+varying highp vec3 v_pos;
 void main() {
     gl_FragColor = vec4(v_normal, 1.0);
 }
 `;
 const VERT_SHADER: string = `
 attribute vec4 vertex_pos;
-attribute vec3 normal;
+attribute vec3 vertex_normal;
 
 varying highp vec3 v_normal;
+varying highp vec3 v_pos;
 
 uniform mat4 view_matrix;
 void main() {
     gl_Position = view_matrix * vertex_pos;
-    v_normal=normal;
+    v_normal = vertex_normal;
+    v_pos = vertex_pos.xyz;
 }
 `;
 
@@ -25,7 +28,7 @@ type ProgramData =
     program: WebGLProgram,
     attribs: {
         vertex_pos: number,
-        normal: number
+        vertex_normal: number
     },
     uniforms: {
         view_matrix: WebGLUniformLocation 
@@ -40,9 +43,12 @@ export class PolytopeCanvas
     readonly ctx: WebGLRenderingContext;
     readonly program: ProgramData;
 
-    position_buffer: WebGLBuffer;
-    ex_tri_index_buffer: WebGLBuffer;
-    ex_tri_normals: WebGLBuffer;
+    vertex_positions: number[][] = [];
+
+    ex_pos_buffer: WebGLBuffer;
+    ex_index_buffer: WebGLBuffer;
+    ex_normal_buffer: WebGLBuffer;
+
     num_vertices = 0;
 
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
@@ -62,11 +68,12 @@ export class PolytopeCanvas
         this.draw_options = draw_options;
 
         this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext; //TODO: Handle fail.
-        this.program = init_shader_prog(this.ctx);
         
-        this.position_buffer = this.new_float_buffer([]);
-        this.ex_tri_index_buffer = this.new_index_buffer([]);
-        this.ex_tri_normals = this.new_float_buffer([]);
+        this.ex_pos_buffer = this.new_float_buffer([]);
+        this.ex_index_buffer = this.new_index_buffer([]);
+        this.ex_normal_buffer = this.new_float_buffer([]);
+
+        this.program = init_shader_prog(this.ctx);
 
         this.resize_canvas();
         addEventListener("resize", (event) => {
@@ -91,26 +98,23 @@ export class PolytopeCanvas
     {
         if(poly.dim != 3) return; //TODO: Handle
         
-        let positions: number[] = [];
+        this.vertex_positions = [];
         for(let pos of poly.vertices)
         {
-            positions = [...positions, ...pos.coordinates];
+            this.vertex_positions.push(structuredClone(pos.coordinates));
         }
-
-        this.position_buffer = this.new_float_buffer(positions)
         
         let ex_indices: number[] = [];
-        for(let external_tri of poly.external_simplices)
-        {
-            ex_indices = [...ex_indices, ...external_tri];
-        }
-
-        this.ex_tri_index_buffer = this.new_index_buffer(ex_indices);
-        this.num_vertices = ex_indices.length;
-
         let ex_normals: number[] = [];
+        let ex_positions: number[] = [];
         for(let external_tri of poly.external_simplices)
         {
+            //Somewhat
+            for(let i = 0; i < 3; i++){
+                ex_indices.push(ex_indices.length);
+            }
+
+            //COMPUTE NORMALS
             let root = poly.vertices[external_tri[0]];
             let arm1 = poly.vertices[external_tri[1]].sub(root);
             let arm2 = poly.vertices[external_tri[2]].sub(root);
@@ -119,18 +123,26 @@ export class PolytopeCanvas
                 arm1.coordinates as [number,number,number],
                 arm2.coordinates as [number,number,number]
             );
+
             let dot = 0;
             for(let i = 0; i < 3; i++)
                 dot += normal[i] * root.coordinates[i];
-            if(dot < 0)
+            if(dot > 0)
             {
                 for(let i = 0; i < 3; i++)
                     normal[i] *= -1;
             }
-            for(let i = 0; i < 3; i++)
+            for(let i = 0; i < 3; i++) {
+                ex_positions = [...ex_positions, ...this.vertex_positions[external_tri[i]]];
                 ex_normals = [...ex_normals, ...normal];
+            }
+                
         }
-        this.ex_tri_normals = this.new_float_buffer(ex_normals);
+
+        this.ex_pos_buffer = this.new_float_buffer(ex_positions)
+        this.ex_index_buffer = this.new_index_buffer(ex_indices);
+        this.ex_normal_buffer = this.new_float_buffer(ex_normals);
+        this.num_vertices = ex_indices.length;
 
     }
 
@@ -163,7 +175,7 @@ export class PolytopeCanvas
         this.bind_uniforms();
         this.bind_normal_buffer();
 
-        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_tri_index_buffer);
+        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_index_buffer);
 
 
         {
@@ -176,7 +188,7 @@ export class PolytopeCanvas
 
     bind_pos_buffer()
     {
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.position_buffer);
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_pos_buffer);
         this.ctx.vertexAttribPointer(
             this.program.attribs.vertex_pos,
             3,
@@ -189,16 +201,15 @@ export class PolytopeCanvas
 
     bind_normal_buffer()
     {
-        const numComponents = 3;
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_tri_normals);
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_normal_buffer);
         this.ctx.vertexAttribPointer(
-            this.program.attribs.normal,
-            numComponents,
+            this.program.attribs.vertex_normal,
+            3,
             this.ctx.FLOAT,
             false,
             0,0
         );
-        this.ctx.enableVertexAttribArray(this.program.attribs.normal);
+        this.ctx.enableVertexAttribArray(this.program.attribs.vertex_normal);
     }
 
     bind_uniforms()
@@ -263,7 +274,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
         program: shader_program,
         attribs: {
             vertex_pos: ctx.getAttribLocation(shader_program, "vertex_pos"),
-            normal: ctx.getAttribLocation(shader_program, "normal")
+            vertex_normal: ctx.getAttribLocation(shader_program, "vertex_normal")
         },
         uniforms: {
             view_matrix: ctx.getUniformLocation(shader_program, "view_matrix") as WebGLUniformLocation,
