@@ -119,6 +119,8 @@ export class PolytopeCanvas
 
 		this.canvas.height = pheight - 2; //-2 to account for border
 		this.canvas.width = pwidth - 2;
+
+        this.ctx.viewport(0, 0, this.canvas.width, this.canvas.height);
 	}
 
     set_polytope(poly: FlowPolytope)
