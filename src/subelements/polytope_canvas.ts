@@ -9,7 +9,15 @@ varying highp vec3 v_pos;
 
 const highp vec3 LIGHT_DIR = normalize(vec3(-1,1,-1));
 
+uniform float cull_dir;
+
 void main() {
+    if(cull_dir * v_normal.z < 0.0)
+    {
+        gl_FragColor = vec4(0,0,0,0);
+        return;
+    }
+
     vec3 color = vec3(1,1,1);
     float light_direct = 0.7 * clamp(-dot(LIGHT_DIR, v_normal), 0.0, 1.0);
     float light_ambient = 0.3;
@@ -46,7 +54,9 @@ type ProgramData =
     },
     uniforms: {
         view_matrix: WebGLUniformLocation,
-        position_matrix: WebGLUniformLocation
+        position_matrix: WebGLUniformLocation,
+        cull_dir: WebGLUniformLocation,
+
     }
 }
 
@@ -206,6 +216,7 @@ export class PolytopeCanvas
 
         this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_index_buffer);
 
+        this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
 
         {
             const triangle_count = this.num_vertices;
@@ -329,6 +340,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
         uniforms: {
             view_matrix: ctx.getUniformLocation(shader_program, "view_matrix") as WebGLUniformLocation,
             position_matrix:  ctx.getUniformLocation(shader_program, "position_matrix") as WebGLUniformLocation,
+            cull_dir: ctx.getUniformLocation(shader_program, "cull_dir") as WebGLUniformLocation,
         }
     };
 }
