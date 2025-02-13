@@ -26,10 +26,13 @@ attribute vec3 vertex_normal;
 varying highp vec3 v_normal;
 varying highp vec3 v_pos;
 
+uniform mat4 position_matrix;
 uniform mat4 view_matrix;
+
+
 void main() {
-    gl_Position = view_matrix * vertex_pos;
-    v_normal = vertex_normal;
+    gl_Position = view_matrix * position_matrix * vertex_pos;
+    v_normal = (position_matrix * vec4(vertex_normal,1)).xyz;
     v_pos = vertex_pos.xyz;
 }
 `;
@@ -42,7 +45,8 @@ type ProgramData =
         vertex_normal: number
     },
     uniforms: {
-        view_matrix: WebGLUniformLocation 
+        view_matrix: WebGLUniformLocation,
+        position_matrix: WebGLUniformLocation
     }
 }
 
@@ -61,6 +65,8 @@ export class PolytopeCanvas
     ex_normal_buffer: WebGLBuffer;
 
     num_vertices = 0;
+
+    current_angle = 0;
 
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
     {
@@ -91,6 +97,16 @@ export class PolytopeCanvas
             if(this)
             this.resize_canvas();
         });
+        canvas.onclick =  (ev) => {
+            if(this)
+                this.on_click();
+        };
+    }
+
+    on_click()
+    {
+        this.current_angle += Math.PI / 20;
+        this.draw();
     }
 
     resize_canvas()
@@ -235,6 +251,16 @@ export class PolytopeCanvas
                 0,0,0,1
             ]
         );
+        this.ctx.uniformMatrix4fv(
+            this.program.uniforms.position_matrix,
+            false,
+            [
+                Math.cos(this.current_angle),0,-Math.sin(this.current_angle),0,
+                0,1,0,0,
+                Math.sin(this.current_angle),0,Math.cos(this.current_angle),0,
+                0,0,0,1
+            ]
+        );
     }
 }
 
@@ -289,6 +315,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
         },
         uniforms: {
             view_matrix: ctx.getUniformLocation(shader_program, "view_matrix") as WebGLUniformLocation,
+            position_matrix:  ctx.getUniformLocation(shader_program, "position_matrix") as WebGLUniformLocation,
         }
     };
 }
