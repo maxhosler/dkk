@@ -243,12 +243,23 @@ export class PolytopeCanvas
 
     bind_uniforms()
     {
+        let wid = this.canvas.width;
+        let hei = this.canvas.height;
+
+        let wmod = wid/hei;
+        let hmod = 1;
+        if(wid > hei)
+        {
+            hmod = hei/wid;
+            wmod = 1;
+        }
+
         this.ctx.uniformMatrix4fv(
             this.program.uniforms.view_matrix,
             false,
             [
-                1,0,0,0,
-                0,1,0,0,
+                hmod,0,0,0,
+                0,wmod,0,0,
                 0,0,1,0,
                 0,0,0,1
             ]
