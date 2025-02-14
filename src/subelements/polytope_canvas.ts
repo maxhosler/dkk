@@ -68,15 +68,14 @@ export class PolytopeCanvas
     readonly ctx: WebGLRenderingContext;
     readonly program: ProgramData;
 
+    num_vertices = 0;
     vertex_positions: number[][] = [];
 
     ex_pos_buffer: WebGLBuffer;
     ex_index_buffer: WebGLBuffer;
     ex_normal_buffer: WebGLBuffer;
 
-    num_vertices = 0;
-
-    current_angle = 0;
+    pos_transform: Mat4 = Mat4.id();
 
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
     {
@@ -107,16 +106,17 @@ export class PolytopeCanvas
             if(this)
             this.resize_canvas();
         });
-        canvas.onclick =  (ev) => {
-            if(this)
-                this.on_click();
-        };
+
     }
 
-    on_click()
+    drag_rotate(delta: [number, number])
     {
-        this.current_angle += Math.PI / 20;
-        this.draw();
+        let [x,y] = delta;
+        let d = Math.sqrt(x*x + y*y);
+        let theta = d/10;
+        let ax: [number,number,number] = [-y/d,x/d,0];
+        let matrix = Mat4.rot_around(ax, theta);
+        this.pos_transform = matrix.mul(this.pos_transform);
     }
 
     resize_canvas()
@@ -278,12 +278,7 @@ export class PolytopeCanvas
         this.ctx.uniformMatrix4fv(
             this.program.uniforms.position_matrix,
             false,
-            [
-                Math.cos(this.current_angle),0,-Math.sin(this.current_angle),0,
-                0,1,0,0,
-                Math.sin(this.current_angle),0,Math.cos(this.current_angle),0,
-                0,0,0,1
-            ]
+            this.pos_transform.flat_arr()
         );
     }
 }
@@ -352,4 +347,67 @@ function cross_product(a: [number,number,number], b: [number, number, number]): 
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0]
     ];
+}
+
+type Row = [number,number,number,number];
+class Mat4
+{
+    readonly inner: [Row,Row,Row,Row]; //row your boat...
+
+    constructor( inner: [Row,Row,Row,Row])
+    {
+        this.inner = inner;
+    }
+
+    static id(): Mat4
+    {
+        return new Mat4([
+            [1,0,0,0],
+            [0,1,0,0],
+            [0,0,1,0],
+            [0,0,0,1]
+        ]);
+    }
+
+    private static zero_arr(): [Row,Row,Row,Row]
+    {
+        return [
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ]
+    }
+
+    flat_arr(): number[]
+    {
+        let out: number[] = [];
+        for(let row of this.inner)
+            out = [...out, ...row];
+        return out;
+    }
+
+    mul(other: Mat4): Mat4
+    {
+        let out = Mat4.zero_arr();
+        for(let i = 0; i < 4; i++)
+            for(let j = 0; j < 4; j++)
+                for(let k=0; k<4; k++)
+                    out[i][j] += this.inner[i][k] * other.inner[k][j];
+        
+        return new Mat4(out);
+    }
+
+    static rot_around(unit_ax: [number,number,number], theta: number)
+    {
+        let c = Math.cos(theta);
+        let s = Math.sin(theta);
+        let [ux,uy,uz] = unit_ax;
+        return new Mat4([
+            [c + ux*ux*(1-c), ux*uy*(1-c) - uz*s, ux*uz*(1-c)+uy*s, 0],
+            [uy*ux*(1-c)+uz*s,  c + uy*uy*(1-c), uy*uz*(1-c) - ux*s,0],
+            [uz*ux*(1-c)-uy*s,uz*uy*(1-c)+ux*s,c + uz*uz*(1-c),0],
+            [0,0,0,1]
+        ])
+    }
 }
