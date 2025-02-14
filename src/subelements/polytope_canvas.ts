@@ -1,4 +1,5 @@
 import { FlowPolytope } from "../routes/polytope";
+import { Clique } from "../routes/routes";
 import { DrawOptions } from "./dag_canvas";
 import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
@@ -146,7 +147,7 @@ export class PolytopeCanvas
         this.ctx.viewport(0, 0, this.canvas.width, this.canvas.height);
 	}
 
-    set_polytope(poly: FlowPolytope)
+    set_polytope(poly: FlowPolytope, curent_clique: Clique)
     {
         if(poly.dim != 3) return; //TODO: Handle
         
@@ -530,3 +531,10 @@ function css_str_to_rgb(css_str: string): [number,number,number]
     console.warn("Unknown color string format! ", css_str);
     return [255,255,255];
 }
+
+/*
+function get_normal(p1: NVector, p2: NVector, p3: NVector)
+{
+
+}
+*/

@@ -114,7 +114,7 @@ export class CliqueViewer
         let {canvas: poly_canvas, element: p_canvas_element} = PolytopeCanvas.create(draw_options);
         segments.poly.appendChild(p_canvas_element);
         poly_canvas.resize_canvas();
-        poly_canvas.set_polytope(this.polytope);
+        poly_canvas.set_polytope(this.polytope, this.cliques.cliques[this.current_clique]);
         this.poly_canvas = poly_canvas;
 
         //Draw and setup redraw

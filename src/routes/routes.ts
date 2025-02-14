@@ -11,7 +11,7 @@ class Route
 	}
 }
 
-class Clique
+export class Clique
 {
 	static indexed_local_edge_order(
 		edge_num: number,
