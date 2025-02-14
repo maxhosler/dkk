@@ -167,23 +167,12 @@ export class PolytopeCanvas
             }
 
             //COMPUTE NORMALS
-            let root = poly.vertices[external_tri[0]];
-            let arm1 = poly.vertices[external_tri[1]].sub(root);
-            let arm2 = poly.vertices[external_tri[2]].sub(root);
+            let normal = get_normal(
+                poly.vertices[external_tri[0]].coordinates as Triple,
+                poly.vertices[external_tri[1]].coordinates as Triple,
+                poly.vertices[external_tri[2]].coordinates as Triple
+            )
 
-            let normal = cross_product(
-                arm1.coordinates as [number,number,number],
-                arm2.coordinates as [number,number,number]
-            );
-
-            let dot = 0;
-            for(let i = 0; i < 3; i++)
-                dot += normal[i] * root.coordinates[i];
-            if(dot > 0)
-            {
-                for(let i = 0; i < 3; i++)
-                    normal[i] *= -1;
-            }
             for(let i = 0; i < 3; i++) {
                 let r = Math.floor(4*Math.random());
                 let extend = [0,0,0,0];
@@ -431,15 +420,6 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
     };
 }
 
-function cross_product(a: [number,number,number], b: [number, number, number]): [number,number,number]
-{
-    return [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0]
-    ];
-}
-
 type Row = [number,number,number,number];
 class Mat4
 {
@@ -529,9 +509,30 @@ function css_str_to_rgb(css_str: string): [number,number,number]
     return [255,255,255];
 }
 
-/*
-function get_normal(p1: NVector, p2: NVector, p3: NVector)
+type Triple = [number,number,number];
+function get_normal(p1: Triple, p2: Triple, p3: Triple): Triple
 {
+    let root: Triple = p1;
+    let arm1: Triple = [p2[0]-root[0], p2[1]-root[1], p2[2]-root[2]];
+    let arm2: Triple = [p3[0]-root[0], p3[1]-root[1], p3[2]-root[2]];
 
+    let normal = cross_product(arm1, arm2);
+
+    let dot = 0;
+    for(let i = 0; i < 3; i++)
+        dot += normal[i] * root[i];
+    if(dot > 0)
+        for(let i = 0; i < 3; i++)
+            normal[i] *= -1;
+
+    return normal;
 }
-*/
+
+function cross_product(a: Triple, b: Triple): Triple
+{
+    return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+    ];
+}
