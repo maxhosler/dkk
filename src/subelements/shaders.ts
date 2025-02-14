@@ -11,6 +11,7 @@ uniform float cull_dir;
 uniform float transparency;
 uniform vec3 color;
 uniform mat4 simplex_colors;
+uniform float do_simplex_color;
 
 void main() {
     if(cull_dir * v_normal.z < 0.0)
@@ -19,7 +20,7 @@ void main() {
     }
 
     vec3 true_color = color;
-    if(v_simplex_pos.x > 0.0)
+    if(do_simplex_color > 0.0)
     {
         float mx = max(max(max(v_simplex_pos.x, v_simplex_pos.y), v_simplex_pos.z), v_simplex_pos.w);
         if(mx == v_simplex_pos.x)
@@ -43,7 +44,7 @@ void main() {
     float light_direct = 0.7 * clamp(-dot(LIGHT_DIR, v_normal), 0.0, 1.0);
     float light_ambient = 0.3;
 
-    vec3 light = (light_direct + light_ambient) * color;
+    vec3 light = (light_direct + light_ambient) * true_color;
 
     gl_FragColor = vec4(light, transparency);
 }

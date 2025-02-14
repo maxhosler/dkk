@@ -18,7 +18,8 @@ type ProgramData =
         cull_dir: WebGLUniformLocation,
         color: WebGLUniformLocation,
         transparency: WebGLUniformLocation,
-        simplex_colors: WebGLUniformLocation
+        simplex_colors: WebGLUniformLocation,
+        do_simplex_color: WebGLUniformLocation
     }
 }
 
@@ -185,9 +186,13 @@ export class PolytopeCanvas
                     normal[i] *= -1;
             }
             for(let i = 0; i < 3; i++) {
+                let r = Math.floor(4*Math.random());
+                let extend = [0,0,0,0];
+                extend[r] = 1;
+
                 ex_positions = [...ex_positions, ...this.vertex_positions[external_tri[i]]];
                 ex_normals = [...ex_normals, ...normal];
-                ex_sp = [...ex_sp, -1, -1, -1, -1];
+                ex_sp = [...ex_sp, ...extend];
             }
                 
         }
@@ -243,6 +248,7 @@ export class PolytopeCanvas
 
             this.ctx.uniform1f(this.program.uniforms.cull_dir, dir);
             this.ctx.uniform1f(this.program.uniforms.transparency, 0.5);
+            this.ctx.uniform1f(this.program.uniforms.do_simplex_color, -1);
 
             let color = [222./256., 94/256., 212/256]; //TODO: parametrize
             if(dir == -1)
@@ -422,6 +428,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
             color: ctx.getUniformLocation(shader_program, "color") as WebGLUniformLocation,
             transparency: ctx.getUniformLocation(shader_program, "transparency") as WebGLUniformLocation,
             simplex_colors: ctx.getUniformLocation(shader_program, "simplex_colors") as WebGLUniformLocation,
+            do_simplex_color: ctx.getUniformLocation(shader_program, "do_simplex_color") as WebGLUniformLocation,
         }
     };
 }
