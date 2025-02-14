@@ -77,6 +77,8 @@ export class PolytopeCanvas
 
     pos_transform: Mat4 = Mat4.id();
 
+    drag: boolean = false;
+
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
     {
         let draw_zone = document.createElement("canvas")
@@ -107,16 +109,25 @@ export class PolytopeCanvas
             this.resize_canvas();
         });
 
+        addEventListener("mouseup", (ev) => this.drag = false);
+        canvas.addEventListener("mousedown", (ev) => this.drag = true);
+        addEventListener("mousemove", (ev) => {
+            if(this && this.drag)
+                this.drag_rotate([ev.movementX, -ev.movementY]);
+        })
     }
 
     drag_rotate(delta: [number, number])
     {
         let [x,y] = delta;
         let d = Math.sqrt(x*x + y*y);
-        let theta = d/10;
+        if(d < 0.01) return;
+
+        let theta = Math.min(d/50, Math.PI/15);
         let ax: [number,number,number] = [-y/d,x/d,0];
         let matrix = Mat4.rot_around(ax, theta);
-        this.pos_transform = matrix.mul(this.pos_transform);
+        this.pos_transform = this.pos_transform.mul(matrix);
+        this.draw();
     }
 
     resize_canvas()
