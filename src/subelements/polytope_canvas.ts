@@ -1,63 +1,51 @@
 import { FlowPolytope } from "../routes/polytope";
 import { DrawOptions } from "./dag_canvas";
-
-const FRAG_SHADER: string = `
-precision mediump float;
-
-varying highp vec3 v_normal;
-varying highp vec3 v_pos;
-
-const highp vec3 LIGHT_DIR = normalize(vec3(-1,1,-1));
-
-uniform float cull_dir;
-uniform float transparency;
-uniform vec3 color;
-
-void main() {
-    if(cull_dir * v_normal.z < 0.0)
-    {
-        discard;
-    }
-
-    float light_direct = 0.7 * clamp(-dot(LIGHT_DIR, v_normal), 0.0, 1.0);
-    float light_ambient = 0.3;
-
-    vec3 light = (light_direct + light_ambient) * color;
-
-    gl_FragColor = vec4(light, transparency);
-}
-`;
-const VERT_SHADER: string = `
-attribute vec4 vertex_pos;
-attribute vec3 vertex_normal;
-
-varying highp vec3 v_normal;
-varying highp vec3 v_pos;
-
-uniform mat4 position_matrix;
-uniform mat4 view_matrix;
+import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
 
-void main() {
-    gl_Position = view_matrix * position_matrix * vertex_pos;
-    v_normal = (position_matrix * vec4(vertex_normal,1)).xyz;
-    v_pos = vertex_pos.xyz;
-}
-`;
 
 type ProgramData =
 {
     program: WebGLProgram,
     attribs: {
         vertex_pos: number,
-        vertex_normal: number
+        vertex_normal: number,
+        simplex_pos: number
     },
     uniforms: {
         view_matrix: WebGLUniformLocation,
         position_matrix: WebGLUniformLocation,
         cull_dir: WebGLUniformLocation,
         color: WebGLUniformLocation,
-        transparency: WebGLUniformLocation
+        transparency: WebGLUniformLocation,
+        simplex_colors: WebGLUniformLocation
+    }
+}
+
+class FaceBuffers
+{
+    num_verts: number;
+
+    pos_buffer: WebGLBuffer;
+    index_buffer: WebGLBuffer;
+    normal_buffer: WebGLBuffer;
+    simplex_pos_buffer: WebGLBuffer;
+
+    constructor(
+        pos_buffer: WebGLBuffer,
+        normal_buffer: WebGLBuffer,
+        simplex_pos_buffer: WebGLBuffer,
+
+        index_buffer: WebGLBuffer,
+
+        num_verts: number,
+    )
+    {
+        this.pos_buffer = pos_buffer;
+        this.index_buffer = index_buffer;
+        this.normal_buffer = normal_buffer;
+        this.simplex_pos_buffer = simplex_pos_buffer;
+        this.num_verts = num_verts;
     }
 }
 
@@ -72,9 +60,9 @@ export class PolytopeCanvas
     num_vertices = 0;
     vertex_positions: number[][] = [];
 
-    ex_pos_buffer: WebGLBuffer;
-    ex_index_buffer: WebGLBuffer;
-    ex_normal_buffer: WebGLBuffer;
+    external_buffers: FaceBuffers;
+
+    simpl_buffers: FaceBuffers;
 
     pos_transform: Mat4 = Mat4.id();
 
@@ -98,9 +86,21 @@ export class PolytopeCanvas
 
         this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext; //TODO: Handle fail.
         
-        this.ex_pos_buffer = this.new_float_buffer([]);
-        this.ex_index_buffer = this.new_index_buffer([]);
-        this.ex_normal_buffer = this.new_float_buffer([]);
+        this.external_buffers = new FaceBuffers(
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_index_buffer([]),
+            0
+        );
+        
+        this.simpl_buffers = new FaceBuffers(
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_index_buffer([]),
+            0
+        );
 
         this.program = init_shader_prog(this.ctx);
 
@@ -158,6 +158,7 @@ export class PolytopeCanvas
         let ex_indices: number[] = [];
         let ex_normals: number[] = [];
         let ex_positions: number[] = [];
+        let ex_sp: number[] = [];
         for(let external_tri of poly.external_simplices)
         {
             //Somewhat
@@ -186,13 +187,20 @@ export class PolytopeCanvas
             for(let i = 0; i < 3; i++) {
                 ex_positions = [...ex_positions, ...this.vertex_positions[external_tri[i]]];
                 ex_normals = [...ex_normals, ...normal];
+                ex_sp = [...ex_sp, -1, -1, -1, -1];
             }
                 
         }
 
-        this.ex_pos_buffer = this.new_float_buffer(ex_positions)
-        this.ex_index_buffer = this.new_index_buffer(ex_indices);
-        this.ex_normal_buffer = this.new_float_buffer(ex_normals);
+        this.external_buffers = new FaceBuffers(
+            this.new_float_buffer(ex_positions),
+            this.new_float_buffer(ex_normals),
+            this.new_float_buffer(ex_sp),
+
+            this.new_index_buffer(ex_indices),
+
+            ex_indices.length
+        )
         this.num_vertices = ex_indices.length;
 
     }
@@ -223,15 +231,15 @@ export class PolytopeCanvas
         this.ctx.useProgram(this.program.program);
 
         this.bind_transform_uniforms();
-
+        this.bind_simplex_colors();
+    
         this.ctx.enable(this.ctx.BLEND);
         this.ctx.blendFunc(this.ctx.SRC_ALPHA, this.ctx.ONE_MINUS_SRC_ALPHA);
 
-        const draw_face = (dir: number) =>
+        const draw_external = (dir: number) =>
         {
-            this.bind_ex_pos_buffer();
-            this.bind_ex_normal_buffer();
-            this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_index_buffer);
+
+            this.bind_face_buffers(this.external_buffers);
 
             this.ctx.uniform1f(this.program.uniforms.cull_dir, dir);
             this.ctx.uniform1f(this.program.uniforms.transparency, 0.5);
@@ -251,18 +259,19 @@ export class PolytopeCanvas
             this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
         }
 
-        draw_face(-1);
+        draw_external(-1);
 
         //TODO: Current simplex.
 
-        draw_face(1);
+        draw_external(1);
     }
 
     
 
-    bind_ex_pos_buffer()
+    bind_face_buffers(face_buffers: FaceBuffers)
     {
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_pos_buffer);
+        //Position
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, face_buffers.pos_buffer);
         this.ctx.vertexAttribPointer(
             this.program.attribs.vertex_pos,
             3,
@@ -271,11 +280,9 @@ export class PolytopeCanvas
             0, 0
         );
         this.ctx.enableVertexAttribArray(this.program.attribs.vertex_pos);
-    }
 
-    bind_ex_normal_buffer()
-    {
-        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_normal_buffer);
+        //normal
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, face_buffers.normal_buffer);
         this.ctx.vertexAttribPointer(
             this.program.attribs.vertex_normal,
             3,
@@ -284,6 +291,21 @@ export class PolytopeCanvas
             0,0
         );
         this.ctx.enableVertexAttribArray(this.program.attribs.vertex_normal);
+
+        //Simplex pos
+        this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, face_buffers.simplex_pos_buffer);
+        this.ctx.vertexAttribPointer(
+            this.program.attribs.simplex_pos,
+            4,
+            this.ctx.FLOAT,
+            false,
+            0, 0
+        );
+        this.ctx.enableVertexAttribArray(this.program.attribs.simplex_pos);
+
+        //Index
+        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, face_buffers.index_buffer);
+
     }
 
     bind_transform_uniforms()
@@ -315,6 +337,34 @@ export class PolytopeCanvas
             this.pos_transform.flat_arr()
         );
     }
+
+    bind_simplex_colors()
+    {
+        let mat = [
+            0,0,0,0,
+            0,0,0,0,
+            0,0,0,0,
+            1,1,1,1
+        ];
+
+        for(let i = 0; i < 4; i++)
+        {
+            let col = this.draw_options.get_route_color(i);
+            let col_arr = css_str_to_rgb(col);
+            for(let j = 0; j < 3; j++)
+            {
+                mat[i+4*j] = col_arr[j]/255;
+            }
+        }
+
+        console.log(mat);
+
+        this.ctx.uniformMatrix4fv(
+            this.program.uniforms.simplex_colors,
+            false,
+            mat
+        );
+    }
 }
 
 
@@ -341,7 +391,7 @@ function load_shader(ctx: WebGLRenderingContext, type: GLenum, src: string): Web
 function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
 {
     const vert_shader = load_shader(ctx, ctx.VERTEX_SHADER, VERT_SHADER);
-    const frag_shader = load_shader(ctx, ctx.FRAGMENT_SHADER, FRAG_SHADER);
+    const frag_shader = load_shader(ctx, ctx.FRAGMENT_SHADER, EXTERNAL_FRAG_SHADER);
     
     // Create the shader program
     
@@ -364,7 +414,8 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
         program: shader_program,
         attribs: {
             vertex_pos: ctx.getAttribLocation(shader_program, "vertex_pos"),
-            vertex_normal: ctx.getAttribLocation(shader_program, "vertex_normal")
+            vertex_normal: ctx.getAttribLocation(shader_program, "vertex_normal"),
+            simplex_pos: ctx.getAttribLocation(shader_program, "simplex_pos")
         },
         uniforms: {
             view_matrix: ctx.getUniformLocation(shader_program, "view_matrix") as WebGLUniformLocation,
@@ -372,6 +423,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
             cull_dir: ctx.getUniformLocation(shader_program, "cull_dir") as WebGLUniformLocation,
             color: ctx.getUniformLocation(shader_program, "color") as WebGLUniformLocation,
             transparency: ctx.getUniformLocation(shader_program, "transparency") as WebGLUniformLocation,
+            simplex_colors: ctx.getUniformLocation(shader_program, "simplex_colors") as WebGLUniformLocation,
         }
     };
 }
@@ -446,4 +498,30 @@ class Mat4
             [0,0,0,1]
         ])
     }
+}
+
+function css_str_to_rgb(css_str: string): [number,number,number]
+{
+    let start = css_str.slice(0,1);
+    if(start == "#")
+    {
+        let num = Number("0x"+css_str.slice(1));
+        return [
+            (num >> 16) & 255,
+            (num >> 8) & 255,
+            num & 255
+        ];
+    }
+    else if (start = "r")
+    {
+        let comps = start.match(/\d+/g) as RegExpMatchArray;
+        return [
+            Number(comps[0]),
+            Number(comps[1]),
+            Number(comps[2]),
+        ];
+    }
+
+    console.warn("Unknown color string format! ", css_str);
+    return [255,255,255];
 }
