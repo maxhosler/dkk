@@ -357,8 +357,6 @@ export class PolytopeCanvas
             }
         }
 
-        console.log(mat);
-
         this.ctx.uniformMatrix4fv(
             this.program.uniforms.simplex_colors,
             false,
