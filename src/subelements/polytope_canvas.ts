@@ -10,6 +10,7 @@ varying highp vec3 v_pos;
 const highp vec3 LIGHT_DIR = normalize(vec3(-1,1,-1));
 
 uniform float cull_dir;
+uniform float transparency;
 uniform vec3 color;
 
 void main() {
@@ -23,7 +24,7 @@ void main() {
 
     vec3 light = (light_direct + light_ambient) * color;
 
-    gl_FragColor = vec4(light, 0.5);
+    gl_FragColor = vec4(light, transparency);
 }
 `;
 const VERT_SHADER: string = `
@@ -56,7 +57,7 @@ type ProgramData =
         position_matrix: WebGLUniformLocation,
         cull_dir: WebGLUniformLocation,
         color: WebGLUniformLocation,
-
+        transparency: WebGLUniformLocation
     }
 }
 
@@ -221,19 +222,21 @@ export class PolytopeCanvas
 
         this.ctx.useProgram(this.program.program);
 
-        this.bind_pos_buffer();
-        this.bind_uniforms();
-        this.bind_normal_buffer();
-
-        this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_index_buffer);
+        this.bind_transform_uniforms();
 
         this.ctx.enable(this.ctx.BLEND);
         this.ctx.blendFunc(this.ctx.SRC_ALPHA, this.ctx.ONE_MINUS_SRC_ALPHA);
 
-        for(let dir of [-1,1])
+        const draw_face = (dir: number) =>
         {
+            this.bind_ex_pos_buffer();
+            this.bind_ex_normal_buffer();
+            this.ctx.bindBuffer(this.ctx.ELEMENT_ARRAY_BUFFER, this.ex_index_buffer);
+
             this.ctx.uniform1f(this.program.uniforms.cull_dir, dir);
-            let color = [222./256., 94/256., 212/256];
+            this.ctx.uniform1f(this.program.uniforms.transparency, 0.5);
+
+            let color = [222./256., 94/256., 212/256]; //TODO: parametrize
             if(dir == -1)
             {
                 color[0] *= 0.5;
@@ -247,9 +250,17 @@ export class PolytopeCanvas
             const offset = 0;
             this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
         }
+
+        draw_face(-1);
+
+        //TODO: Current simplex.
+
+        draw_face(1);
     }
 
-    bind_pos_buffer()
+    
+
+    bind_ex_pos_buffer()
     {
         this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_pos_buffer);
         this.ctx.vertexAttribPointer(
@@ -262,7 +273,7 @@ export class PolytopeCanvas
         this.ctx.enableVertexAttribArray(this.program.attribs.vertex_pos);
     }
 
-    bind_normal_buffer()
+    bind_ex_normal_buffer()
     {
         this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.ex_normal_buffer);
         this.ctx.vertexAttribPointer(
@@ -275,7 +286,7 @@ export class PolytopeCanvas
         this.ctx.enableVertexAttribArray(this.program.attribs.vertex_normal);
     }
 
-    bind_uniforms()
+    bind_transform_uniforms()
     {
         let wid = this.canvas.width;
         let hei = this.canvas.height;
@@ -360,6 +371,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
             position_matrix:  ctx.getUniformLocation(shader_program, "position_matrix") as WebGLUniformLocation,
             cull_dir: ctx.getUniformLocation(shader_program, "cull_dir") as WebGLUniformLocation,
             color: ctx.getUniformLocation(shader_program, "color") as WebGLUniformLocation,
+            transparency: ctx.getUniformLocation(shader_program, "transparency") as WebGLUniformLocation,
         }
     };
 }
