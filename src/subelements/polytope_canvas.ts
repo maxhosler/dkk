@@ -59,11 +59,9 @@ export class PolytopeCanvas
     readonly ctx: WebGLRenderingContext;
     readonly program: ProgramData;
 
-    num_vertices = 0;
     vertex_positions: number[][] = [];
 
     external_buffers: FaceBuffers;
-
     simpl_buffers: FaceBuffers;
 
     pos_transform: Mat4 = Mat4.id();
@@ -207,7 +205,6 @@ export class PolytopeCanvas
 
             ex_indices.length
         )
-        this.num_vertices = ex_indices.length;
 
     }
 
@@ -260,7 +257,7 @@ export class PolytopeCanvas
             }
             this.ctx.uniform3fv(this.program.uniforms.color, color);
 
-            const triangle_count = this.num_vertices;
+            const triangle_count = this.external_buffers.num_verts;
             const type = this.ctx.UNSIGNED_SHORT;
             const offset = 0;
             this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
