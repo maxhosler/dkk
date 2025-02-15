@@ -145,7 +145,7 @@ export class PolytopeCanvas
         this.ctx.viewport(0, 0, this.canvas.width, this.canvas.height);
 	}
 
-    set_polytope(poly: FlowPolytope, curent_clique: Clique)
+    set_polytope(poly: FlowPolytope, current_clique: Clique)
     {
         if(poly.dim != 3) return; //TODO: Handle
         
@@ -170,7 +170,8 @@ export class PolytopeCanvas
             let normal = get_normal(
                 poly.vertices[external_tri[0]].coordinates as Triple,
                 poly.vertices[external_tri[1]].coordinates as Triple,
-                poly.vertices[external_tri[2]].coordinates as Triple
+                poly.vertices[external_tri[2]].coordinates as Triple,
+                [0,0,0]
             )
 
             for(let i = 0; i < 3; i++) {
@@ -193,8 +194,65 @@ export class PolytopeCanvas
             this.new_index_buffer(ex_indices),
 
             ex_indices.length
-        )
+        );
 
+        this.set_clique(current_clique);
+    }
+
+    set_clique(current_clique: Clique)
+    {
+        let sim_indices: number[] = [];
+        let sim_normals: number[] = [];
+        let sim_positions: number[] = [];
+        let sim_sp: number[] = [];
+
+        let center: Triple = [0,0,0];
+        for(let j = 0; j < 4; j++)
+        {
+            let vert = this.vertex_positions[current_clique.routes[j]];
+            for(let i = 0; i < 3; i++)
+            {
+                center[i] += vert[i]/4;
+            }
+        }
+
+        for(let excluded_idx = 0; excluded_idx < 4; excluded_idx++)
+        {
+            for(let i = 0; i < 3; i++){
+                sim_indices.push(sim_indices.length);
+            }
+
+            let verts: Triple[] = [];
+
+            for(let j = 0; j < 4; j++)
+            {
+                if(j==excluded_idx) continue;
+                let vert = this.vertex_positions[current_clique.routes[j]];
+                verts.push(vert as Triple);
+
+                let sp = [0,0,0,0];
+                sp[j] = 1;
+
+                const EPS_PLUS_ONE = 1.001;
+                sim_positions = [...sim_positions, EPS_PLUS_ONE*vert[0], EPS_PLUS_ONE*vert[1], EPS_PLUS_ONE*vert[2]];
+                sim_sp = [...sim_sp, ...sp];
+            }
+
+            let normal = get_normal(verts[0], verts[1], verts[2], center);
+            for(let i = 0; i < 3; i++)
+                sim_normals = [...sim_normals, ...normal];
+        }
+
+        this.simpl_buffers = new FaceBuffers(
+            this.new_float_buffer(sim_positions),
+            this.new_float_buffer(sim_normals),
+            this.new_float_buffer(sim_sp),
+
+            this.new_index_buffer(sim_indices),
+
+            sim_indices.length
+        );
+        this.draw();
     }
 
     new_float_buffer(arr: number[]): WebGLBuffer
@@ -254,7 +312,22 @@ export class PolytopeCanvas
 
         draw_external(-1);
 
-        //TODO: Current simplex.
+        {
+
+            this.bind_face_buffers(this.simpl_buffers);
+
+            this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
+            this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
+            this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
+
+            let color = [1, 0, 0]; //If this color shows, something is broken
+            this.ctx.uniform3fv(this.program.uniforms.color, color);
+
+            const triangle_count = this.simpl_buffers.num_verts;
+            const type = this.ctx.UNSIGNED_SHORT;
+            const offset = 0;
+            this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
+        }
 
         draw_external(1);
     }
@@ -510,7 +583,7 @@ function css_str_to_rgb(css_str: string): [number,number,number]
 }
 
 type Triple = [number,number,number];
-function get_normal(p1: Triple, p2: Triple, p3: Triple): Triple
+function get_normal(p1: Triple, p2: Triple, p3: Triple, center: Triple): Triple
 {
     let root: Triple = p1;
     let arm1: Triple = [p2[0]-root[0], p2[1]-root[1], p2[2]-root[2]];
@@ -520,7 +593,7 @@ function get_normal(p1: Triple, p2: Triple, p3: Triple): Triple
 
     let dot = 0;
     for(let i = 0; i < 3; i++)
-        dot += normal[i] * root[i];
+        dot += normal[i] * (root[i] - center[i]);
     if(dot > 0)
         for(let i = 0; i < 3; i++)
             normal[i] *= -1;
