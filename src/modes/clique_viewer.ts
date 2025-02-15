@@ -138,6 +138,11 @@ export class CliqueViewer
                 this.current_clique,
                 idx
             );
+        this.poly_canvas.set_clique(
+            this.cliques.cliques[
+                this.current_clique
+            ]
+        );
         this.draw();
     }
 

@@ -252,7 +252,6 @@ export class PolytopeCanvas
 
             sim_indices.length
         );
-        this.draw();
     }
 
     new_float_buffer(arr: number[]): WebGLBuffer
