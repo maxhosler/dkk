@@ -68,6 +68,8 @@ export class PolytopeCanvas
 
     drag: boolean = false;
 
+    active: boolean = true;
+
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
     {
         let draw_zone = document.createElement("canvas")
@@ -147,7 +149,11 @@ export class PolytopeCanvas
 
     set_polytope(poly: FlowPolytope, current_clique: Clique)
     {
-        if(poly.dim != 3) return; //TODO: Handle
+
+        if(poly.dim != 3) {
+            this.deactivate(poly.dim);
+            return;
+        }
         
         this.vertex_positions = [];
         for(let pos of poly.vertices)
@@ -201,6 +207,8 @@ export class PolytopeCanvas
 
     set_clique(current_clique: Clique)
     {
+        if (!this.active) { return; }
+
         let sim_indices: number[] = [];
         let sim_normals: number[] = [];
         let sim_positions: number[] = [];
@@ -274,6 +282,9 @@ export class PolytopeCanvas
     {
         this.ctx.clearColor(0,0,0,1);
         this.ctx.clearDepth(1.0);
+
+        if (!this.active) return;
+
         this.ctx.enable(this.ctx.DEPTH_TEST);
         this.ctx.depthFunc(this.ctx.LEQUAL);
 
@@ -427,6 +438,29 @@ export class PolytopeCanvas
             false,
             mat
         );
+    }
+
+    deactivate(poly_dim: number)
+    {
+        this.active = false;
+
+        this.external_buffers = new FaceBuffers(
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_index_buffer([]),
+            0
+        );
+        
+        this.simpl_buffers = new FaceBuffers(
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_index_buffer([]),
+            0
+        );
+
+
     }
 }
 
