@@ -20,7 +20,8 @@ type ProgramData =
         color: WebGLUniformLocation,
         transparency: WebGLUniformLocation,
         simplex_colors: WebGLUniformLocation,
-        do_simplex_color: WebGLUniformLocation
+        do_simplex_color: WebGLUniformLocation,
+        shade_amount: WebGLUniformLocation
     }
 }
 
@@ -232,33 +233,75 @@ export class PolytopeCanvas
             }
         }
 
-        for(let excluded_idx = 0; excluded_idx < 4; excluded_idx++)
+        if(this.poly_dim == 3) {
+            for(let excluded_idx = 0; excluded_idx < 4; excluded_idx++)
+            {
+                for(let i = 0; i < 3; i++){
+                    sim_indices.push(sim_indices.length);
+                }
+    
+                let verts: Triple[] = [];
+    
+                for(let j = 0; j < 4; j++)
+                {
+                    if(j==excluded_idx) continue;
+                    let vert = this.vertex_positions[current_clique.routes[j]];
+                    verts.push(vert as Triple);
+    
+                    let sp = [0,0,0,0];
+                    sp[j] = 1;
+    
+                    const EPS_PLUS_ONE = 1.001;
+                    sim_positions = [...sim_positions, EPS_PLUS_ONE*vert[0], EPS_PLUS_ONE*vert[1], EPS_PLUS_ONE*vert[2]];
+                    sim_sp = [...sim_sp, ...sp];
+                }
+    
+                let normal = get_normal(verts[0], verts[1], verts[2], center);
+                for(let i = 0; i < 3; i++)
+                    sim_normals = [...sim_normals, ...normal];
+            }
+        }
+        else if (this.poly_dim == 2)
         {
-            for(let i = 0; i < 3; i++){
+
+            for(let i = 0; i < 6; i++){
                 sim_indices.push(sim_indices.length);
             }
 
-            let verts: Triple[] = [];
+            let base_verts: Triple[] = [];
 
-            for(let j = 0; j < this.poly_dim+1; j++)
+            for(let j = 0; j < 3; j++)
             {
-                if(j==excluded_idx) continue;
                 let vert = this.vertex_positions[current_clique.routes[j]];
-                verts.push(vert as Triple);
+                base_verts.push(vert as Triple);
+            }
+            const EPS_PLUS_ONE = 1.001;
 
-                let sp = [0,0,0,0];
-                sp[j] = 1;
+            for(let orient = -1; orient < 2; orient += 2)
+            {
+                let transform = (v: Triple) => {
+                    return [
+                        v[0] * EPS_PLUS_ONE,
+                        v[1] * EPS_PLUS_ONE,
+                        (v[2] + 0.001 * orient) * EPS_PLUS_ONE
+                    ] as Triple;
+                }
+                let verts: Triple[] = base_verts.map(transform);
 
-                const EPS_PLUS_ONE = 1.001;
-                sim_positions = [...sim_positions, EPS_PLUS_ONE*vert[0], EPS_PLUS_ONE*vert[1], EPS_PLUS_ONE*vert[2]];
-                sim_sp = [...sim_sp, ...sp];
+                sim_positions = [...sim_positions, ...verts[0], ...verts[1], ...verts[2]];
+                sim_sp = [...sim_sp, 1,0,0,0,0,1,0,0,0,0,1,0];
+                
+                let normal = get_normal(verts[0], verts[1], verts[2], center);
+                for(let i = 0; i < 3; i++)
+                    sim_normals = [...sim_normals, ...structuredClone(normal)];
             }
 
-            let normal = get_normal(verts[0], verts[1], verts[2], center);
-            for(let i = 0; i < 3; i++)
-                sim_normals = [...sim_normals, ...normal];
         }
-
+        else
+        {
+            console.warn("set_clique reached state that should be unreachable.")
+        }
+        
         this.simpl_buffers = new FaceBuffers(
             this.new_float_buffer(sim_positions),
             this.new_float_buffer(sim_normals),
@@ -313,6 +356,13 @@ export class PolytopeCanvas
             this.ctx.uniform1f(this.program.uniforms.transparency, 0.5);
             this.ctx.uniform1f(this.program.uniforms.do_simplex_color, -1);
 
+            this.ctx.uniform1f(this.program.uniforms.shade_amount, 1);
+            
+            if (this.poly_dim == 2)
+            {
+                this.ctx.uniform1f(this.program.uniforms.shade_amount, 0);
+            }
+
             let color = [222./256., 94/256., 212/256]; //TODO: parametrize
             if(dir == -1)
             {
@@ -337,6 +387,7 @@ export class PolytopeCanvas
             this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
             this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
             this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
+            this.ctx.uniform1f(this.program.uniforms.shade_amount, 1);
 
             let color = [1, 0, 0]; //If this color shows, something is broken
             this.ctx.uniform3fv(this.program.uniforms.color, color);
@@ -530,6 +581,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
             transparency: ctx.getUniformLocation(shader_program, "transparency") as WebGLUniformLocation,
             simplex_colors: ctx.getUniformLocation(shader_program, "simplex_colors") as WebGLUniformLocation,
             do_simplex_color: ctx.getUniformLocation(shader_program, "do_simplex_color") as WebGLUniformLocation,
+            shade_amount: ctx.getUniformLocation(shader_program, "shade_amount") as WebGLUniformLocation,
         }
     };
 }
