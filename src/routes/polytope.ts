@@ -451,7 +451,7 @@ export class FlowPolytope
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v).trunc(this.dim));
         
-        if(this.dim == 3)
+        if(this.dim == 3 || this.dim == 2)
         {
             let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
 
@@ -521,7 +521,7 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
     let N = points.length;
     let P = Matrix.from_columns(points);
     
-    const d = 3;
+    const d = points[0].dim();
     const n = d+1;
 
     let Q = append_1_row(P);
