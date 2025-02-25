@@ -295,6 +295,15 @@ export function prebuilt_dag(num: number): FramedDAG
         out.add_edge(3,4);
         return out;
     }
+    else if (num == 5)
+    {
+        let out = new FramedDAG(3);
+        out.add_edge(0,1).unwrap();
+        out.add_edge(0,1).unwrap();
+        out.add_edge(1,2).unwrap();
+        out.add_edge(1,2).unwrap();
+        return out;
+    }
     console.warn("Invalid test_dag number, returning (0).")
     return prebuilt_dag(0);
 }

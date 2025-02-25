@@ -471,6 +471,12 @@ export class FlowPolytope
         let external_simplices: number[][] = [];
         for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
         {
+            if (this.dim == 2)
+            {
+                external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
+                continue;
+            }
+
             let clq = dag_cliques.cliques[clq_idx];
             let no_flip: number[] = [];
             for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)

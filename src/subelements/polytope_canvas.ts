@@ -68,6 +68,7 @@ export class PolytopeCanvas
 
     drag: boolean = false;
 
+    poly_dim: number = 0;
     active: boolean = true;
 
     static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
@@ -149,16 +150,18 @@ export class PolytopeCanvas
 
     set_polytope(poly: FlowPolytope, current_clique: Clique)
     {
-
-        if(poly.dim != 3) {
+        this.poly_dim = poly.dim;
+        if(poly.dim > 3 || poly.dim <= 1) {
             this.deactivate(poly.dim);
             return;
         }
+        let pad_zeroes = 3-poly.dim;
         
         this.vertex_positions = [];
         for(let pos of poly.vertices)
         {
-            this.vertex_positions.push(structuredClone(pos.coordinates));
+            let pad: number[] = new Array(pad_zeroes).fill(0);
+            this.vertex_positions.push(structuredClone(pos.coordinates).concat(pad));
         }
         
         let ex_indices: number[] = [];
@@ -172,11 +175,15 @@ export class PolytopeCanvas
                 ex_indices.push(ex_indices.length);
             }
 
+            let get_ex_vert = (i: number) => {
+                return structuredClone(this.vertex_positions[external_tri[i]]) as Triple;
+            };
+
             //COMPUTE NORMALS
             let normal = get_normal(
-                poly.vertices[external_tri[0]].coordinates as Triple,
-                poly.vertices[external_tri[1]].coordinates as Triple,
-                poly.vertices[external_tri[2]].coordinates as Triple,
+                get_ex_vert(0),
+                get_ex_vert(1),
+                get_ex_vert(2),
                 [0,0,0]
             )
 
@@ -215,12 +222,13 @@ export class PolytopeCanvas
         let sim_sp: number[] = [];
 
         let center: Triple = [0,0,0];
-        for(let j = 0; j < 4; j++)
+        for(let j = 0; j < this.poly_dim+1; j++)
         {
+            
             let vert = this.vertex_positions[current_clique.routes[j]];
             for(let i = 0; i < 3; i++)
             {
-                center[i] += vert[i]/4;
+                center[i] += vert[i]/(this.poly_dim+1);
             }
         }
 
@@ -232,7 +240,7 @@ export class PolytopeCanvas
 
             let verts: Triple[] = [];
 
-            for(let j = 0; j < 4; j++)
+            for(let j = 0; j < this.poly_dim+1; j++)
             {
                 if(j==excluded_idx) continue;
                 let vert = this.vertex_positions[current_clique.routes[j]];
