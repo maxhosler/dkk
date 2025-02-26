@@ -461,7 +461,7 @@ export class FlowPolytope
             //(x-c)^TA(x-c)=1 to the unit sphere.
 
             this.vertices = projected_vertices
-                .map((v) => B.inv().apply_to( v.sub(center) ));
+                .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
         }
         else
         {

@@ -54,7 +54,9 @@ class FaceBuffers
 
 export class PolytopeCanvas
 {
+    readonly root: HTMLDivElement;
     readonly canvas: HTMLCanvasElement;
+    readonly text_overlay: HTMLDivElement;
     readonly draw_options: DrawOptions;
 
     readonly ctx: WebGLRenderingContext;
@@ -70,26 +72,31 @@ export class PolytopeCanvas
     drag: boolean = false;
 
     poly_dim: number = 0;
-    active: boolean = true;
 
-    static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLCanvasElement }
+    static create(draw_options: DrawOptions): { canvas: PolytopeCanvas, element: HTMLDivElement }
     {
-        let draw_zone = document.createElement("canvas")
-        draw_zone.id = "poly-draw-zone";
-        let canvas = new PolytopeCanvas(draw_zone, draw_options);
+        let root = document.createElement("div")
+        let canvas = new PolytopeCanvas(root, draw_options);
         return {
             canvas: canvas,
-            element: draw_zone
+            element: root
         }
     }
 
-    private constructor(canvas: HTMLCanvasElement, draw_options: DrawOptions)
+    private constructor(root: HTMLDivElement, draw_options: DrawOptions)
     {
-        this.canvas = canvas;
+        this.root = root;
+        this.root.id = "poly-root";
         this.draw_options = draw_options;
 
+        this.canvas = document.createElement("canvas")
+        this.root.appendChild(this.canvas);
+
+        this.text_overlay = document.createElement("div");
+        this.text_overlay.id = "poly-canvas-overlay";
+        this.root.appendChild(this.text_overlay);
+
         this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext; //TODO: Handle fail.
-        
         this.external_buffers = new FaceBuffers(
             this.new_float_buffer([]),
             this.new_float_buffer([]),
@@ -115,7 +122,7 @@ export class PolytopeCanvas
         });
 
         addEventListener("mouseup", (ev) => this.drag = false);
-        canvas.addEventListener("mousedown", (ev) => this.drag = true);
+        this.canvas.addEventListener("mousedown", (ev) => this.drag = true);
         addEventListener("mousemove", (ev) => {
             if(this && this.drag)
                 this.drag_rotate([ev.movementX, -ev.movementY]);
@@ -137,8 +144,11 @@ export class PolytopeCanvas
 
     resize_canvas()
 	{
-		let pheight = (this.canvas.parentElement?.clientHeight || 2);
-		let pwidth  = (this.canvas.parentElement?.clientWidth || 2);
+		let pheight = (this.root.parentElement?.clientHeight || 2);
+		let pwidth  = (this.root.parentElement?.clientWidth || 2);
+
+		this.root.style.height = pheight.toString() + "px";
+		this.root.style.width = pwidth.toString() + "px";
 
 		this.canvas.style.height = pheight.toString() + "px";
 		this.canvas.style.width = pwidth.toString() + "px";
@@ -152,10 +162,10 @@ export class PolytopeCanvas
     set_polytope(poly: FlowPolytope, current_clique: Clique)
     {
         this.poly_dim = poly.dim;
-        if(poly.dim > 3 || poly.dim <= 1) {
-            this.deactivate(poly.dim);
-            return;
-        }
+        this.set_message();
+        if(!this.do_render()) {return;}
+
+
         let pad_zeroes = 3-poly.dim;
         
         this.vertex_positions = [];
@@ -215,7 +225,7 @@ export class PolytopeCanvas
 
     set_clique(current_clique: Clique)
     {
-        if (!this.active) { return; }
+        if (!this.do_render()) { return; }
 
         let sim_indices: number[] = [];
         let sim_normals: number[] = [];
@@ -313,6 +323,11 @@ export class PolytopeCanvas
         );
     }
 
+    set_message()
+    {
+        this.text_overlay.innerText = "Polytope dimension: " + this.poly_dim.toString();
+    }
+
     new_float_buffer(arr: number[]): WebGLBuffer
     {
         let buf = this.ctx.createBuffer();
@@ -334,7 +349,7 @@ export class PolytopeCanvas
         this.ctx.clearColor(0,0,0,1);
         this.ctx.clearDepth(1.0);
 
-        if (!this.active) return;
+        if (!this.do_render()) return;
 
         this.ctx.enable(this.ctx.DEPTH_TEST);
         this.ctx.depthFunc(this.ctx.LEQUAL);
@@ -499,27 +514,9 @@ export class PolytopeCanvas
         );
     }
 
-    deactivate(poly_dim: number)
+    do_render(): boolean
     {
-        this.active = false;
-
-        this.external_buffers = new FaceBuffers(
-            this.new_float_buffer([]),
-            this.new_float_buffer([]),
-            this.new_float_buffer([]),
-            this.new_index_buffer([]),
-            0
-        );
-        
-        this.simpl_buffers = new FaceBuffers(
-            this.new_float_buffer([]),
-            this.new_float_buffer([]),
-            this.new_float_buffer([]),
-            this.new_index_buffer([]),
-            0
-        );
-
-
+        return this.poly_dim == 2 || this.poly_dim == 3;
     }
 }
 

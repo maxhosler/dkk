@@ -85,6 +85,16 @@ html, body {
 
 }
 
+#poly-root
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;  
+    
+    background-color: #000000;
+}
+
 #poly-draw-zone
 {
     position: absolute;
@@ -93,6 +103,23 @@ html, body {
     margin: 0;
 
     background-color: #000000;
+}
+
+#poly-canvas-overlay
+{
+    color: white;
+    font-size: medium;
+    z-index: 1;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    
+    padding: 5pt;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
 
 }
 
