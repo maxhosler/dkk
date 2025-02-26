@@ -71,7 +71,7 @@ export class SwapBox
                 return;
             }    
         }
-        console.log("Failed to swap color!")
+        console.warn("Failed to swap color!")
     }
 
     update_color()
