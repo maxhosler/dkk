@@ -38,9 +38,7 @@ class FaceBuffers
         pos_buffer: WebGLBuffer,
         normal_buffer: WebGLBuffer,
         simplex_pos_buffer: WebGLBuffer,
-
         index_buffer: WebGLBuffer,
-
         num_verts: number,
     )
     {
@@ -68,6 +66,7 @@ export class PolytopeCanvas
     simpl_buffers: FaceBuffers;
 
     pos_transform: Mat4 = Mat4.id();
+    current_clique: Clique | null = null;
 
     drag: boolean = false;
 
@@ -225,12 +224,14 @@ export class PolytopeCanvas
 
     set_clique(current_clique: Clique)
     {
+        this.current_clique = structuredClone(current_clique);
+
         if (!this.do_render()) { return; }
 
         let sim_indices: number[] = [];
         let sim_normals: number[] = [];
         let sim_positions: number[] = [];
-        let sim_sp: number[] = [];
+        let sim_simpl_pos: number[] = [];
 
         let center: Triple = [0,0,0];
         for(let j = 0; j < this.poly_dim+1; j++)
@@ -263,7 +264,7 @@ export class PolytopeCanvas
     
                     const EPS_PLUS_ONE = 1.001;
                     sim_positions = [...sim_positions, EPS_PLUS_ONE*vert[0], EPS_PLUS_ONE*vert[1], EPS_PLUS_ONE*vert[2]];
-                    sim_sp = [...sim_sp, ...sp];
+                    sim_simpl_pos = [...sim_simpl_pos, ...sp];
                 }
     
                 let normal = get_normal(verts[0], verts[1], verts[2], center);
@@ -299,7 +300,7 @@ export class PolytopeCanvas
                 let verts: Triple[] = base_verts.map(transform);
 
                 sim_positions = [...sim_positions, ...verts[0], ...verts[1], ...verts[2]];
-                sim_sp = [...sim_sp, 1,0,0,0,0,1,0,0,0,0,1,0];
+                sim_simpl_pos = [...sim_simpl_pos, 1,0,0,0,0,1,0,0,0,0,1,0];
                 
                 let normal = get_normal(verts[0], verts[1], verts[2], center);
                 for(let i = 0; i < 3; i++)
@@ -315,7 +316,7 @@ export class PolytopeCanvas
         this.simpl_buffers = new FaceBuffers(
             this.new_float_buffer(sim_positions),
             this.new_float_buffer(sim_normals),
-            this.new_float_buffer(sim_sp),
+            this.new_float_buffer(sim_simpl_pos),
 
             this.new_index_buffer(sim_indices),
 
@@ -491,19 +492,30 @@ export class PolytopeCanvas
     bind_simplex_colors()
     {
         let mat = [
-            0,0,0,0,
-            0,0,0,0,
-            0,0,0,0,
-            1,1,1,1
+            0,0,0,1,
+            0,0,0,1,
+            0,0,0,1,
+            0,0,0,1
         ];
+
+        let colors = [0,1,2,3];
+        if (this.current_clique)
+        {
+            colors = this.current_clique.routes;
+        }
+        else
+        {
+            console.warn("No current clique; coloring will be arbitrary.");
+        }
 
         for(let i = 0; i < 4; i++)
         {
-            let col = this.draw_options.get_route_color(i);
+            let c_idx = colors[i];
+            let col = this.draw_options.get_route_color(c_idx);
             let col_arr = css_str_to_rgb(col);
             for(let j = 0; j < 3; j++)
             {
-                mat[i+4*j] = col_arr[j]/255;
+                mat[4*i+j] = col_arr[j]/255;
             }
         }
 
