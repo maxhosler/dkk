@@ -182,6 +182,35 @@ export class FramedDAG {
         return out;
     }
 
+    sinks(): Array<number>
+    {
+        let out: number[] = [];
+
+        for(let i = 0; i < this._num_verts; i++)
+        {
+            if(this.out_edges[i].length == 0)
+                out.push( i );
+        }
+
+        return out;
+    }
+
+    source(): Option<number>
+    {
+        let ls = this.sources();
+        if(ls.length == 1)
+            return Option.some(ls[0]);
+        return Option.none();
+    }
+
+    sink(): Option<number>
+    {
+        let ls = this.sinks();
+        if(ls.length == 1)
+            return Option.some(ls[0]);
+        return Option.none();
+    }
+
     clone(): FramedDAG
     {
         let out = new FramedDAG(this._num_verts);
@@ -242,6 +271,53 @@ export function prebuilt_dag(num: number): FramedDAG
         out.add_edge(1,3);
         return out;
     }
+    else if (num == 3)
+    {
+        let out = new FramedDAG(4);
+        out.add_edge(0,2);
+        out.add_edge(0,1);
+        out.add_edge(0,1);
+        out.add_edge(1,2);
+        out.add_edge(2,3);
+        out.add_edge(1,3);
+        return out;
+    }
+    else if (num == 4)
+    {
+        let out = new FramedDAG(5);
+        out.add_edge(0,1);
+        out.add_edge(0,2);
+        out.add_edge(1,3);
+        out.add_edge(1,3);
+        out.add_edge(2,3);
+        out.add_edge(2,3);
+        out.add_edge(3,4);
+        out.add_edge(3,4);
+        return out;
+    }
+    else if (num == 5)
+    {
+        let out = new FramedDAG(3);
+        out.add_edge(0,1).unwrap();
+        out.add_edge(0,1).unwrap();
+        out.add_edge(1,2).unwrap();
+        out.add_edge(1,2).unwrap();
+        return out;
+    }
     console.warn("Invalid test_dag number, returning (0).")
     return prebuilt_dag(0);
+}
+
+export function caracol(num_verts: number): FramedDAG
+{
+    let dag = new FramedDAG(num_verts);
+    
+    for(let i = num_verts-2; i > 0; i--)
+        dag.add_edge(0,i);
+    for(let i = 0; i < num_verts-1; i++)
+        dag.add_edge(i,i+1);
+    for(let i = num_verts-2; i > 0; i--)
+        dag.add_edge(i, num_verts-1);
+
+    return dag;
 }

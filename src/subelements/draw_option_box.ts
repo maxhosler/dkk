@@ -3,10 +3,10 @@ import { DrawOptions } from "./dag_canvas";
 const SCALE_LOWER: number = 80;
 const SCALE_UPPER: number = 300;
 
+
 export class DrawOptionBox
 {
     draw_options: DrawOptions;
-    on_change_listeners: (() => void)[] = [];
 
     scale_slider: HTMLInputElement;
 
@@ -42,14 +42,10 @@ export class DrawOptionBox
         scale_slider.className = "slider";
         scale_slider.min = SCALE_LOWER.toString();
         scale_slider.max = SCALE_UPPER.toString();
-        scale_slider.value = draw_options.scale.toString();
+        scale_slider.value = draw_options.scale().toString();
         scale_slider.oninput = (ev) => {
             let as_num = Number(scale_slider.value);
-            if (as_num)
-            {
-                draw_options.scale = as_num;
-                this.fire_on_change();
-            }
+            draw_options.set_scale(as_num);
         };
         return scale_slider;
     }
@@ -81,14 +77,4 @@ export class DrawOptionBox
         return table;
     }
 
-    fire_on_change()
-    {
-        for(let f of this.on_change_listeners)
-            f();
-    }
-
-    add_on_change(f: () => void)
-    {
-        this.on_change_listeners.push(f);
-    }
 }

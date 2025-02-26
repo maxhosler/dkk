@@ -2,6 +2,11 @@ html {
     font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+:root {
+    --default-border: 1pt solid #b0b0b0;
+}
+  
+
 body
 {
     
@@ -9,6 +14,7 @@ body
     margin: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 html, body {
@@ -16,9 +22,38 @@ html, body {
     margin: 0;
 }
 
+#top-bar
+{
+    height: 20pt;
+    width: 100%;
+
+    background-color: #f0f0f0;
+    border-bottom: var(--default-border);
+}
+
+.top-bar-button
+{
+    height: 100%;
+    max-width: fit-content;
+    border-right: var(--default-border);
+    padding-top: 2pt;
+    padding-bottom: 2pt;
+    padding-left: 10pt;
+    padding-right: 10pt;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+
+}
+.top-bar-button:hover
+{
+    background-color: #00000022;
+}
+
 #complete
 {
-    background-color: rgb(216, 216, 216);
+    background-color: #d8d8d8;
     flex-grow: 1;
 
     display: flex;
@@ -34,24 +69,57 @@ html, body {
 
 #right_area
 {
-    flex-grow: 1;
-    padding: 12pt;
+    flex: 100%;
+    padding: 0pt;
     position: relative;
 }
 
 #draw_zone
 {
-    height: 95%;
-    width: 95%;
-    min-height: 15cm;
-
-    margin: 0;
     position: absolute;
-    top: 50%;
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
+    top: 0;
+    left: 0;
+    margin: 0;
 
     background-color: #b0b0b0;
+
+}
+
+#poly-root
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;  
+    
+    background-color: #000000;
+}
+
+#poly-draw-zone
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+
+    background-color: #000000;
+}
+
+#poly-canvas-overlay
+{
+    color: white;
+    font-size: medium;
+    z-index: 1;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    
+    padding: 5pt;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
 
 }
 
@@ -60,7 +128,8 @@ html, body {
     border-style: solid;
     border-color: #b0b0b0;
     border-width: 1pt;
-    padding: 10pt;
+    padding: 8pt;
+    margin-bottom: 10pt;
 
     min-height: 12pt;
 }
@@ -76,5 +145,147 @@ html, body {
     display: block;
     margin-left: auto;
     margin-right: auto;
+    width: 100%;
+}
+
+.swap_button
+{
+    width: 100%;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black, 1px 1px 2px black, 1px 1px 2px black;
+    text-align: center;
+    padding: 5px 0;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+
+.fullscreen
+{
+    position:fixed;
+    padding:0;
+    margin:0;
+
+    top:0;
+    left:0;
+
+    width: 100%;
+    height: 100%;
+}
+
+#shadow
+{
+    background-color:rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup-window
+{
+    border: var(--default-border);
+    background-color: #d8d8d8;
+    width: fit-content;
+    min-width: 2in;
+    
+    height: fit-content;
+    min-height: 2in;
+}
+
+.popup-top-bar
+{
+    width: 100%;
+    height: 23pt;
+    border-bottom: var(--default-border);
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+}
+
+.popup-top-bar h3
+{
+    margin: 0;
+    margin-top: 2pt;
+    margin-left: 4pt;
+}
+
+.popup-xout
+{
+    width: 10pt;
+    border-left: var(--default-border);
+    justify-content: space-between;
+
+    padding-top: 2pt;
+    padding-bottom: 2pt;
+    padding-left: 5pt;
+    padding-right: 5pt;
+
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+.popup-xout:hover
+{
+    background-color: #00000022;
+    
+}
+
+.popup-body
+{
+    width: 100%;
+    height: fit-content;
+    padding: 10pt;
+}
+
+#clq-root
+{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: stretch;
+
+    margin: 0;
+    padding: 0;
+}
+
+#clq-root > div
+{
+    position: relative;
+    flex: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#clq-root > div:nth-child(1)
+{
+    display: flex;
+    flex-direction: column;
+}
+
+#clq-root > div:nth-child(1) > div
+{
+    flex: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+    position: relative;
+}
+
+#clq-root canvas
+{
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+
+    border: 1px solid #686868;
+    flex: 100%;
     width: 100%;
 }

@@ -1,13 +1,13 @@
-import { Edge, FramedDAG, prebuilt_dag } from "./dag";
+import { caracol, Edge, FramedDAG, prebuilt_dag } from "./dag";
 import { Option } from "./result";
-import { Bezier, Vector } from "./util";
+import { Bezier, clamp, Vector } from "./util";
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
 	end_list_pos:   [pos: number, out_of: number],
 
-	start_vec_override: Option<Vector>,
-	end_vec_override:   Option<Vector>,
+	start_ang_override: Option<number>,
+	end_ang_override:   Option<number>,
 }
 
 export type VertData = {
@@ -37,8 +37,8 @@ export class FramedDAGEmbedding
 			() => ({ 
 				start_list_pos: [1,1],
 				end_list_pos: [1,1],
-				start_vec_override: Option.none(),
-				end_vec_override: Option.none(),
+				start_ang_override: Option.none(),
+				end_ang_override: Option.none(),
 			})
 		);
 
@@ -92,7 +92,7 @@ export class FramedDAGEmbedding
 		{
 			let index = depths_arr[j][1];
 			let vd = this.vert_data[index];
-			vd.position = new Vector(j,0);
+			vd.position = new Vector(j - (depths_arr.length-1)/2,0);
 		}
 	}
 
@@ -119,12 +119,17 @@ export class FramedDAGEmbedding
 			let tan_len = delta.norm() / 2;
 
 			let spread_percents = spread_percent(edge_data);
-			let start_tan = edge_data.start_vec_override.unwrap_or(
-				delta.rot(spread_percents[0] * start_data.spread)
-			).normalized().scale(tan_len);
-			let end_tan = edge_data.end_vec_override.unwrap_or(
-				delta.rot(-spread_percents[1] * end_data.spread)
-			).normalized().scale(tan_len);
+			let start_ang = edge_data.start_ang_override.unwrap_or(
+				spread_percents[0] * start_data.spread
+			)
+			let end_ang = edge_data.end_ang_override.unwrap_or(
+				-spread_percents[1] * end_data.spread
+			)
+
+			let start_tan = delta.rot(start_ang)
+				.normalized().scale(tan_len);
+			let end_tan = delta.rot(end_ang)
+				.normalized().scale(tan_len);
 
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
@@ -188,16 +193,47 @@ export function prebuilt_dag_embedding(num: number): FramedDAGEmbedding
 	if(num == 2)
 	{
 		for(let i of [2,3,4]){
-			emb.edge_data[i].start_vec_override = Option.some(Vector.right());
-			emb.edge_data[i].end_vec_override = Option.some(Vector.right());
+			emb.edge_data[i].start_ang_override = Option.some(0);
+			emb.edge_data[i].end_ang_override = Option.some(0);
 		}
-		emb.edge_data[1].start_vec_override = Option.some(
-			Vector.right().rot(-Math.PI/8)
-		);
-		emb.edge_data[5].end_vec_override = Option.some(
-			Vector.right().rot(-Math.PI/8)
-		)
+		emb.edge_data[1].start_ang_override = Option.some(-Math.PI/8);
+		emb.edge_data[5].end_ang_override = Option.some(-Math.PI/8);
+	}
+	else if (num == 6)
+	{
+		emb = caracol_emb(5);
 	}
 
 	return emb;
+}
+
+export function caracol_emb(num_verts: number): FramedDAGEmbedding
+{
+    let dag = caracol(num_verts);
+    let emb = new FramedDAGEmbedding(dag);
+
+	let excess = clamp(num_verts-4, 0, 4);
+	let ang_max = Math.PI/4 + excess * Math.PI/16;
+
+	for(let i = 0; i < num_verts-2; i++)
+	{
+		let ang = -ang_max * ( 1 - i/(num_verts-2) );
+		emb.edge_data[i].start_ang_override = Option.some(ang);
+	}
+
+	//spine: [num_verts-2..2*num_verts-3]
+	for(let i = num_verts-2; i < 2 * num_verts-3; i++)
+	{
+		emb.edge_data[i].start_ang_override = Option.some(0);
+		emb.edge_data[i].end_ang_override = Option.some(0);
+	}
+
+	for(let i = 0; i < num_verts-2; i++)
+	{
+		let j = i + 2 * num_verts-3;
+		let ang = -ang_max * ( i/(num_verts-2) );
+		emb.edge_data[j].end_ang_override = Option.some(ang);
+	}
+
+    return emb;
 }

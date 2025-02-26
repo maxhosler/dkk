@@ -92,6 +92,22 @@ export class Vector
 	{
 		return new Vector(1,0);
 	}
+
+	min(other: Vector): Vector
+	{
+		return new Vector(
+			Math.min(this.x, other.x),
+			Math.min(this.y, other.y)
+		)
+	}
+
+	max(other: Vector): Vector
+	{
+		return new Vector(
+			Math.max(this.x, other.x),
+			Math.max(this.y, other.y)
+		)
+	}
 }
 
 export class Bezier 
@@ -173,5 +189,47 @@ export class Bezier
 	}
 }
 
-const clamp: (num: number, min: number, max: number) => number
+export class BoundingBox
+{
+	empty: boolean = true;
+	top_corner: Vector = Vector.zero();
+	bot_corner: Vector = Vector.zero();
+
+	constructor(vecs: Vector[])
+	{
+		for(let v of vecs)
+			this.add_box(v);
+	}
+
+	add_box(v: Vector)
+	{
+		if(this.empty)
+		{
+			this.empty = false;
+			this.top_corner = v;
+			this.bot_corner = v;
+		}
+		else
+		{
+			this.top_corner = this.top_corner.min(v);
+			this.bot_corner = this.bot_corner.max(v);
+		}
+	}
+
+	extent(): Vector
+	{
+		let x = Math.max(
+			Math.abs(this.top_corner.x),
+			Math.abs(this.bot_corner.x)
+		);
+		let y = Math.max(
+			Math.abs(this.top_corner.y),
+			Math.abs(this.bot_corner.y)
+		);
+
+		return new Vector(x,y);
+	}
+}
+
+export const clamp: (num: number, min: number, max: number) => number
 	= (num: number, min: number, max: number) => Math.min(Math.max(num, min), max)
