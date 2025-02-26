@@ -7,7 +7,9 @@ type PresetOption = {name: string, idx: number};
 const PRESETS: PresetOption[] = [
     {name: "cube", idx: 0},
     {name: "cube-twist", idx: 1},
+    {name: "square", idx: 5},
     {name: "caracol-4", idx: 2},
+    {name: "caracol-5", idx: 6},
     {name: "test-c-4", idx: 3},
     {name: "psuedopants", idx: 4}
 ];

@@ -451,7 +451,7 @@ export class FlowPolytope
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v).trunc(this.dim));
         
-        if(this.dim == 3)
+        if(this.dim == 3 || this.dim == 2)
         {
             let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
 
@@ -461,7 +461,7 @@ export class FlowPolytope
             //(x-c)^TA(x-c)=1 to the unit sphere.
 
             this.vertices = projected_vertices
-                .map((v) => B.inv().apply_to( v.sub(center) ));
+                .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
         }
         else
         {
@@ -471,6 +471,12 @@ export class FlowPolytope
         let external_simplices: number[][] = [];
         for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
         {
+            if (this.dim == 2)
+            {
+                external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
+                continue;
+            }
+
             let clq = dag_cliques.cliques[clq_idx];
             let no_flip: number[] = [];
             for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
@@ -515,7 +521,7 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
     let N = points.length;
     let P = Matrix.from_columns(points);
     
-    const d = 3;
+    const d = points[0].dim();
     const n = d+1;
 
     let Q = append_1_row(P);

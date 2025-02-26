@@ -199,6 +199,10 @@ export function prebuilt_dag_embedding(num: number): FramedDAGEmbedding
 		emb.edge_data[1].start_ang_override = Option.some(-Math.PI/8);
 		emb.edge_data[5].end_ang_override = Option.some(-Math.PI/8);
 	}
+	else if (num == 6)
+	{
+		emb = caracol_emb(5);
+	}
 
 	return emb;
 }
