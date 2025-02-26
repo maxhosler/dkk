@@ -1,3 +1,4 @@
+import { COLORS } from "../colors";
 import { get_cookie, set_cookie } from "../cookie";
 import { BakedDAGEmbedding } from "../dag_layout";
 import { Bezier, Vector } from "../util";
@@ -45,6 +46,11 @@ export class DrawOptions
 	set_scale(scale: number)
 	{
 		this.f_scale = scale;
+		this.on_change();
+	}
+	set_builtin_color_scheme(id: number)
+	{
+		this.f_route_colors = COLORS[ Math.min(id, COLORS.length-1) ];
 		this.on_change();
 	}
 

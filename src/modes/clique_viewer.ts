@@ -63,12 +63,15 @@ export class CliqueViewer
     {
         this.dag = dag;
         this.draw_options = draw_options;
+        this.cliques = new DAGCliques(dag.base_dag);
+        this.polytope = new FlowPolytope(this.cliques);
+        this.draw_options.set_builtin_color_scheme(
+            this.cliques.routes.length
+        );
         draw_options.add_change_listener(() => {
             if(this) this.draw_clique();
             if(this.swap_box) this.swap_box.update_color();
-        })
-        this.cliques = new DAGCliques(dag.base_dag);
-        this.polytope = new FlowPolytope(this.cliques);
+        });
 
         //sidebar
         sidebar_head.innerText = "Clique Viewer";
@@ -128,9 +131,8 @@ export class CliqueViewer
             this.current_clique
         ];
         for(let i = 0; i < cc.routes.length; i++)
-        {
-            this.swap_box.set_color(i, cc.routes[i])
-        }
+        { this.swap_box.set_color(i, cc.routes[i]) }
+
     }
 
 

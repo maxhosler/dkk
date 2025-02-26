@@ -672,7 +672,7 @@ function css_str_to_rgb(css_str: string): [number,number,number]
     }
     else if (start = "r")
     {
-        let comps = start.match(/\d+/g) as RegExpMatchArray;
+        let comps = css_str.match(/\d+/g) as RegExpMatchArray;
         return [
             Number(comps[0]),
             Number(comps[1]),
