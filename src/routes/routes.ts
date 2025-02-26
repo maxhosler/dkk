@@ -430,7 +430,7 @@ export class DAGCliques
 		return this.shared_subroutes_arr[route_idx_1][route_idx_2].subroutes
 	}
 
-	routes_at_by_clique_idx(edge_num: number, clique_num: number): number[]
+	routes_at(edge_num: number, clique_num: number): number[]
 	{
 		let out: number[] = [];
 
@@ -440,11 +440,8 @@ export class DAGCliques
 			let r = clique.routes[i];
 			let route = this.routes[r];
 			if(route.edges.includes(edge_num))
-				out.push(i);
+				out.push(r);
 		}
-
-		let edge_ordering = Clique.indexed_local_edge_order(edge_num, clique.routes, this);
-		out.sort(edge_ordering);
 
 		return out;
 	}

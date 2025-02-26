@@ -338,3 +338,8 @@ export class DAGCanvasContext
 		this.ctx.stroke()
 	}
 }
+
+function contrasting_colors(num: number): string[]
+{
+	throw new Error("Not yet implemented."); //TODO:
+}

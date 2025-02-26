@@ -65,7 +65,7 @@ export class CliqueViewer
         this.draw_options = draw_options;
         draw_options.add_change_listener(() => {
             if(this) this.draw_clique();
-            if(this.swap_box) this.swap_box.recolor();
+            if(this.swap_box) this.swap_box.update_color();
         })
         this.cliques = new DAGCliques(dag.base_dag);
         this.polytope = new FlowPolytope(this.cliques);
@@ -123,6 +123,14 @@ export class CliqueViewer
             if(this)
             this.draw();
         });
+
+        let cc = this.cliques.cliques[
+            this.current_clique
+        ];
+        for(let i = 0; i < cc.routes.length; i++)
+        {
+            this.swap_box.set_color(i, cc.routes[i])
+        }
     }
 
 
@@ -133,16 +141,44 @@ export class CliqueViewer
 
     route_swap(idx: number)
     {
-        this.current_clique = 
-            this.cliques.route_swap(
-                this.current_clique,
-                idx
-            );
-        this.poly_canvas.set_clique(
-            this.cliques.cliques[
-                this.current_clique
-            ]
+        let old_clq = this.current_clique;
+        let new_clq = this.cliques.route_swap(
+            this.current_clique,
+            idx
         );
+
+        this.current_clique = new_clq;
+
+        let oc = this.cliques.cliques[old_clq];
+        let cc = this.cliques.cliques[new_clq];
+        this.poly_canvas.set_clique(cc);
+
+        if(old_clq != new_clq) {
+            let old_route = -1;
+            for(let r of oc.routes)
+            {
+                if(!cc.routes.includes(r))
+                {
+                    old_route = r;
+                    break;
+                }
+            }
+
+            let new_route = -1;
+            for(let r of cc.routes)
+            {
+                if(!oc.routes.includes(r))
+                {
+                    new_route = r;
+                    break;
+                }
+            }
+
+            if(old_route !== -1 && new_route !== -1)
+                this.swap_box.swap_color(old_route, new_route);
+            else
+                console.warn("Old route and new clique do not differ as expected.")
+        }
         this.draw();
     }
 
@@ -156,6 +192,7 @@ export class CliqueViewer
         this.draw_clique();
         this.draw_hasse();
         this.draw_polytope();
+        this.swap_box.update_color();
     }
 
     draw_clique()
@@ -176,7 +213,7 @@ export class CliqueViewer
             );
 
             //routes
-            let routes = this.cliques.routes_at_by_clique_idx(edge_idx, this.current_clique);
+            let routes = this.cliques.routes_at(edge_idx, this.current_clique);
             if(routes.length == 0)
                 continue;
             let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
@@ -254,7 +291,6 @@ export class CliqueViewer
     {
         this.poly_canvas.draw();
     }
-
 }
 
 function build_right_area_zones(): {

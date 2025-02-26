@@ -5,6 +5,7 @@ export class SwapBox
     draw_options: DrawOptions;
     on_click: (idx: number) => void;
     boxes: HTMLDivElement[];
+    color_idxs: number[];
 
     static create(
         on_click: (idx: number) => void,
@@ -32,6 +33,7 @@ export class SwapBox
         this.on_click = on_click;
 
         let boxes: HTMLDivElement[] = [];
+        let color_idxs: number[] = []
         for(let i = 0; i < clique_size; i++)
         {
             let box = document.createElement("div");
@@ -40,19 +42,44 @@ export class SwapBox
                 this.on_click(idx);
             };
             box.className = "swap_button";
-            box.style.backgroundColor = this.draw_options.get_route_color(i);
             box.innerText = "Swap";
             
             main_box.appendChild(box);
 
             boxes.push(box);
+
+            color_idxs.push(0);
         }
         this.boxes = boxes;
+        this.color_idxs = color_idxs;
     }
 
-    recolor()
+    set_color(box_idx: number, color_idx: number)
+    {   
+        this.color_idxs[box_idx] = color_idx;
+        this.update_color();
+    }
+
+    swap_color(old_color_idx: number, new_color_idx: number)
+    {
+        for(let i = 0; i < this.color_idxs.length; i++)
+        {
+            if (this.color_idxs[i] == old_color_idx)
+            {
+                this.color_idxs[i] = new_color_idx;
+                this.update_color();
+                return;
+            }    
+        }
+        console.log("Failed to swap color!")
+    }
+
+    update_color()
     {
         for(let i = 0; i < this.boxes.length; i++)
-            this.boxes[i].style.backgroundColor = this.draw_options.get_route_color(i);
+        {
+            this.boxes[i].style.backgroundColor =
+                this.draw_options.get_route_color(this.color_idxs[i]);
+        }
     }
 }
