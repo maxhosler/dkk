@@ -139,6 +139,42 @@ class OpenPopup extends Popup
     }
 }
 
+class SettingsPopup extends Popup
+{
+    parent: DKKProgram;
+    constructor(base: HTMLElement, parent: DKKProgram)
+    {
+        super(base, "Settings", () => parent.popup_open = false);
+        this.parent = parent;
+
+        this.popup_body.innerHTML = `
+            <table>
+                <tr>
+                    <td><label for="settings-simplrend">Simplex Rendering Mode</label></td>
+                    <td>
+                        <select id="settings-simplrend">
+                            <option value="solid">solid</option>
+                            <option value="dots">dots</option>
+                            <option value="blank">blank</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        `;
+
+        let simplrend_dropdown: HTMLSelectElement = document.getElementById("settings-simplrend") as HTMLSelectElement;
+        simplrend_dropdown.value = parent.draw_options.simplex_render_mode();
+        simplrend_dropdown.addEventListener("change", (ev) => {
+            let val = simplrend_dropdown.value;
+            parent.draw_options.set_simplex_render_mode(val);
+        });
+
+
+        
+        
+    }
+}
+
 class DKKProgram
 {
     body: HTMLBodyElement;
@@ -156,6 +192,11 @@ class DKKProgram
 		open_button.onclick = (ev) => {
             this.open_button_click();
 		};
+
+        let settings_button: HTMLDivElement = document.getElementById("settings-button") as HTMLDivElement;
+		settings_button.onclick = (ev) => {
+            this.settings_button_click();
+		};
 	}
 
     open_button_click()
@@ -164,6 +205,17 @@ class DKKProgram
 
         this.popup_open = true;
         let popup = new OpenPopup(
+            this.body,
+            this
+        );
+    }
+
+    settings_button_click()
+    {
+        if(this.popup_open) { return; }
+
+        this.popup_open = true;
+        let popup = new SettingsPopup(
             this.body,
             this
         );

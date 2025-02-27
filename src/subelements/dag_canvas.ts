@@ -55,10 +55,17 @@ export class DrawOptions
 		this.f_route_colors = get_colors(id);
 		this.on_change();
 	}
-	set_simplex_render_mode(mode: SimplexRenderMode)
+	set_simplex_render_mode(mode: string)
 	{
-		this.f_simplex_render_mode = mode;
-		this.on_change();
+		if(mode == "solid" || mode == "dots" || mode == "blank")
+		{
+			this.f_simplex_render_mode = mode;
+			this.on_change();
+		}
+		else
+		{
+			console.warn("Tried to change to invalid simplex render mode!");
+		}
 	}
 
 	save_to_cookies()

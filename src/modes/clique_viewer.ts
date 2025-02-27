@@ -69,7 +69,7 @@ export class CliqueViewer
             this.cliques.routes.length
         );
         draw_options.add_change_listener(() => {
-            if(this) this.draw_clique();
+            if(this) this.draw();
             if(this.swap_box) this.swap_box.update_color();
         });
 
