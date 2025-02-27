@@ -190,6 +190,24 @@ export class DrawOptions
 		if(typeof json_ob.f_simplex_render_mode == "string")
 			this.f_simplex_render_mode = json_ob.f_simplex_render_mode;
 	}
+
+	reset()
+	{
+		//TODO: Think about this. What do I want to reset?
+
+		this.f_scale = 200;
+		this.f_node_radius = 12;
+		this.f_stroke_weight = 6;
+		this.f_stroke_halo = 6;
+		this.f_route_weight = 8;
+		this.f_background_color = "#b0b0b0";
+		this.f_selection_color = "#2160c487";
+		this.f_edge_color = "#222222";
+		this.f_node_color = "#000000";
+		this.f_simplex_render_mode = "solid";
+
+		this.on_change();
+	}
 }
 
 export class DAGCanvas

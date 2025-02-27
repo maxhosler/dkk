@@ -142,6 +142,10 @@ class OpenPopup extends Popup
 class SettingsPopup extends Popup
 {
     parent: DKKProgram;
+
+    simplrend_dropdown: HTMLSelectElement;
+    reset_button: HTMLButtonElement;
+
     constructor(base: HTMLElement, parent: DKKProgram)
     {
         super(base, "Settings", () => parent.popup_open = false);
@@ -160,18 +164,31 @@ class SettingsPopup extends Popup
                     </td>
                 </tr>
             </table>
+            <button id="settings-reset-button">Reset</button>
         `;
 
-        let simplrend_dropdown: HTMLSelectElement = document.getElementById("settings-simplrend") as HTMLSelectElement;
-        simplrend_dropdown.value = parent.draw_options.simplex_render_mode();
-        simplrend_dropdown.addEventListener("change", (ev) => {
-            let val = simplrend_dropdown.value;
-            parent.draw_options.set_simplex_render_mode(val);
+        this.simplrend_dropdown = this.popup_body.querySelector("#settings-simplrend") as HTMLSelectElement;
+        this.simplrend_dropdown.addEventListener("change", (ev) => {
+            let val = this.simplrend_dropdown.value;
+            this.parent.draw_options.set_simplex_render_mode(val);
         });
 
+        this.reset_button = this.popup_body.querySelector("#settings-reset-button") as HTMLButtonElement;
+        this.reset_button.onclick = (ev) => this.reset_settings();
 
-        
-        
+        this.sync_with_settings();
+    }
+
+    reset_settings()
+    {
+        this.parent.draw_options.reset();
+        this.sync_with_settings();
+    }
+
+    sync_with_settings()
+    {
+        this.simplrend_dropdown.value = 
+            this.parent.draw_options.simplex_render_mode();
     }
 }
 
