@@ -498,26 +498,39 @@ export class PolytopeCanvas
             0,0,0,1
         ];
 
-        let colors = [0,1,2,3];
-        if (this.current_clique)
+        if(this.draw_options.simplex_render_mode() == "solid")
         {
-            colors = this.current_clique.routes;
+            let colors = [0,1,2,3];
+            if (this.current_clique)
+            {
+                colors = this.current_clique.routes;
+            }
+            else
+            {
+                console.warn("No current clique; coloring will be arbitrary.");
+            }
+
+            for(let i = 0; i < 4; i++)
+            {
+                let c_idx = colors[i];
+                let col = this.draw_options.get_route_color(c_idx);
+                let col_arr = css_str_to_rgb(col);
+                for(let j = 0; j < 3; j++)
+                {
+                    mat[4*i+j] = col_arr[j]/255;
+                }
+            }
         }
         else
         {
-            console.warn("No current clique; coloring will be arbitrary.");
+            mat = [
+                0.792, 0.913, 0.960, 1,
+                0.792, 0.913, 0.960, 1,
+                0.792, 0.913, 0.960, 1,
+                0.792, 0.913, 0.960, 1
+            ];
         }
-
-        for(let i = 0; i < 4; i++)
-        {
-            let c_idx = colors[i];
-            let col = this.draw_options.get_route_color(c_idx);
-            let col_arr = css_str_to_rgb(col);
-            for(let j = 0; j < 3; j++)
-            {
-                mat[4*i+j] = col_arr[j]/255;
-            }
-        }
+        
 
         this.ctx.uniformMatrix4fv(
             this.program.uniforms.simplex_colors,

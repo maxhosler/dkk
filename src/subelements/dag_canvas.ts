@@ -14,6 +14,7 @@ const ROUTE_RAINBOW: string[] = [
 
 const DRAW_OPTIONS_COOKIE_NAME: string = "draw-options-cookie"
 
+type SimplexRenderMode = "solid" | "dots" | "blank";
 export class DrawOptions
 {
 	private f_scale: number = 200;
@@ -26,6 +27,7 @@ export class DrawOptions
 	private f_selection_color: string = "#2160c487";
 	private f_edge_color: string = "#222222";
 	private f_node_color: string = "#000000";
+	private f_simplex_render_mode: SimplexRenderMode = "solid";
 
 	private change_listeners: (()=>void)[] = [];
 
@@ -33,7 +35,6 @@ export class DrawOptions
 	{
 		this.change_listeners.push(listener);
 	}
-
 	fire_change_listeners()
 	{
 		for(let f of this.change_listeners)
@@ -43,6 +44,7 @@ export class DrawOptions
 	{
 		this.change_listeners = [];
 	}
+
 	set_scale(scale: number)
 	{
 		this.f_scale = scale;
@@ -51,6 +53,11 @@ export class DrawOptions
 	set_builtin_color_scheme(id: number)
 	{
 		this.f_route_colors = get_colors(id);
+		this.on_change();
+	}
+	set_simplex_render_mode(mode: SimplexRenderMode)
+	{
+		this.f_simplex_render_mode = mode;
 		this.on_change();
 	}
 
@@ -114,9 +121,14 @@ export class DrawOptions
 	{
 		return this.f_node_color;
 	}
-
-	constructor()
+	simplex_render_mode(): SimplexRenderMode
 	{
+		return this.f_simplex_render_mode;
+	}
+
+	constructor(load_from_cookies: boolean)
+	{
+		if(!load_from_cookies) return;
 		let cookie_str = get_cookie(DRAW_OPTIONS_COOKIE_NAME);
 		if(!cookie_str) return;
 
@@ -167,6 +179,9 @@ export class DrawOptions
 
 		if(typeof json_ob.f_node_color == "string")
 			this.f_node_color = json_ob.f_node_color;
+
+		if(typeof json_ob.f_simplex_render_mode == "string")
+			this.f_simplex_render_mode = json_ob.f_simplex_render_mode;
 	}
 }
 
@@ -343,9 +358,4 @@ export class DAGCanvasContext
 		this.ctx.lineWidth = weight;
 		this.ctx.stroke()
 	}
-}
-
-function contrasting_colors(num: number): string[]
-{
-	throw new Error("Not yet implemented."); //TODO:
 }

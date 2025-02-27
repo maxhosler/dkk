@@ -142,7 +142,7 @@ class OpenPopup extends Popup
 class DKKProgram
 {
     body: HTMLBodyElement;
-	draw_options = new DrawOptions();
+	draw_options = new DrawOptions(true);
 	mode: CliqueViewer | EmbeddingEditor = CliqueViewer.destructive_new(
 		prebuilt_dag_embedding(0),
 		this.draw_options
@@ -176,4 +176,4 @@ class DKKProgram
 	}
 }
 
-let dkk = new DKKProgram();
+var dkk = new DKKProgram();
