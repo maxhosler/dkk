@@ -144,7 +144,7 @@ export class CliqueViewer
     route_swap(idx: number)
     {
         let old_clq = this.current_clique;
-        let new_clq = this.cliques.route_swap(
+        let new_clq = this.cliques.route_swap_by_route_idx(
             this.current_clique,
             idx
         );

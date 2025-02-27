@@ -446,8 +446,22 @@ export class DAGCliques
 		return out;
 	}
 
-	route_swap(clique_idx: number, route_idx: number): number
+	route_swap_by_route_idx(clique_idx: number, route_idx: number): number
 	{
-		return this.route_swaps[clique_idx][route_idx];
+		let clq = this.cliques[clique_idx];
+		for(let i = 0; i < clq.routes.length; i++)
+		{
+			if (clq.routes[i] == route_idx)
+			{
+				return this.route_swaps[clique_idx][i];
+			}
+		}
+		console.warn("Just tried to swap route not present in given clique.");
+		return clique_idx;
+	}
+
+	route_swap_by_idx_in_clq(clique_idx: number, idx_in_clique: number): number
+	{
+		return this.route_swaps[clique_idx][idx_in_clique];
 	}
 }
