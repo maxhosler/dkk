@@ -1,4 +1,9 @@
-export const COLORS: string[][] = [
+export function get_colors(num_colors: number): string[]
+{
+    return COLORS[Math.min(COLORS.length-1, num_colors)]
+}
+
+const COLORS: string[][] = [
     [],
     [
       "#0000ff"

@@ -1,4 +1,4 @@
-import { COLORS } from "../colors";
+import { get_colors } from "../colors";
 import { get_cookie, set_cookie } from "../cookie";
 import { BakedDAGEmbedding } from "../dag_layout";
 import { Bezier, Vector } from "../util";
@@ -50,7 +50,7 @@ export class DrawOptions
 	}
 	set_builtin_color_scheme(id: number)
 	{
-		this.f_route_colors = COLORS[ Math.min(id, COLORS.length-1) ];
+		this.f_route_colors = get_colors(id);
 		this.on_change();
 	}
 
