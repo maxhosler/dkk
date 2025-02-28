@@ -1,6 +1,6 @@
+import { DrawOptions } from "../draw/draw_options";
 import { FlowPolytope } from "../routes/polytope";
 import { Clique } from "../routes/routes";
-import { DrawOptions } from "./dag_canvas";
 import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
 

@@ -3,7 +3,8 @@ import { Vector } from "../util";
 import { Option } from "../result";
 import { FramedDAGEmbedding } from "../dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
-import { DAGCanvas, DAGCanvasContext, DrawOptions } from "../subelements/dag_canvas";
+import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
+import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 
 type SelectionType = "none" | "vertex" | "edge";

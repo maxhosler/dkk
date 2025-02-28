@@ -1,4 +1,4 @@
-import { DAGCanvas, DrawOptions } from "../subelements/dag_canvas";
+import { DAGCanvas } from "../subelements/dag_canvas";
 import { FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
@@ -7,6 +7,7 @@ import { DAGCliques } from "../routes/routes";
 import { SwapBox } from "../subelements/swap_box";
 import { FlowPolytope } from "../routes/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
+import { DrawOptions } from "../draw/draw_options";
 
 export class CliqueViewer
 {
