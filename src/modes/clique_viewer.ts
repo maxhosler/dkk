@@ -275,19 +275,38 @@ export class CliqueViewer
         {
             if(hasse.covering_relation[i][j])
             {
+                let mid = positions[i].add(positions[j]).scale(0.5);
+                let rts = hasse.cover_routes[i][j];
+                let color1 = this.draw_options.get_route_color(rts[0]);
+                let color2 = this.draw_options.get_route_color(rts[1]);
                 ctx.draw_line(
                     positions[i],
+                    mid,
+                    color1,
+                    5
+                );
+                ctx.draw_line(
+                    mid,
                     positions[j],
-                    "#000000",
+                    color2,
                     5
                 );
             }
         }
 
-        for(let pos of positions)
-        {            
-            ctx.draw_node(pos);
+        for(let i = 0; i < positions.length; i++)
+        {   
+            let color = "#000000";
+            if(this.current_clique == i)
+                color = "#ffffff";
+            let pos = positions[i];
+            ctx.draw_circ(
+                pos,
+                color,
+                this.draw_options.node_radius()
+            )
         }
+        
     }
 
     draw_polytope()

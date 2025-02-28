@@ -252,7 +252,7 @@ export class DAGCliques
 		}
 		this.clique_leq_matrix = clique_leq_matrix;
 		
-		this.hasse = new HasseDiagram(clique_leq_matrix);
+		this.hasse = new HasseDiagram(clique_leq_matrix, this.cliques);
 	}
 
 	/*
