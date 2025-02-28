@@ -1,4 +1,4 @@
-import { DrawOptions } from "./dag_canvas";
+import { DrawOptions } from "../draw/draw_options";
 
 export class SwapBox
 {

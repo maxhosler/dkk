@@ -1,5 +1,5 @@
-import { DrawOptions } from "./subelements/dag_canvas";
 import { caracol_emb, prebuilt_dag_embedding } from "./dag_layout";
+import { DrawOptions } from "./draw/draw_options";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 

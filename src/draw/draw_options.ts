@@ -13,6 +13,7 @@ const ROUTE_RAINBOW: string[] = [
 const DRAW_OPTIONS_COOKIE_NAME: string = "draw-options-cookie"
 
 type SimplexRenderMode = "solid" | "dots" | "blank";
+type ColorSchemeMode = "computed";
 export class DrawOptions
 {
 	private f_scale: number = 200;
@@ -22,7 +23,7 @@ export class DrawOptions
 	private f_edge_halo: number = 6;
 	private f_route_weight: number = 8;
 
-	private f_route_colors: string[] = ROUTE_RAINBOW;
+	private f_scheme_mode: {mode: ColorSchemeMode, index: number} = {mode: "computed", index:2};
 	private f_background_color: string = "#b0b0b0";
 	private f_selection_color: string = "#2160c487";
 	private f_edge_color: string = "#222222";
@@ -67,7 +68,10 @@ export class DrawOptions
 	}
 	set_builtin_color_scheme(id: number)
 	{
-		this.f_route_colors = get_colors(id);
+		this.f_scheme_mode = {
+			mode: "computed",
+			index: id
+		};
 		this.on_change();
 	}
 	set_simplex_render_mode(mode: string)
@@ -104,7 +108,16 @@ export class DrawOptions
 
 	get_route_color(i: number): string
 	{
-		return this.f_route_colors[i % this.f_route_colors.length];
+		let scheme: string[];
+		if(this.f_scheme_mode.mode == "computed")
+		{
+			scheme = get_colors(this.f_scheme_mode.index);
+		}
+		else
+		{
+			throw new Error("Impossible")
+		}
+		return scheme[i % scheme.length];
 	}
 	scale(): number
 	{
@@ -167,27 +180,24 @@ export class DrawOptions
 		if(typeof json_ob.f_node_radius == "number")
 			this.f_node_radius = json_ob.f_node_radius;
 		
-		if(typeof json_ob.f_stroke_weight == "number")
-			this.f_edge_weight = json_ob.f_stroke_weight;
+		if(typeof json_ob.f_edge_weight == "number")
+			this.f_edge_weight = json_ob.f_edge_weight;
 		
-		if(typeof json_ob.f_stroke_halo == "number")
-			this.f_edge_halo = json_ob.f_stroke_halo;
+		if(typeof json_ob.f_edge_halo == "number")
+			this.f_edge_halo = json_ob.f_edge_halo;
 		
 		if(typeof json_ob.f_route_weight == "number")
 			this.f_route_weight = json_ob.f_route_weight;
 		
-		//Cursed! Thumbs up!
-		try{
-		if(json_ob.f_route_colors.constructor.name == "Array")
+		
+		if(typeof json_ob.f_scheme_mode == "object")
 		{
-			for(let entry of json_ob.f_route_colors)
-			{
-				if(typeof entry != "string")
-					throw new Error("");
+			if( typeof json_ob.f_scheme_mode.mode == "string" && 
+				typeof json_ob.f_scheme_mode.mode.index == "number"
+			){
+				this.f_scheme_mode = json_ob.f_scheme_mode;
 			}
-			this.f_route_colors = json_ob.f_route_colors;
 		}
-		} catch {}
 			
 		
 		if(typeof json_ob.f_background_color == "string")
