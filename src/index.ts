@@ -148,6 +148,7 @@ class SettingsPopup extends Popup
     node_radius_spinner: HTMLInputElement;
     edge_weight_spinner: HTMLInputElement;
     route_weight_spinner: HTMLInputElement;
+    hasse_weight_spinner: HTMLInputElement;
 
     reset_button: HTMLButtonElement;
 
@@ -191,6 +192,12 @@ class SettingsPopup extends Popup
             "settings-route-weight",
             (val) => this.parent.draw_options.set_route_weight(val)
         );
+        this.hasse_weight_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Hasse edge weight",
+            "settings-hasse-weight",
+            (val) => this.parent.draw_options.set_hasse_edge_weight(val)
+        );
 
         this.reset_button = document.createElement("button");
         this.reset_button.onclick = (ev) => this.reset_settings();
@@ -216,6 +223,8 @@ class SettingsPopup extends Popup
             this.parent.draw_options.edge_weight().toString();
         this.route_weight_spinner.value = 
             this.parent.draw_options.route_weight().toString();
+        this.hasse_weight_spinner.value = 
+            this.parent.draw_options.hasse_edge_weight().toString();
     }
 
     private static add_stepper_row(

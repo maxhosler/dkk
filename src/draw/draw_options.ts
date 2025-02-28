@@ -22,13 +22,15 @@ export class DrawOptions
 	private f_edge_weight: number = 6;
 	private f_edge_halo: number = 6;
 	private f_route_weight: number = 8;
+	private f_hasse_edge_weight: number = 10;
 
 	private f_scheme_mode: {mode: ColorSchemeMode, index: number} = {mode: "computed", index:2};
+	private f_simplex_render_mode: SimplexRenderMode = "solid";
+
 	private f_background_color: string = "#b0b0b0";
 	private f_selection_color: string = "#2160c487";
 	private f_edge_color: string = "#222222";
 	private f_node_color: string = "#000000";
-	private f_simplex_render_mode: SimplexRenderMode = "solid";
 
 	private change_listeners: (()=>void)[] = [];
 
@@ -59,6 +61,11 @@ export class DrawOptions
 	set_route_weight(weight: number)
 	{
 		this.f_route_weight = weight;
+		this.on_change();
+	}
+	set_hasse_edge_weight(weight: number)
+	{
+		this.f_hasse_edge_weight = weight;
 		this.on_change();
 	}
 	set_scale(scale: number)
@@ -139,6 +146,10 @@ export class DrawOptions
 	{
 		return this.f_route_weight;
 	}
+	hasse_edge_weight(): number
+	{
+		return this.f_hasse_edge_weight;
+	}
 
 	background_color(): string
 	{
@@ -218,18 +229,25 @@ export class DrawOptions
 
 	reset()
 	{
-		//TODO: Think about this. What do I want to reset?
+		let def = new DrawOptions(false);
 
-		this.f_scale = 200;
-		this.f_node_radius = 12;
-		this.f_edge_weight = 6;
-		this.f_edge_halo = 6;
-		this.f_route_weight = 8;
-		this.f_background_color = "#b0b0b0";
-		this.f_selection_color = "#2160c487";
-		this.f_edge_color = "#222222";
-		this.f_node_color = "#000000";
-		this.f_simplex_render_mode = "solid";
+		let old_mode: {mode: ColorSchemeMode, index: number} | null = null;
+		if(this.f_scheme_mode.mode == "computed")
+		{
+			old_mode = this.f_scheme_mode;
+		}
+
+		for(let field in def)
+		{
+			if(field.substring(0,2) == "f_")
+				// @ts-ignore
+				this[field] = def[field];
+		}
+
+		if(old_mode)
+		{
+			this.f_scheme_mode = old_mode;
+		}
 
 		this.on_change();
 	}

@@ -283,13 +283,13 @@ export class CliqueViewer
                     positions[i],
                     mid,
                     color1,
-                    5
+                    this.draw_options.hasse_edge_weight()
                 );
                 ctx.draw_line(
                     mid,
                     positions[j],
                     color2,
-                    5
+                    this.draw_options.hasse_edge_weight()
                 );
             }
         }
