@@ -492,10 +492,10 @@ export class PolytopeCanvas
     bind_simplex_colors()
     {
         let mat = [
-            0,0,0,1,
-            0,0,0,1,
-            0,0,0,1,
-            0,0,0,1
+            0.792, 0.913, 0.960, 1,
+            0.792, 0.913, 0.960, 1,
+            0.792, 0.913, 0.960, 1,
+            0.792, 0.913, 0.960, 1
         ];
 
         if(this.draw_options.simplex_render_mode() == "solid")
@@ -510,7 +510,7 @@ export class PolytopeCanvas
                 console.warn("No current clique; coloring will be arbitrary.");
             }
 
-            for(let i = 0; i < 4; i++)
+            for(let i = 0; i < colors.length; i++)
             {
                 let c_idx = colors[i];
                 let col = this.draw_options.get_route_color(c_idx);
@@ -520,15 +520,6 @@ export class PolytopeCanvas
                     mat[4*i+j] = col_arr[j]/255;
                 }
             }
-        }
-        else
-        {
-            mat = [
-                0.792, 0.913, 0.960, 1,
-                0.792, 0.913, 0.960, 1,
-                0.792, 0.913, 0.960, 1,
-                0.792, 0.913, 0.960, 1
-            ];
         }
         
 
