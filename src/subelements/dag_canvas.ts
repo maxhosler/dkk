@@ -19,9 +19,11 @@ export class DrawOptions
 {
 	private f_scale: number = 200;
 	private f_node_radius: number = 12;
-	private f_stroke_weight: number = 6;
-	private f_stroke_halo: number = 6;
+	
+	private f_edge_weight: number = 6;
+	private f_edge_halo: number = 6;
 	private f_route_weight: number = 8;
+
 	private f_route_colors: string[] = ROUTE_RAINBOW;
 	private f_background_color: string = "#b0b0b0";
 	private f_selection_color: string = "#2160c487";
@@ -45,6 +47,21 @@ export class DrawOptions
 		this.change_listeners = [];
 	}
 
+	set_node_radius(rad: number)
+	{
+		this.f_node_radius = rad;
+		this.on_change();
+	}
+	set_edge_weight(weight: number)
+	{
+		this.f_edge_weight = weight;
+		this.on_change();
+	}
+	set_route_weight(weight: number)
+	{
+		this.f_route_weight = weight;
+		this.on_change();
+	}
 	set_scale(scale: number)
 	{
 		this.f_scale = scale;
@@ -99,13 +116,13 @@ export class DrawOptions
 	{
 		return this.f_node_radius;
 	}
-	stroke_weight(): number
+	edge_weight(): number
 	{
-		return this.f_stroke_weight;
+		return this.f_edge_weight;
 	}
-	stroke_halo(): number
+	edge_halo(): number
 	{
-		return this.f_stroke_halo;
+		return this.f_edge_halo;
 	}
 	route_weight(): number
 	{
@@ -153,10 +170,10 @@ export class DrawOptions
 			this.f_node_radius = json_ob.f_node_radius;
 		
 		if(typeof json_ob.f_stroke_weight == "number")
-			this.f_stroke_weight = json_ob.f_stroke_weight;
+			this.f_edge_weight = json_ob.f_stroke_weight;
 		
 		if(typeof json_ob.f_stroke_halo == "number")
-			this.f_stroke_halo = json_ob.f_stroke_halo;
+			this.f_edge_halo = json_ob.f_stroke_halo;
 		
 		if(typeof json_ob.f_route_weight == "number")
 			this.f_route_weight = json_ob.f_route_weight;
@@ -197,8 +214,8 @@ export class DrawOptions
 
 		this.f_scale = 200;
 		this.f_node_radius = 12;
-		this.f_stroke_weight = 6;
-		this.f_stroke_halo = 6;
+		this.f_edge_weight = 6;
+		this.f_edge_halo = 6;
 		this.f_route_weight = 8;
 		this.f_background_color = "#b0b0b0";
 		this.f_selection_color = "#2160c487";
@@ -356,7 +373,7 @@ export class DAGCanvasContext
 			grad.addColorStop(1.0,   trans_bk);
 
 			this.ctx.strokeStyle = grad;
-			this.ctx.lineWidth = weight + this.parent.draw_options.stroke_halo();
+			this.ctx.lineWidth = weight + this.parent.draw_options.edge_halo();
 			this.ctx.stroke()
 		}
 

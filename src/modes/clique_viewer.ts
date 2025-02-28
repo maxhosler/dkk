@@ -210,7 +210,7 @@ export class CliqueViewer
             ctx.draw_bez(
                 edge, 
                 this.draw_options.edge_color() + "22",
-                this.draw_options.stroke_weight(),
+                this.draw_options.edge_weight(),
                 true
             );
 

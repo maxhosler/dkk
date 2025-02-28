@@ -171,7 +171,7 @@ export class EmbeddingEditor
 			let bez = dag.edges[i].transform
 				((v: Vector) => this.canvas.local_trans(v));
 
-			if(bez.distance_to(position) <= this.draw_options.stroke_weight())
+			if(bez.distance_to(position) <= this.draw_options.edge_weight())
 				return Option.some(i);
 		}
 			
@@ -194,7 +194,7 @@ export class EmbeddingEditor
 		{ ctx.draw_bez(
 			edge, 
 			this.draw_options.edge_color(), 
-			this.draw_options.stroke_weight(), 
+			this.draw_options.edge_weight(), 
 			true
 		); }
 
@@ -240,7 +240,7 @@ export class EmbeddingEditor
 			ctx.draw_bez(
 				bez,
 				this.draw_options.selection_color(),
-				this.draw_options.stroke_weight() + 5,
+				this.draw_options.edge_weight() + 5,
 				false
 			)
 		}

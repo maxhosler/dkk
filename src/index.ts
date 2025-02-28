@@ -144,6 +144,11 @@ class SettingsPopup extends Popup
     parent: DKKProgram;
 
     simplrend_dropdown: HTMLSelectElement;
+
+    node_radius_spinner: HTMLInputElement;
+    edge_weight_spinner: HTMLInputElement;
+    route_weight_spinner: HTMLInputElement;
+
     reset_button: HTMLButtonElement;
 
     constructor(base: HTMLElement, parent: DKKProgram)
@@ -167,14 +172,35 @@ class SettingsPopup extends Popup
             <button id="settings-reset-button">Reset</button>
         `;
 
+        let table = this.popup_body.querySelector("table") as HTMLTableElement;
+
         this.simplrend_dropdown = this.popup_body.querySelector("#settings-simplrend") as HTMLSelectElement;
         this.simplrend_dropdown.addEventListener("change", (ev) => {
             let val = this.simplrend_dropdown.value;
             this.parent.draw_options.set_simplex_render_mode(val);
         });
 
+        this.node_radius_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Node radius",
+            "settings-node-radius",
+            (val) => parent.draw_options.set_node_radius(val)
+        );
+        this.edge_weight_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Edge weight",
+            "settings-edge-weight",
+            (val) => parent.draw_options.set_edge_weight(val)
+        );
+        this.route_weight_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Route weight",
+            "settings-route-weight",
+            (val) => parent.draw_options.set_route_weight(val)
+        );
+
         this.reset_button = this.popup_body.querySelector("#settings-reset-button") as HTMLButtonElement;
-        this.reset_button.onclick = (ev) => this.reset_settings();
+        this.reset_button.onclick = (ev) => this.reset_settings();  
 
         this.sync_with_settings();
     }
@@ -189,6 +215,85 @@ class SettingsPopup extends Popup
     {
         this.simplrend_dropdown.value = 
             this.parent.draw_options.simplex_render_mode();
+        this.node_radius_spinner.value = 
+            this.parent.draw_options.node_radius().toString();
+        this.edge_weight_spinner.value = 
+            this.parent.draw_options.edge_weight().toString();
+        this.route_weight_spinner.value = 
+            this.parent.draw_options.route_weight().toString();
+    }
+
+    private static add_stepper_row(
+        table: HTMLTableElement,
+        name: string,
+        id: string,
+        onchange: (val: number) => void
+    ): HTMLInputElement
+    {
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerText = name;
+
+        let spinner = document.createElement("input");
+        spinner.type = "number";
+        spinner.id = id;
+        spinner.step = "1";
+        spinner.min = "1";
+        spinner.onclick = (ev) => {
+            onchange(parseInt(spinner.value))
+        };
+
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+
+        d1.appendChild(label);
+        d2.appendChild(spinner);
+
+        table.appendChild(row);
+
+        return spinner;
+    }
+
+    private static add_selector_row(
+        table: HTMLTableElement,
+        name: string,
+        id: string,
+        name_val_pairs: [string, string][],
+        onchange: (val: string) => void
+    ): HTMLSelectElement
+    {
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerText = name;
+
+        let selector = document.createElement("select");
+        selector.id = id;
+        for(let pair in name_val_pairs)
+        {
+            let opt = document.createElement("option");
+            opt.value = pair[1];
+            opt.innerText = pair[1];
+            selector.appendChild(opt);
+        }
+        selector.onclick = (ev) => {
+            onchange(selector.value)
+        };
+
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+
+        d1.appendChild(label);
+        d2.appendChild(selector);
+
+        table.appendChild(row);
+
+        return selector;
     }
 }
 
