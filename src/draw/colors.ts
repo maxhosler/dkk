@@ -1,4 +1,15 @@
+var colors_cache: { [key: number]: string[] } = {}
+
 export function get_colors(num_colors: number): string[]
+{
+	if(!(num_colors in colors_cache))
+	{
+		colors_cache[num_colors] = get_colors_inner(num_colors);
+	}
+	return colors_cache[num_colors];
+}
+
+export function get_colors_inner(num_colors: number): string[]
 {
 	let lum_rows: number;
 	let hue_rows: number;
