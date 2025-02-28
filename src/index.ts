@@ -156,29 +156,22 @@ class SettingsPopup extends Popup
         super(base, "Settings", () => parent.popup_open = false);
         this.parent = parent;
 
-        this.popup_body.innerHTML = `
-            <table>
-                <tr>
-                    <td><label for="settings-simplrend">Simplex Rendering Mode</label></td>
-                    <td>
-                        <select id="settings-simplrend">
-                            <option value="solid">solid</option>
-                            <option value="dots">dots</option>
-                            <option value="blank">blank</option>
-                        </select>
-                    </td>
-                </tr>
-            </table>
-            <button id="settings-reset-button">Reset</button>
-        `;
+        let table = document.createElement("table");
+        this.popup_body.appendChild(table);
 
-        let table = this.popup_body.querySelector("table") as HTMLTableElement;
-
-        this.simplrend_dropdown = this.popup_body.querySelector("#settings-simplrend") as HTMLSelectElement;
-        this.simplrend_dropdown.addEventListener("change", (ev) => {
-            let val = this.simplrend_dropdown.value;
-            this.parent.draw_options.set_simplex_render_mode(val);
-        });
+        this.simplrend_dropdown = SettingsPopup.add_selector_row(
+            table,
+            "Simplex mode",
+            "settings-simpl-mode",
+            [
+                ["solid", "solid"],
+                ["dots", "dots"],
+                ["blank", "blank"]
+            ],
+            (val) => {
+                this.parent.draw_options.set_simplex_render_mode(val);
+            }
+        )
 
         this.node_radius_spinner = SettingsPopup.add_stepper_row(
             table,
@@ -199,8 +192,10 @@ class SettingsPopup extends Popup
             (val) => parent.draw_options.set_route_weight(val)
         );
 
-        this.reset_button = this.popup_body.querySelector("#settings-reset-button") as HTMLButtonElement;
-        this.reset_button.onclick = (ev) => this.reset_settings();  
+        this.reset_button = document.createElement("button");
+        this.reset_button.onclick = (ev) => this.reset_settings();
+        this.reset_button.innerText = "Reset";
+        this.popup_body.appendChild(this.reset_button);
 
         this.sync_with_settings();
     }
@@ -271,16 +266,16 @@ class SettingsPopup extends Popup
 
         let selector = document.createElement("select");
         selector.id = id;
-        for(let pair in name_val_pairs)
+        for(let pair of name_val_pairs)
         {
             let opt = document.createElement("option");
             opt.value = pair[1];
-            opt.innerText = pair[1];
+            opt.innerText = pair[0];
             selector.appendChild(opt);
         }
-        selector.onclick = (ev) => {
+        selector.addEventListener("change", (ev) => {
             onchange(selector.value)
-        };
+        });
 
         let row = document.createElement("tr");
         let d1 = document.createElement("td");
