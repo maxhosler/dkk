@@ -171,25 +171,25 @@ class SettingsPopup extends Popup
             (val) => {
                 this.parent.draw_options.set_simplex_render_mode(val);
             }
-        )
+        );
 
         this.node_radius_spinner = SettingsPopup.add_stepper_row(
             table,
             "Node radius",
             "settings-node-radius",
-            (val) => parent.draw_options.set_node_radius(val)
+            (val) => this.parent.draw_options.set_node_radius(val)
         );
         this.edge_weight_spinner = SettingsPopup.add_stepper_row(
             table,
             "Edge weight",
             "settings-edge-weight",
-            (val) => parent.draw_options.set_edge_weight(val)
+            (val) => this.parent.draw_options.set_edge_weight(val)
         );
         this.route_weight_spinner = SettingsPopup.add_stepper_row(
             table,
             "Route weight",
             "settings-route-weight",
-            (val) => parent.draw_options.set_route_weight(val)
+            (val) => this.parent.draw_options.set_route_weight(val)
         );
 
         this.reset_button = document.createElement("button");
