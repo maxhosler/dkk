@@ -150,6 +150,9 @@ class SettingsPopup extends Popup
     route_weight_spinner: HTMLInputElement;
     hasse_weight_spinner: HTMLInputElement;
 
+    vertex_color_selector: HTMLInputElement;
+    background_color_selector: HTMLInputElement;
+
     reset_button: HTMLButtonElement;
 
     constructor(base: HTMLElement, parent: DKKProgram)
@@ -157,41 +160,53 @@ class SettingsPopup extends Popup
         super(base, "Settings", () => parent.popup_open = false);
         this.parent = parent;
 
-        let table = document.createElement("table");
-        table.className = "settings-table";
-        this.popup_body.appendChild(table);
+        let base_table = document.createElement("table");
+        base_table.className = "settings-column-table";
+        let column_holder = document.createElement("tr");
+        this.popup_body.appendChild(base_table);
+        base_table.appendChild(column_holder);
 
-        SettingsPopup.add_title(table, "Size and Weight");
+        let col1 = document.createElement("td");
+        let col2 = document.createElement("td");
+        column_holder.appendChild(col1);
+        column_holder.appendChild(col2);
+
+        //FIRST COLUMN
+        let col1_table = document.createElement("table");
+        col1_table.className = "settings-table";
+        col1.appendChild(col1_table);
+
+        SettingsPopup.add_title(col1_table, "Size and Weight");
 
         this.node_radius_spinner = SettingsPopup.add_stepper_row(
-            table,
+            col1_table,
             "Node radius",
             "settings-node-radius",
             (val) => this.parent.draw_options.set_node_radius(val)
         );
         this.edge_weight_spinner = SettingsPopup.add_stepper_row(
-            table,
+            col1_table,
             "Edge weight",
             "settings-edge-weight",
             (val) => this.parent.draw_options.set_edge_weight(val)
         );
         this.route_weight_spinner = SettingsPopup.add_stepper_row(
-            table,
+            col1_table,
             "Route weight",
             "settings-route-weight",
             (val) => this.parent.draw_options.set_route_weight(val)
         );
         this.hasse_weight_spinner = SettingsPopup.add_stepper_row(
-            table,
+            col1_table,
             "Hasse edge weight",
             "settings-hasse-weight",
             (val) => this.parent.draw_options.set_hasse_edge_weight(val)
         );
 
-        SettingsPopup.add_title(table, "Misc.");
+        SettingsPopup.add_title(col1_table, "Misc.");
 
         this.simplrend_dropdown = SettingsPopup.add_selector_row(
-            table,
+            col1_table,
             "Simplex mode",
             "settings-simpl-mode",
             [
@@ -204,6 +219,31 @@ class SettingsPopup extends Popup
             }
         );
 
+        //SECOND COLUMN
+        let col2_table = document.createElement("table");
+        col2_table.className = "settings-table";
+        col2.appendChild(col2_table);
+
+        SettingsPopup.add_title(col2_table, "Colors");
+
+        this.vertex_color_selector = SettingsPopup.add_color_row(
+            col2_table,
+            "Vertex color",
+            "settings-vert-color",
+            (val) => {
+                this.parent.draw_options.set_vertex_color(val);
+            }
+        );
+        this.background_color_selector = SettingsPopup.add_color_row(
+            col2_table,
+            "Background color",
+            "settings-bg-color",
+            (val) => {
+                this.parent.draw_options.set_background_color(val);
+            }
+        );
+
+        //RESET BUTTON
         this.reset_button = document.createElement("button");
         this.reset_button.onclick = (ev) => this.reset_settings();
         this.reset_button.innerText = "Reset";
@@ -231,6 +271,10 @@ class SettingsPopup extends Popup
             this.parent.draw_options.route_weight().toString();
         this.hasse_weight_spinner.value = 
             this.parent.draw_options.hasse_edge_weight().toString();
+        this.vertex_color_selector.value = 
+            this.parent.draw_options.vertex_color();
+        this.background_color_selector.value = 
+            this.parent.draw_options.background_color();
     }
 
     private static add_stepper_row(
@@ -249,9 +293,9 @@ class SettingsPopup extends Popup
         spinner.id = id;
         spinner.step = "1";
         spinner.min = "1";
-        spinner.onclick = (ev) => {
+        spinner.addEventListener("change", (ev) => {
             onchange(parseInt(spinner.value))
-        };
+        });
 
         let row = document.createElement("tr");
         let d1 = document.createElement("td");
@@ -323,12 +367,44 @@ class SettingsPopup extends Popup
         title.innerText = name;
         d1.appendChild(title);
     }
+
+    private static add_color_row(
+        table: HTMLTableElement,
+        name: string,
+        id: string,
+        onchange: (val: string) => void
+    ): HTMLInputElement
+    {
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerText = name;
+
+        let colorsel = document.createElement("input");
+        colorsel.type = "color";
+        colorsel.id = id;
+        colorsel.addEventListener("change", (ev) => {
+            onchange(colorsel.value)
+        });
+
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+
+        d1.appendChild(label);
+        d2.appendChild(colorsel);
+
+        table.appendChild(row);
+
+        return colorsel;
+    }
 }
 
 class DKKProgram
 {
     body: HTMLBodyElement;
-	draw_options = new DrawOptions(true);
+	draw_options = new DrawOptions(true, true);
 	mode: CliqueViewer | EmbeddingEditor = CliqueViewer.destructive_new(
 		prebuilt_dag_embedding(0),
 		this.draw_options

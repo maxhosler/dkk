@@ -30,9 +30,10 @@ export class DrawOptions
 	private f_background_color: string = "#b0b0b0";
 	private f_selection_color: string = "#2160c487";
 	private f_edge_color: string = "#222222";
-	private f_node_color: string = "#000000";
+	private f_vertex_color: string = "#000000";
 
 	private change_listeners: (()=>void)[] = [];
+	private do_sync_css: boolean;
 
 	add_change_listener(listener: () => void)
 	{
@@ -93,6 +94,16 @@ export class DrawOptions
 			console.warn("Tried to change to invalid simplex render mode!");
 		}
 	}
+	set_vertex_color(color: string)
+	{
+		this.f_vertex_color = color;
+		this.on_change();
+	}
+	set_background_color(color: string)
+	{
+		this.f_background_color = color;
+		this.on_change();
+	}
 
 	save_to_cookies()
 	{
@@ -108,9 +119,15 @@ export class DrawOptions
 	}
 	on_change()
 	{
+		this.sync_css();
 		this.fire_change_listeners()
 		try{ this.save_to_cookies() }
 		catch(e) { console.warn("Failed to save draw settings as cookie!", e) }
+	}
+	sync_css()
+	{
+		if(!this.do_sync_css) { return; }
+		document.documentElement.style.setProperty("--draw-background", this.background_color());
 	}
 
 	get_route_color(i: number): string
@@ -163,18 +180,22 @@ export class DrawOptions
 	{
 		return this.f_edge_color;
 	}
-	node_color(): string
+	vertex_color(): string
 	{
-		return this.f_node_color;
+		return this.f_vertex_color;
 	}
 	simplex_render_mode(): SimplexRenderMode
 	{
 		return this.f_simplex_render_mode;
 	}
 
-	constructor(load_from_cookies: boolean)
+	constructor(load_from_cookies: boolean, sync_css: boolean)
 	{
-		if(!load_from_cookies) return;
+		this.do_sync_css = sync_css;
+		if(!load_from_cookies){
+			this.sync_css();
+			return
+		};
 		let cookie_str = get_cookie(DRAW_OPTIONS_COOKIE_NAME);
 		if(!cookie_str) return;
 
@@ -220,16 +241,18 @@ export class DrawOptions
 		if(typeof json_ob.f_edge_color == "string")
 			this.f_edge_color = json_ob.f_edge_color;
 
-		if(typeof json_ob.f_node_color == "string")
-			this.f_node_color = json_ob.f_node_color;
+		if(typeof json_ob.f_vertex_color == "string")
+			this.f_vertex_color = json_ob.f_vertex_color;
 
 		if(typeof json_ob.f_simplex_render_mode == "string")
 			this.f_simplex_render_mode = json_ob.f_simplex_render_mode;
+	
+		this.sync_css();
 	}
 
 	reset()
 	{
-		let def = new DrawOptions(false);
+		let def = new DrawOptions(false, false);
 
 		let old_mode: {mode: ColorSchemeMode, index: number} | null = null;
 		if(this.f_scheme_mode.mode == "computed")

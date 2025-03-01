@@ -95,7 +95,7 @@ export class DAGCanvasContext
 	draw_node(pos: Vector)
 	{
 		this.draw_circ(pos,
-			this.parent.draw_options.node_color(),
+			this.parent.draw_options.vertex_color(),
 			this.parent.draw_options.node_radius()
 		);
 	}

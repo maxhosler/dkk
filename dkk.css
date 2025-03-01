@@ -7,7 +7,8 @@ html {
     --draw-border: #686868;
     --menu-background1: #f0f0f0;
 
-    --default-border: 1pt solid var(--draw-background);
+    --ui-border-color: #b0b0b0;
+    --default-border: 1pt solid var(--ui-border-color);
 }
   
 
@@ -131,7 +132,7 @@ html, body {
 .sb-subsection
 {
     border-style: solid;
-    border-color: var(--draw-background);
+    border-color: var(--ui-border-color);
     border-width: 1pt;
     padding: 8pt;
     margin-bottom: 10pt;
@@ -265,6 +266,12 @@ html, body {
 {
     margin-top: 12pt;
     font-weight: bold;
+}
+
+.settings-column-table > tr > td
+{
+    vertical-align: top;
+    padding-right: 10pt;
 }
 
 .settings-table > tr:nth-child(1) > td > .settings-head
