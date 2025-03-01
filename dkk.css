@@ -167,10 +167,21 @@ html, body {
     user-select: none; /* Standard syntax */
 }
 
-.swap-greyed
+.swap-dot
 {
-    color: #00000000;
-    text-shadow: none;
+    height: 16px;
+    width: 16px;
+    background-color: #ffffff;
+    border: solid 2pt black;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.swap-greyed>.swap-dot
+{
+    background-color: #ffffff00;
+    border: solid 2pt #00000000;
+
 }
 
 .fullscreen

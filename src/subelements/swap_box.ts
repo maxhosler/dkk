@@ -42,7 +42,7 @@ export class SwapBox
                 this.on_click(this.route_idxs[idx]);
             };
             box.className = "swap_button";
-            box.innerText = "Swap";
+            box.innerHTML = "<div class=\"swap-dot\"/>";
             
             main_box.appendChild(box);
 

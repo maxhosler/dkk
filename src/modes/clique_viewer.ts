@@ -128,9 +128,7 @@ export class CliqueViewer
             this.draw();
         });
 
-        let cc = this.cliques.cliques[
-            this.current_clique
-        ];
+        let cc = this.cliques.cliques[ this.current_clique ];
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
 
