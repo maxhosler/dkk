@@ -342,22 +342,21 @@ export class PolytopeCanvas
         let dot_positions: number[] = [];
         let dot_simpl_pos: number[] = [];
 
-        let sphere = gen_sphere(5, 10, 0.05);
+        let sphere = gen_sphere(10, 10, 0.05);
 
         for(let j = 0; j < this.poly_dim+1; j++)
         {
             
             let center = this.vertex_positions[current_clique.routes[j]];
-            
-            let base = dot_indices.length;
+
+            let base = sphere.positions.length * j;
             for(let idx of sphere.idxs)
                 dot_indices.push(base + idx);
 
             let simpl = [0,0,0,0];
             simpl[j] = 1;
-            for(let pos of sphere.pos)
+            for(let pos of sphere.positions)
             {
-                dot_normals = [...dot_normals, ...pos];
                 let offset_pos = [
                     center[0] + pos[0],
                     center[1] + pos[1],
@@ -365,6 +364,10 @@ export class PolytopeCanvas
                 ];
                 dot_positions = [...dot_positions, ...offset_pos];
                 dot_simpl_pos = [...dot_simpl_pos, ...simpl];
+            }
+            for(let norm of sphere.normals)
+            {
+                dot_normals = [...dot_normals, ...norm];
             }
         }
 
@@ -477,27 +480,28 @@ export class PolytopeCanvas
         draw_external(1);
 
         if(this.draw_options.simplex_render_mode() == "dots")
-        { this.draw_dots() }
-    }
+        {
+            if(this.draw_options.dot_on_top())
+                this.ctx.clearDepth(-1.0);
 
-    draw_dots()
-    {
-        this.ctx.disable(this.ctx.DEPTH_TEST);
+            this.bind_face_buffers(this.dot_buffers);
 
-        this.bind_face_buffers(this.dot_buffers);
+            this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
+            this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
+            this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
+            let shade_amount = 0;
+            if(this.draw_options.dot_shade())
+                shade_amount = 1;
+            this.ctx.uniform1f(this.program.uniforms.shade_amount, shade_amount);
 
-        this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
-        this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
-        this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
-        this.ctx.uniform1f(this.program.uniforms.shade_amount, 0);
+            let color = [1, 0, 0]; //If this color shows, something is broken
+            this.ctx.uniform3fv(this.program.uniforms.color, color);
 
-        let color = [1, 0, 0]; //If this color shows, something is broken
-        this.ctx.uniform3fv(this.program.uniforms.color, color);
-
-        const triangle_count = this.dot_buffers.num_verts;
-        const type = this.ctx.UNSIGNED_SHORT;
-        const offset = 0;
-        this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
+            const triangle_count = this.dot_buffers.num_verts;
+            const type = this.ctx.UNSIGNED_SHORT;
+            const offset = 0;
+            this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
+        }
     }
 
     bind_face_buffers(face_buffers: FaceBuffers)
@@ -796,19 +800,17 @@ function cross_product(a: Triple, b: Triple): Triple
     ];
 }
 
-function gen_sphere(rows: number, cols: number, radius: number): {pos: Triple[], idxs: number[]}
+function gen_sphere(rows: number, cols: number, radius: number): {positions: Triple[], idxs: number[], normals: Triple[]}
 {
     let sphere: Triple[] = [];
     let idx: number[] = [];
+    let normals: Triple[] = [];
 
-    const ROWS: number = 5;
-    const COLS: number = 10;
+    for(let row = 0; row < rows; row++){
+    for(let col = 0; col < cols; col++){
 
-    for(let row = 0; row < ROWS; row++){
-    for(let col = 0; col < COLS; col++){
-
-        let vangle = row * Math.PI / (ROWS - 1);
-        let hangle = col * 2 * Math.PI / COLS;
+        let vangle = row * Math.PI / (rows - 1);
+        let hangle = col * 2 * Math.PI / cols;
 
         let sv = Math.sin(vangle);
         let cv = Math.cos(vangle);
@@ -817,15 +819,16 @@ function gen_sphere(rows: number, cols: number, radius: number): {pos: Triple[],
         let ch = Math.cos(hangle);
 
         let vert: Triple = [ch*sv * radius, cv * radius, sh*sv * radius];
+        let normal: Triple = [ch*sv, cv, sh*sv];
 
         sphere.push(vert);
-
+        normals.push(normal);
     }}
 
-    let vert_idx = (row: number, col: number) => row * COLS + (col % COLS);
+    let vert_idx = (row: number, col: number) => row * cols + (col % cols);
 
-    for(let row = 0; row < ROWS-1; row++){
-    for(let col = 0; col < COLS; col++){
+    for(let row = 0; row < rows-1; row++){
+    for(let col = 0; col < cols; col++){
 
         let p1 = vert_idx(row, col);
         let p2 = vert_idx(row+1, col);
@@ -836,5 +839,5 @@ function gen_sphere(rows: number, cols: number, radius: number): {pos: Triple[],
 
     }}
 
-    return {pos: sphere, idxs: idx};
+    return {positions: sphere, idxs: idx, normals};
 }
