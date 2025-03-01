@@ -244,6 +244,22 @@ html, body {
     padding: 10pt;
 }
 
+.settings-head
+{
+    margin-top: 12pt;
+    font-weight: bold;
+}
+
+.settings-table > tr:nth-child(1) > td > .settings-head
+{
+    margin-top: auto;
+}
+
+#reset-button
+{
+    margin-top: 12pt;
+}
+
 #clq-root
 {
     width: 100%;

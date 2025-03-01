@@ -158,21 +158,10 @@ class SettingsPopup extends Popup
         this.parent = parent;
 
         let table = document.createElement("table");
+        table.className = "settings-table";
         this.popup_body.appendChild(table);
 
-        this.simplrend_dropdown = SettingsPopup.add_selector_row(
-            table,
-            "Simplex mode",
-            "settings-simpl-mode",
-            [
-                ["solid", "solid"],
-                ["dots", "dots"],
-                ["blank", "blank"]
-            ],
-            (val) => {
-                this.parent.draw_options.set_simplex_render_mode(val);
-            }
-        );
+        SettingsPopup.add_title(table, "Size and Weight");
 
         this.node_radius_spinner = SettingsPopup.add_stepper_row(
             table,
@@ -199,9 +188,26 @@ class SettingsPopup extends Popup
             (val) => this.parent.draw_options.set_hasse_edge_weight(val)
         );
 
+        SettingsPopup.add_title(table, "Misc.");
+
+        this.simplrend_dropdown = SettingsPopup.add_selector_row(
+            table,
+            "Simplex mode",
+            "settings-simpl-mode",
+            [
+                ["solid", "solid"],
+                ["dots", "dots"],
+                ["blank", "blank"]
+            ],
+            (val) => {
+                this.parent.draw_options.set_simplex_render_mode(val);
+            }
+        );
+
         this.reset_button = document.createElement("button");
         this.reset_button.onclick = (ev) => this.reset_settings();
         this.reset_button.innerText = "Reset";
+        this.reset_button.id = "reset-button";
         this.popup_body.appendChild(this.reset_button);
 
         this.sync_with_settings();
@@ -298,6 +304,24 @@ class SettingsPopup extends Popup
         table.appendChild(row);
 
         return selector;
+    }
+
+    private static add_title(
+        table: HTMLTableElement,
+        name: string
+    )
+    {
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+        table.appendChild(row);
+
+        let title = document.createElement("div");
+        title.className = "settings-head";
+        title.innerText = name;
+        d1.appendChild(title);
     }
 }
 

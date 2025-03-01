@@ -1,10 +1,5 @@
-import { get_colors } from "../draw/colors";
-import { get_cookie, set_cookie } from "../cookie";
-import { BakedDAGEmbedding } from "../dag_layout";
 import { Bezier, Vector } from "../util";
 import { DrawOptions } from "../draw/draw_options";
-
-
 
 export class DAGCanvas
 {
