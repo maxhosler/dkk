@@ -25,12 +25,16 @@ export class DrawOptions
 	private f_hasse_edge_weight: number = 10;
 
 	private f_scheme_mode: {mode: ColorSchemeMode, index: number} = {mode: "computed", index:2};
-	private f_simplex_render_mode: SimplexRenderMode = "solid";
+	private f_simplex_render_mode: SimplexRenderMode = "dots";
 
 	private f_background_color: string = "#b0b0b0";
 	private f_selection_color: string = "#2160c487";
 	private f_edge_color: string = "#222222";
 	private f_vertex_color: string = "#000000";
+
+	private f_dot_shade: boolean = false;
+	private f_dot_on_top: boolean = true;
+	private f_dot_radius: number = 5;
 
 	private change_listeners: (()=>void)[] = [];
 	private do_sync_css: boolean;
@@ -102,6 +106,22 @@ export class DrawOptions
 	set_background_color(color: string)
 	{
 		this.f_background_color = color;
+		this.on_change();
+	}
+
+	set_dot_shade(b: boolean)
+	{
+		this.f_dot_shade = b;
+		this.on_change();
+	}
+	set_dot_on_top(b: boolean)
+	{
+		this.f_dot_on_top = b;
+		this.on_change();
+	}
+	set_dot_radius(rad: number)
+	{
+		this.f_dot_radius = rad;
 		this.on_change();
 	}
 
@@ -188,6 +208,18 @@ export class DrawOptions
 	{
 		return this.f_simplex_render_mode;
 	}
+	dot_shade(): boolean
+	{
+		return this.f_dot_shade;
+	}
+	dot_on_top(): boolean
+	{
+		return this.f_dot_on_top;
+	}
+	dot_radius(): number
+	{
+		return this.f_dot_radius;
+	}
 
 	constructor(load_from_cookies: boolean, sync_css: boolean)
 	{
@@ -206,46 +238,12 @@ export class DrawOptions
 		} catch(e)
 		{ console.warn("Failed to parse draw options cookie.", e); return; }
 
-		if(typeof json_ob.f_scale == "number")
-			this.f_scale = json_ob.f_scale;
-
-		if(typeof json_ob.f_node_radius == "number")
-			this.f_node_radius = json_ob.f_node_radius;
-		
-		if(typeof json_ob.f_edge_weight == "number")
-			this.f_edge_weight = json_ob.f_edge_weight;
-		
-		if(typeof json_ob.f_edge_halo == "number")
-			this.f_edge_halo = json_ob.f_edge_halo;
-		
-		if(typeof json_ob.f_route_weight == "number")
-			this.f_route_weight = json_ob.f_route_weight;
-		
-		
-		if(typeof json_ob.f_scheme_mode == "object")
+		for(let field in this)
 		{
-			if( typeof json_ob.f_scheme_mode.mode == "string" && 
-				typeof json_ob.f_scheme_mode.mode.index == "number"
-			){
-				this.f_scheme_mode = json_ob.f_scheme_mode;
-			}
+			if(field.substring(0,2) == "f_" && field in json_ob)
+				// @ts-ignore
+				this[field] = json_ob[field];
 		}
-			
-		
-		if(typeof json_ob.f_background_color == "string")
-			this.f_background_color = json_ob.f_background_color;
-		
-		if(typeof json_ob.f_selection_color == "string")
-			this.f_selection_color = json_ob.f_selection_color;
-		
-		if(typeof json_ob.f_edge_color == "string")
-			this.f_edge_color = json_ob.f_edge_color;
-
-		if(typeof json_ob.f_vertex_color == "string")
-			this.f_vertex_color = json_ob.f_vertex_color;
-
-		if(typeof json_ob.f_simplex_render_mode == "string")
-			this.f_simplex_render_mode = json_ob.f_simplex_render_mode;
 	
 		this.sync_css();
 	}

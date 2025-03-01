@@ -143,12 +143,15 @@ class SettingsPopup extends Popup
 {
     parent: DKKProgram;
 
-    simplrend_dropdown: HTMLSelectElement;
-
     node_radius_spinner: HTMLInputElement;
     edge_weight_spinner: HTMLInputElement;
     route_weight_spinner: HTMLInputElement;
     hasse_weight_spinner: HTMLInputElement;
+
+    simplrend_dropdown: HTMLSelectElement;
+    dot_on_top_cb: HTMLInputElement;
+    dot_shade_cb: HTMLInputElement;
+    dot_radius_spinner: HTMLInputElement;
 
     vertex_color_selector: HTMLInputElement;
     background_color_selector: HTMLInputElement;
@@ -203,7 +206,7 @@ class SettingsPopup extends Popup
             (val) => this.parent.draw_options.set_hasse_edge_weight(val)
         );
 
-        SettingsPopup.add_title(col1_table, "Misc.");
+        SettingsPopup.add_title(col1_table, "Simplex drawing");
 
         this.simplrend_dropdown = SettingsPopup.add_selector_row(
             col1_table,
@@ -218,6 +221,24 @@ class SettingsPopup extends Popup
                 this.parent.draw_options.set_simplex_render_mode(val);
             }
         );
+        this.dot_on_top_cb = SettingsPopup.add_tickbox_row(
+            col1_table,
+            "Draw dots on top",
+            "settings-dots-on-top",
+            (b) => this.parent.draw_options.set_dot_on_top(b)
+        );
+        this.dot_shade_cb = SettingsPopup.add_tickbox_row(
+            col1_table,
+            "Shade dots",
+            "settings-dots-shade",
+            (b) => this.parent.draw_options.set_dot_shade(b)
+        );
+        this.dot_radius_spinner = SettingsPopup.add_stepper_row(
+            col1_table,
+            "Dot radius",
+            "settings-dot-radius",
+            (v) => this.parent.draw_options.set_dot_radius(v)
+        )
 
         //SECOND COLUMN
         let col2_table = document.createElement("table");
@@ -275,6 +296,12 @@ class SettingsPopup extends Popup
             this.parent.draw_options.vertex_color();
         this.background_color_selector.value = 
             this.parent.draw_options.background_color();
+        this.dot_on_top_cb.checked =
+            this.parent.draw_options.dot_on_top();
+        this.dot_shade_cb.checked =
+            this.parent.draw_options.dot_shade();
+        this.dot_radius_spinner.value = 
+            this.parent.draw_options.dot_radius().toString();
     }
 
     private static add_stepper_row(
@@ -398,6 +425,38 @@ class SettingsPopup extends Popup
         table.appendChild(row);
 
         return colorsel;
+    }
+
+    private static add_tickbox_row(
+        table: HTMLTableElement,
+        name: string,
+        id: string,
+        onchange: (val: boolean) => void
+    ): HTMLInputElement
+    {
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerText = name;
+
+        let tickbox = document.createElement("input");
+        tickbox.type = "checkbox";
+        tickbox.id = id;
+        tickbox.addEventListener("change", (ev) => {
+            onchange(tickbox.checked)
+        });
+
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+
+        d1.appendChild(label);
+        d2.appendChild(tickbox);
+
+        table.appendChild(row);
+
+        return tickbox;
     }
 }
 
