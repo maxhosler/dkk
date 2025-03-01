@@ -134,6 +134,7 @@ export class CliqueViewer
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
 
+        this.update_route_enabled()
     }
 
 
@@ -153,14 +154,14 @@ export class CliqueViewer
         this.current_clique = new_clq;
 
         let oc = this.cliques.cliques[old_clq];
-        let cc = this.cliques.cliques[new_clq];
-        this.poly_canvas.set_clique(cc);
+        let nc = this.cliques.cliques[new_clq];
+        this.poly_canvas.set_clique(nc);
 
         if(old_clq != new_clq) {
             let old_route = -1;
             for(let r of oc.routes)
             {
-                if(!cc.routes.includes(r))
+                if(!nc.routes.includes(r))
                 {
                     old_route = r;
                     break;
@@ -168,7 +169,7 @@ export class CliqueViewer
             }
 
             let new_route = -1;
-            for(let r of cc.routes)
+            for(let r of nc.routes)
             {
                 if(!oc.routes.includes(r))
                 {
@@ -181,8 +182,24 @@ export class CliqueViewer
                 this.swap_box.swap_color(old_route, new_route);
             else
                 console.warn("Old route and new clique do not differ as expected.")
+        
+            this.update_route_enabled();
         }
+
         this.draw();
+    }
+
+    update_route_enabled()
+    {
+        let nc = this.cliques.cliques[this.current_clique];
+        for(let r of nc.routes)
+        {
+            let en = this.cliques.route_swap_by_route_idx(
+                this.current_clique,
+                r
+            ) != this.current_clique;
+            this.swap_box.show_enabled(r, en);
+        }
     }
 
     /*

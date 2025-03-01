@@ -167,6 +167,12 @@ html, body {
     user-select: none; /* Standard syntax */
 }
 
+.swap-greyed
+{
+    color: #00000000;
+    text-shadow: none;
+}
+
 .fullscreen
 {
     position:fixed;
@@ -310,3 +316,4 @@ html, body {
     flex: 100%;
     width: 100%;
 }
+

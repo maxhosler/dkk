@@ -82,4 +82,21 @@ export class SwapBox
                 this.draw_options.get_route_color(this.route_idxs[i]);
         }
     }
+
+    show_enabled(route_idx: number, enabled: boolean)
+    {
+        let i = this.route_idxs.indexOf(route_idx);
+        if(i===-1)
+        {
+            console.warn("Tried to show_enabled invalid index.");
+            return;
+        }
+        let box = this.boxes[i];
+
+        box.classList.remove("swap-greyed");
+        if(!enabled)
+        {
+            box.classList.add("swap-greyed");
+        }
+    }
 }
