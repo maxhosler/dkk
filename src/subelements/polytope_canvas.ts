@@ -1,6 +1,7 @@
 import { DrawOptions } from "../draw/draw_options";
 import { FlowPolytope } from "../routes/polytope";
 import { Clique } from "../routes/routes";
+import { Vector } from "../util";
 import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
 
@@ -64,6 +65,7 @@ export class PolytopeCanvas
 
     external_buffers: FaceBuffers;
     simpl_buffers: FaceBuffers;
+    dot_buffers: FaceBuffers;
 
     pos_transform: Mat4 = Mat4.id();
     current_clique: Clique | null = null;
@@ -105,6 +107,14 @@ export class PolytopeCanvas
         );
         
         this.simpl_buffers = new FaceBuffers(
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_float_buffer([]),
+            this.new_index_buffer([]),
+            0
+        );
+
+        this.dot_buffers = new FaceBuffers(
             this.new_float_buffer([]),
             this.new_float_buffer([]),
             this.new_float_buffer([]),
@@ -228,6 +238,8 @@ export class PolytopeCanvas
 
         if (!this.do_render()) { return; }
 
+        //SIMPLICES
+
         let sim_indices: number[] = [];
         let sim_normals: number[] = [];
         let sim_positions: number[] = [];
@@ -322,6 +334,49 @@ export class PolytopeCanvas
 
             sim_indices.length
         );
+
+        //DOTS
+
+        let dot_indices: number[] = [];
+        let dot_normals: number[] = [];
+        let dot_positions: number[] = [];
+        let dot_simpl_pos: number[] = [];
+
+        let sphere = gen_sphere(5, 10, 0.05);
+
+        for(let j = 0; j < this.poly_dim+1; j++)
+        {
+            
+            let center = this.vertex_positions[current_clique.routes[j]];
+            
+            let base = dot_indices.length;
+            for(let idx of sphere.idxs)
+                dot_indices.push(base + idx);
+
+            let simpl = [0,0,0,0];
+            simpl[j] = 1;
+            for(let pos of sphere.pos)
+            {
+                dot_normals = [...dot_normals, ...pos];
+                let offset_pos = [
+                    center[0] + pos[0],
+                    center[1] + pos[1],
+                    center[2] + pos[2]
+                ];
+                dot_positions = [...dot_positions, ...offset_pos];
+                dot_simpl_pos = [...dot_simpl_pos, ...simpl];
+            }
+        }
+
+        this.dot_buffers = new FaceBuffers(
+            this.new_float_buffer(dot_positions),
+            this.new_float_buffer(dot_normals),
+            this.new_float_buffer(dot_simpl_pos),
+
+            this.new_index_buffer(dot_indices),
+
+            dot_indices.length
+        );
     }
 
     set_message()
@@ -403,9 +458,14 @@ export class PolytopeCanvas
             this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
             this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
             this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
+
+            let simpl_mode = this.draw_options.simplex_render_mode();
+            if(simpl_mode == "blank" || simpl_mode == "dots")
+                this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 0);
+
             this.ctx.uniform1f(this.program.uniforms.shade_amount, 1);
 
-            let color = [1, 0, 0]; //If this color shows, something is broken
+            let color = [0.792, 0.913, 0.960];
             this.ctx.uniform3fv(this.program.uniforms.color, color);
 
             const triangle_count = this.simpl_buffers.num_verts;
@@ -415,9 +475,30 @@ export class PolytopeCanvas
         }
 
         draw_external(1);
+
+        if(this.draw_options.simplex_render_mode() == "dots")
+        { this.draw_dots() }
     }
 
-    
+    draw_dots()
+    {
+        this.ctx.disable(this.ctx.DEPTH_TEST);
+
+        this.bind_face_buffers(this.dot_buffers);
+
+        this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
+        this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
+        this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
+        this.ctx.uniform1f(this.program.uniforms.shade_amount, 0);
+
+        let color = [1, 0, 0]; //If this color shows, something is broken
+        this.ctx.uniform3fv(this.program.uniforms.color, color);
+
+        const triangle_count = this.dot_buffers.num_verts;
+        const type = this.ctx.UNSIGNED_SHORT;
+        const offset = 0;
+        this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
+    }
 
     bind_face_buffers(face_buffers: FaceBuffers)
     {
@@ -498,29 +579,28 @@ export class PolytopeCanvas
             0.792, 0.913, 0.960, 1
         ];
 
-        if(this.draw_options.simplex_render_mode() == "solid")
-        {
-            let colors = [0,1,2,3];
-            if (this.current_clique)
-            {
-                colors = this.current_clique.routes;
-            }
-            else
-            {
-                console.warn("No current clique; coloring will be arbitrary.");
-            }
 
-            for(let i = 0; i < colors.length; i++)
+        let colors = [0,1,2,3];
+        if (this.current_clique)
+        {
+            colors = this.current_clique.routes;
+        }
+        else
+        {
+            console.warn("No current clique; coloring will be arbitrary.");
+        }
+
+        for(let i = 0; i < colors.length; i++)
+        {
+            let c_idx = colors[i];
+            let col = this.draw_options.get_route_color(c_idx);
+            let col_arr = css_str_to_rgb(col);
+            for(let j = 0; j < 3; j++)
             {
-                let c_idx = colors[i];
-                let col = this.draw_options.get_route_color(c_idx);
-                let col_arr = css_str_to_rgb(col);
-                for(let j = 0; j < 3; j++)
-                {
-                    mat[4*i+j] = col_arr[j]/255;
-                }
+                mat[4*i+j] = col_arr[j]/255;
             }
         }
+        
         
 
         this.ctx.uniformMatrix4fv(
@@ -714,4 +794,47 @@ function cross_product(a: Triple, b: Triple): Triple
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0]
     ];
+}
+
+function gen_sphere(rows: number, cols: number, radius: number): {pos: Triple[], idxs: number[]}
+{
+    let sphere: Triple[] = [];
+    let idx: number[] = [];
+
+    const ROWS: number = 5;
+    const COLS: number = 10;
+
+    for(let row = 0; row < ROWS; row++){
+    for(let col = 0; col < COLS; col++){
+
+        let vangle = row * Math.PI / (ROWS - 1);
+        let hangle = col * 2 * Math.PI / COLS;
+
+        let sv = Math.sin(vangle);
+        let cv = Math.cos(vangle);
+
+        let sh = Math.sin(hangle);
+        let ch = Math.cos(hangle);
+
+        let vert: Triple = [ch*sv * radius, cv * radius, sh*sv * radius];
+
+        sphere.push(vert);
+
+    }}
+
+    let vert_idx = (row: number, col: number) => row * COLS + (col % COLS);
+
+    for(let row = 0; row < ROWS-1; row++){
+    for(let col = 0; col < COLS; col++){
+
+        let p1 = vert_idx(row, col);
+        let p2 = vert_idx(row+1, col);
+        let p3 = vert_idx(row, col+1);
+        let p4 = vert_idx(row+1, col+1);
+
+        idx = [...idx, p1, p2, p4, p1, p3, p4];
+
+    }}
+
+    return {pos: sphere, idxs: idx};
 }
