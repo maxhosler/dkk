@@ -70,7 +70,11 @@ export class CliqueViewer
             this.cliques.routes.length
         );
         draw_options.add_change_listener(() => {
-            if(this) this.draw();
+            if(this) {
+                let nc = this.cliques.cliques[this.current_clique];
+                this.poly_canvas.set_clique(nc);
+                this.draw();
+            }
             if(this.swap_box) this.swap_box.update_color();
         });
 

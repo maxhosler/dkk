@@ -25,7 +25,7 @@ export class DrawOptions
 	private f_hasse_edge_weight: number = 10;
 
 	private f_scheme_mode: {mode: ColorSchemeMode, index: number} = {mode: "computed", index:2};
-	private f_simplex_render_mode: SimplexRenderMode = "solid";
+	private f_simplex_render_mode: SimplexRenderMode = "dots";
 
 	private f_background_color: string = "#b0b0b0";
 	private f_selection_color: string = "#2160c487";
@@ -34,6 +34,7 @@ export class DrawOptions
 
 	private f_dot_shade: boolean = false;
 	private f_dot_on_top: boolean = true;
+	private f_dot_radius: number = 5;
 
 	private change_listeners: (()=>void)[] = [];
 	private do_sync_css: boolean;
@@ -116,6 +117,11 @@ export class DrawOptions
 	set_dot_on_top(b: boolean)
 	{
 		this.f_dot_on_top = b;
+		this.on_change();
+	}
+	set_dot_radius(rad: number)
+	{
+		this.f_dot_radius = rad;
 		this.on_change();
 	}
 
@@ -210,6 +216,10 @@ export class DrawOptions
 	{
 		return this.f_dot_on_top;
 	}
+	dot_radius(): number
+	{
+		return this.f_dot_radius;
+	}
 
 	constructor(load_from_cookies: boolean, sync_css: boolean)
 	{
@@ -230,7 +240,7 @@ export class DrawOptions
 
 		for(let field in this)
 		{
-			if(field.substring(0,2) == "f_" && json_ob[field])
+			if(field.substring(0,2) == "f_" && field in json_ob)
 				// @ts-ignore
 				this[field] = json_ob[field];
 		}

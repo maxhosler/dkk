@@ -151,6 +151,7 @@ class SettingsPopup extends Popup
     simplrend_dropdown: HTMLSelectElement;
     dot_on_top_cb: HTMLInputElement;
     dot_shade_cb: HTMLInputElement;
+    dot_radius_spinner: HTMLInputElement;
 
     vertex_color_selector: HTMLInputElement;
     background_color_selector: HTMLInputElement;
@@ -232,6 +233,12 @@ class SettingsPopup extends Popup
             "settings-dots-shade",
             (b) => this.parent.draw_options.set_dot_shade(b)
         );
+        this.dot_radius_spinner = SettingsPopup.add_stepper_row(
+            col1_table,
+            "Dot radius",
+            "settings-dot-radius",
+            (v) => this.parent.draw_options.set_dot_radius(v)
+        )
 
         //SECOND COLUMN
         let col2_table = document.createElement("table");
@@ -293,6 +300,8 @@ class SettingsPopup extends Popup
             this.parent.draw_options.dot_on_top();
         this.dot_shade_cb.checked =
             this.parent.draw_options.dot_shade();
+        this.dot_radius_spinner.value = 
+            this.parent.draw_options.dot_radius().toString();
     }
 
     private static add_stepper_row(

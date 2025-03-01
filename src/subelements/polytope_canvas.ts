@@ -342,7 +342,7 @@ export class PolytopeCanvas
         let dot_positions: number[] = [];
         let dot_simpl_pos: number[] = [];
 
-        let sphere = gen_sphere(10, 10, 0.05);
+        let sphere = gen_sphere(10, 10, this.draw_options.dot_radius() / 100);
 
         for(let j = 0; j < this.poly_dim+1; j++)
         {
