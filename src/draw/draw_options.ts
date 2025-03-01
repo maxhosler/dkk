@@ -32,6 +32,9 @@ export class DrawOptions
 	private f_edge_color: string = "#222222";
 	private f_vertex_color: string = "#000000";
 
+	private f_polytope_color: string = "#de5ed4";
+	private f_simplex_color: string = "#c9e8f4";
+
 	private f_dot_shade: boolean = false;
 	private f_dot_on_top: boolean = true;
 	private f_dot_radius: number = 5;
@@ -106,6 +109,16 @@ export class DrawOptions
 	set_background_color(color: string)
 	{
 		this.f_background_color = color;
+		this.on_change();
+	}
+	set_polytope_color(color: string)
+	{
+		this.f_polytope_color = color;
+		this.on_change();
+	}
+	set_simplex_color(color: string)
+	{
+		this.f_simplex_color = color;
 		this.on_change();
 	}
 
@@ -204,6 +217,15 @@ export class DrawOptions
 	{
 		return this.f_vertex_color;
 	}
+	polytope_color(): string
+	{
+		return this.f_polytope_color;
+	}
+	simplex_color(): string
+	{
+		return this.f_simplex_color;
+	}
+
 	simplex_render_mode(): SimplexRenderMode
 	{
 		return this.f_simplex_render_mode;

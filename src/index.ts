@@ -155,6 +155,8 @@ class SettingsPopup extends Popup
 
     vertex_color_selector: HTMLInputElement;
     background_color_selector: HTMLInputElement;
+    polytope_color_selector: HTMLInputElement;
+    simplex_color_selector: HTMLInputElement;
 
     reset_button: HTMLButtonElement;
 
@@ -263,6 +265,22 @@ class SettingsPopup extends Popup
                 this.parent.draw_options.set_background_color(val);
             }
         );
+        this.polytope_color_selector = SettingsPopup.add_color_row(
+            col2_table,
+            "Polytope color",
+            "settings-polytope-color",
+            (val) => {
+                this.parent.draw_options.set_polytope_color(val);
+            }
+        );
+        this.simplex_color_selector = SettingsPopup.add_color_row(
+            col2_table,
+            "Simplex color",
+            "settings-simplex-color",
+            (val) => {
+                this.parent.draw_options.set_simplex_color(val);
+            }
+        );
 
         //RESET BUTTON
         this.reset_button = document.createElement("button");
@@ -292,10 +310,16 @@ class SettingsPopup extends Popup
             this.parent.draw_options.route_weight().toString();
         this.hasse_weight_spinner.value = 
             this.parent.draw_options.hasse_edge_weight().toString();
+            
         this.vertex_color_selector.value = 
             this.parent.draw_options.vertex_color();
         this.background_color_selector.value = 
             this.parent.draw_options.background_color();
+        this.polytope_color_selector.value = 
+            this.parent.draw_options.polytope_color();
+        this.simplex_color_selector.value = 
+            this.parent.draw_options.simplex_color();
+
         this.dot_on_top_cb.checked =
             this.parent.draw_options.dot_on_top();
         this.dot_shade_cb.checked =

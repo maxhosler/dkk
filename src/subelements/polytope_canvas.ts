@@ -466,7 +466,12 @@ export class PolytopeCanvas
                 this.ctx.uniform1f(this.program.uniforms.shade_amount, 0);
             }
 
-            let color = [222./256., 94/256., 212/256]; //TODO: parametrize
+            let color_i = css_str_to_rgb(this.draw_options.polytope_color());
+            let color = [
+                color_i[0] / 255,
+                color_i[1] / 255,
+                color_i[2] / 255
+            ];
             if(dir == -1)
             {
                 color[0] *= 0.5;
@@ -499,7 +504,12 @@ export class PolytopeCanvas
 
             this.ctx.uniform1f(this.program.uniforms.shade_amount, 1);
 
-            let color = [0.792, 0.913, 0.960];
+            let color_i = css_str_to_rgb(this.draw_options.simplex_color());
+            let color = [
+                color_i[0] / 255,
+                color_i[1] / 255,
+                color_i[2] / 255
+            ];
             this.ctx.uniform3fv(this.program.uniforms.color, color);
 
             const triangle_count = this.simpl_buffers.num_verts;
