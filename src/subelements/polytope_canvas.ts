@@ -405,8 +405,8 @@ export class PolytopeCanvas
 
     draw()
     {
-        this.ctx.clearColor(0,0,0,1);
         this.ctx.clearDepth(1.0);
+        this.ctx.clearColor(0,0,0,1);
 
         if (!this.do_render()) return;
 
@@ -420,6 +420,35 @@ export class PolytopeCanvas
     
         this.ctx.enable(this.ctx.BLEND);
         this.ctx.blendFunc(this.ctx.SRC_ALPHA, this.ctx.ONE_MINUS_SRC_ALPHA);
+
+        const draw_dots = () => {
+            if(this.draw_options.simplex_render_mode() == "dots")
+            {
+                if(this.draw_options.dot_on_top())
+                {
+                    this.ctx.clear(this.ctx.DEPTH_BUFFER_BIT);
+                }
+                    
+    
+                this.bind_face_buffers(this.dot_buffers);
+    
+                this.ctx.uniform1f(this.program.uniforms.cull_dir, 0);
+                this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
+                this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
+                let shade_amount = 0;
+                if(this.draw_options.dot_shade())
+                    shade_amount = 1;
+                this.ctx.uniform1f(this.program.uniforms.shade_amount, shade_amount);
+    
+                let color = [1, 0, 0]; //If this color shows, something is broken
+                this.ctx.uniform3fv(this.program.uniforms.color, color);
+    
+                const triangle_count = this.dot_buffers.num_verts;
+                const type = this.ctx.UNSIGNED_SHORT;
+                const offset = 0;
+                this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
+            }
+        }
 
         const draw_external = (dir: number) =>
         {
@@ -452,6 +481,8 @@ export class PolytopeCanvas
             this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
         }
 
+        draw_dots();
+
         draw_external(-1);
 
         {
@@ -479,29 +510,7 @@ export class PolytopeCanvas
 
         draw_external(1);
 
-        if(this.draw_options.simplex_render_mode() == "dots")
-        {
-            if(this.draw_options.dot_on_top())
-                this.ctx.clearDepth(-1.0);
-
-            this.bind_face_buffers(this.dot_buffers);
-
-            this.ctx.uniform1f(this.program.uniforms.cull_dir, 1);
-            this.ctx.uniform1f(this.program.uniforms.transparency, 1.0);
-            this.ctx.uniform1f(this.program.uniforms.do_simplex_color, 1);
-            let shade_amount = 0;
-            if(this.draw_options.dot_shade())
-                shade_amount = 1;
-            this.ctx.uniform1f(this.program.uniforms.shade_amount, shade_amount);
-
-            let color = [1, 0, 0]; //If this color shows, something is broken
-            this.ctx.uniform3fv(this.program.uniforms.color, color);
-
-            const triangle_count = this.dot_buffers.num_verts;
-            const type = this.ctx.UNSIGNED_SHORT;
-            const offset = 0;
-            this.ctx.drawElements(this.ctx.TRIANGLES, triangle_count, type, offset);
-        }
+        draw_dots();
     }
 
     bind_face_buffers(face_buffers: FaceBuffers)
@@ -819,7 +828,7 @@ function gen_sphere(rows: number, cols: number, radius: number): {positions: Tri
         let ch = Math.cos(hangle);
 
         let vert: Triple = [ch*sv * radius, cv * radius, sh*sv * radius];
-        let normal: Triple = [ch*sv, cv, sh*sv];
+        let normal: Triple = [-ch*sv, -cv, -sh*sv];
 
         sphere.push(vert);
         normals.push(normal);
