@@ -1,5 +1,5 @@
-import { DrawOptions } from "./subelements/dag_canvas";
 import { caracol_emb, prebuilt_dag_embedding } from "./dag_layout";
+import { DrawOptions } from "./draw/draw_options";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 
@@ -139,10 +139,196 @@ class OpenPopup extends Popup
     }
 }
 
+class SettingsPopup extends Popup
+{
+    parent: DKKProgram;
+
+    simplrend_dropdown: HTMLSelectElement;
+
+    node_radius_spinner: HTMLInputElement;
+    edge_weight_spinner: HTMLInputElement;
+    route_weight_spinner: HTMLInputElement;
+    hasse_weight_spinner: HTMLInputElement;
+
+    reset_button: HTMLButtonElement;
+
+    constructor(base: HTMLElement, parent: DKKProgram)
+    {
+        super(base, "Settings", () => parent.popup_open = false);
+        this.parent = parent;
+
+        let table = document.createElement("table");
+        table.className = "settings-table";
+        this.popup_body.appendChild(table);
+
+        SettingsPopup.add_title(table, "Size and Weight");
+
+        this.node_radius_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Node radius",
+            "settings-node-radius",
+            (val) => this.parent.draw_options.set_node_radius(val)
+        );
+        this.edge_weight_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Edge weight",
+            "settings-edge-weight",
+            (val) => this.parent.draw_options.set_edge_weight(val)
+        );
+        this.route_weight_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Route weight",
+            "settings-route-weight",
+            (val) => this.parent.draw_options.set_route_weight(val)
+        );
+        this.hasse_weight_spinner = SettingsPopup.add_stepper_row(
+            table,
+            "Hasse edge weight",
+            "settings-hasse-weight",
+            (val) => this.parent.draw_options.set_hasse_edge_weight(val)
+        );
+
+        SettingsPopup.add_title(table, "Misc.");
+
+        this.simplrend_dropdown = SettingsPopup.add_selector_row(
+            table,
+            "Simplex mode",
+            "settings-simpl-mode",
+            [
+                ["solid", "solid"],
+                ["dots", "dots"],
+                ["blank", "blank"]
+            ],
+            (val) => {
+                this.parent.draw_options.set_simplex_render_mode(val);
+            }
+        );
+
+        this.reset_button = document.createElement("button");
+        this.reset_button.onclick = (ev) => this.reset_settings();
+        this.reset_button.innerText = "Reset";
+        this.reset_button.id = "reset-button";
+        this.popup_body.appendChild(this.reset_button);
+
+        this.sync_with_settings();
+    }
+
+    reset_settings()
+    {
+        this.parent.draw_options.reset();
+        this.sync_with_settings();
+    }
+
+    sync_with_settings()
+    {
+        this.simplrend_dropdown.value = 
+            this.parent.draw_options.simplex_render_mode();
+        this.node_radius_spinner.value = 
+            this.parent.draw_options.node_radius().toString();
+        this.edge_weight_spinner.value = 
+            this.parent.draw_options.edge_weight().toString();
+        this.route_weight_spinner.value = 
+            this.parent.draw_options.route_weight().toString();
+        this.hasse_weight_spinner.value = 
+            this.parent.draw_options.hasse_edge_weight().toString();
+    }
+
+    private static add_stepper_row(
+        table: HTMLTableElement,
+        name: string,
+        id: string,
+        onchange: (val: number) => void
+    ): HTMLInputElement
+    {
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerText = name;
+
+        let spinner = document.createElement("input");
+        spinner.type = "number";
+        spinner.id = id;
+        spinner.step = "1";
+        spinner.min = "1";
+        spinner.onclick = (ev) => {
+            onchange(parseInt(spinner.value))
+        };
+
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+
+        d1.appendChild(label);
+        d2.appendChild(spinner);
+
+        table.appendChild(row);
+
+        return spinner;
+    }
+
+    private static add_selector_row(
+        table: HTMLTableElement,
+        name: string,
+        id: string,
+        name_val_pairs: [string, string][],
+        onchange: (val: string) => void
+    ): HTMLSelectElement
+    {
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerText = name;
+
+        let selector = document.createElement("select");
+        selector.id = id;
+        for(let pair of name_val_pairs)
+        {
+            let opt = document.createElement("option");
+            opt.value = pair[1];
+            opt.innerText = pair[0];
+            selector.appendChild(opt);
+        }
+        selector.addEventListener("change", (ev) => {
+            onchange(selector.value)
+        });
+
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+
+        d1.appendChild(label);
+        d2.appendChild(selector);
+
+        table.appendChild(row);
+
+        return selector;
+    }
+
+    private static add_title(
+        table: HTMLTableElement,
+        name: string
+    )
+    {
+        let row = document.createElement("tr");
+        let d1 = document.createElement("td");
+        let d2 = document.createElement("td");
+        row.appendChild(d1);
+        row.appendChild(d2);
+        table.appendChild(row);
+
+        let title = document.createElement("div");
+        title.className = "settings-head";
+        title.innerText = name;
+        d1.appendChild(title);
+    }
+}
+
 class DKKProgram
 {
     body: HTMLBodyElement;
-	draw_options = new DrawOptions();
+	draw_options = new DrawOptions(true);
 	mode: CliqueViewer | EmbeddingEditor = CliqueViewer.destructive_new(
 		prebuilt_dag_embedding(0),
 		this.draw_options
@@ -155,6 +341,11 @@ class DKKProgram
 		let open_button: HTMLDivElement = document.getElementById("open-button") as HTMLDivElement;
 		open_button.onclick = (ev) => {
             this.open_button_click();
+		};
+
+        let settings_button: HTMLDivElement = document.getElementById("settings-button") as HTMLDivElement;
+		settings_button.onclick = (ev) => {
+            this.settings_button_click();
 		};
 	}
 
@@ -169,6 +360,17 @@ class DKKProgram
         );
     }
 
+    settings_button_click()
+    {
+        if(this.popup_open) { return; }
+
+        this.popup_open = true;
+        let popup = new SettingsPopup(
+            this.body,
+            this
+        );
+    }
+
 	set_clique_viewer(idx: number)
 	{
 		var layout = prebuilt_dag_embedding(idx);
@@ -176,4 +378,4 @@ class DKKProgram
 	}
 }
 
-let dkk = new DKKProgram();
+var dkk = new DKKProgram();

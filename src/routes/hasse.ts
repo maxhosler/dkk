@@ -1,4 +1,5 @@
 import { BoundingBox, Vector } from "../util";
+import { Clique } from "./routes";
 
 export class HasseDiagram
 {
@@ -10,7 +11,10 @@ export class HasseDiagram
     
     readonly minimal_elt: number;
     readonly maximal_elt: number;
-    constructor(poset_relation: boolean[][])
+
+    readonly cover_routes: [lower: number, higher: number][][];
+
+    constructor(poset_relation: boolean[][], cliques: Clique[])
     {
         //Extracts the covering relation from the poset relation.
         let covering_relation: boolean[][] = structuredClone(poset_relation);
@@ -60,6 +64,52 @@ export class HasseDiagram
         )
 
         this.bounding_box = new BoundingBox(this.layout_rows);
+
+        this.cover_routes = [];
+        for(let i = 0; i < this.poset_size; i++) {
+            this.cover_routes.push([])
+            for(let j = 0; j < this.poset_size; j++)
+            {
+                if (!this.covering_relation[i][j]) {
+                    this.cover_routes[i].push([-1,-1]);
+                    continue;
+                }
+                
+                let lo_clq = cliques[i];
+                let hi_clq = cliques[j];
+                
+                let lo_route = -1;
+                let hi_route = -1;
+
+                for(let r of lo_clq.routes)
+                {
+                    if(!hi_clq.routes.includes(r))
+                    {
+                        lo_route = r;
+                        break;
+                    }
+                }
+
+                for(let r of hi_clq.routes)
+                {
+                    if(!lo_clq.routes.includes(r))
+                    {
+                        hi_route = r;
+                        break;
+                    }
+                }
+
+                if(lo_route == -1 || hi_route == -1)
+                {
+                    console.warn("Clique covered by other clique do not differ as expected.")
+                    this.cover_routes[i].push([-1,-1]);
+                }
+
+                this.cover_routes[i].push([lo_route, hi_route]);
+            }
+        }
+
+        
     }
 
     private static compute_layout_rows(

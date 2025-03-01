@@ -3,7 +3,11 @@ html {
 }
 
 :root {
-    --default-border: 1pt solid #b0b0b0;
+    --draw-background: #b0b0b0;
+    --draw-border: #686868;
+    --menu-background1: #f0f0f0;
+
+    --default-border: 1pt solid var(--draw-background);
 }
   
 
@@ -27,8 +31,10 @@ html, body {
     height: 20pt;
     width: 100%;
 
-    background-color: #f0f0f0;
+    background-color: var(--menu-background1);
     border-bottom: var(--default-border);
+
+    display: flex;
 }
 
 .top-bar-button
@@ -53,7 +59,6 @@ html, body {
 
 #complete
 {
-    background-color: #d8d8d8;
     flex-grow: 1;
 
     display: flex;
@@ -63,7 +68,7 @@ html, body {
 #sidebar
 {
     width: 8cm;
-    background-color: rgb(244, 244, 244);
+    background-color: var(--menu-background1);
     padding: 12pt;
 }
 
@@ -81,7 +86,7 @@ html, body {
     left: 0;
     margin: 0;
 
-    background-color: #b0b0b0;
+    background-color: var(--draw-background);
 
 }
 
@@ -126,7 +131,7 @@ html, body {
 .sb-subsection
 {
     border-style: solid;
-    border-color: #b0b0b0;
+    border-color: var(--draw-background);
     border-width: 1pt;
     padding: 8pt;
     margin-bottom: 10pt;
@@ -186,7 +191,7 @@ html, body {
 .popup-window
 {
     border: var(--default-border);
-    background-color: #d8d8d8;
+    background-color: var(--menu-background1);
     width: fit-content;
     min-width: 2in;
     
@@ -239,6 +244,22 @@ html, body {
     padding: 10pt;
 }
 
+.settings-head
+{
+    margin-top: 12pt;
+    font-weight: bold;
+}
+
+.settings-table > tr:nth-child(1) > td > .settings-head
+{
+    margin-top: auto;
+}
+
+#reset-button
+{
+    margin-top: 12pt;
+}
+
 #clq-root
 {
     width: 100%;
@@ -285,7 +306,7 @@ html, body {
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
 
-    border: 1px solid #686868;
+    border: 1px solid var(--draw-border);
     flex: 100%;
     width: 100%;
 }

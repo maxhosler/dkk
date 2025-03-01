@@ -252,7 +252,7 @@ export class DAGCliques
 		}
 		this.clique_leq_matrix = clique_leq_matrix;
 		
-		this.hasse = new HasseDiagram(clique_leq_matrix);
+		this.hasse = new HasseDiagram(clique_leq_matrix, this.cliques);
 	}
 
 	/*
@@ -430,7 +430,7 @@ export class DAGCliques
 		return this.shared_subroutes_arr[route_idx_1][route_idx_2].subroutes
 	}
 
-	routes_at_by_clique_idx(edge_num: number, clique_num: number): number[]
+	routes_at(edge_num: number, clique_num: number): number[]
 	{
 		let out: number[] = [];
 
@@ -440,17 +440,28 @@ export class DAGCliques
 			let r = clique.routes[i];
 			let route = this.routes[r];
 			if(route.edges.includes(edge_num))
-				out.push(i);
+				out.push(r);
 		}
-
-		let edge_ordering = Clique.indexed_local_edge_order(edge_num, clique.routes, this);
-		out.sort(edge_ordering);
 
 		return out;
 	}
 
-	route_swap(clique_idx: number, route_idx: number): number
+	route_swap_by_route_idx(clique_idx: number, route_idx: number): number
 	{
-		return this.route_swaps[clique_idx][route_idx];
+		let clq = this.cliques[clique_idx];
+		for(let i = 0; i < clq.routes.length; i++)
+		{
+			if (clq.routes[i] == route_idx)
+			{
+				return this.route_swaps[clique_idx][i];
+			}
+		}
+		console.warn("Just tried to swap route not present in given clique.");
+		return clique_idx;
+	}
+
+	route_swap_by_idx_in_clq(clique_idx: number, idx_in_clique: number): number
+	{
+		return this.route_swaps[clique_idx][idx_in_clique];
 	}
 }

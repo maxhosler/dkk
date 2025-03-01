@@ -1,4 +1,4 @@
-import { DAGCanvas, DrawOptions } from "../subelements/dag_canvas";
+import { DAGCanvas } from "../subelements/dag_canvas";
 import { FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
@@ -7,6 +7,7 @@ import { DAGCliques } from "../routes/routes";
 import { SwapBox } from "../subelements/swap_box";
 import { FlowPolytope } from "../routes/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
+import { DrawOptions } from "../draw/draw_options";
 
 export class CliqueViewer
 {
@@ -63,12 +64,15 @@ export class CliqueViewer
     {
         this.dag = dag;
         this.draw_options = draw_options;
-        draw_options.add_change_listener(() => {
-            if(this) this.draw_clique();
-            if(this.swap_box) this.swap_box.recolor();
-        })
         this.cliques = new DAGCliques(dag.base_dag);
         this.polytope = new FlowPolytope(this.cliques);
+        this.draw_options.set_builtin_color_scheme(
+            this.cliques.routes.length
+        );
+        draw_options.add_change_listener(() => {
+            if(this) this.draw();
+            if(this.swap_box) this.swap_box.update_color();
+        });
 
         //sidebar
         sidebar_head.innerText = "Clique Viewer";
@@ -123,6 +127,13 @@ export class CliqueViewer
             if(this)
             this.draw();
         });
+
+        let cc = this.cliques.cliques[
+            this.current_clique
+        ];
+        for(let i = 0; i < cc.routes.length; i++)
+        { this.swap_box.set_color(i, cc.routes[i]) }
+
     }
 
 
@@ -133,16 +144,44 @@ export class CliqueViewer
 
     route_swap(idx: number)
     {
-        this.current_clique = 
-            this.cliques.route_swap(
-                this.current_clique,
-                idx
-            );
-        this.poly_canvas.set_clique(
-            this.cliques.cliques[
-                this.current_clique
-            ]
+        let old_clq = this.current_clique;
+        let new_clq = this.cliques.route_swap_by_route_idx(
+            this.current_clique,
+            idx
         );
+
+        this.current_clique = new_clq;
+
+        let oc = this.cliques.cliques[old_clq];
+        let cc = this.cliques.cliques[new_clq];
+        this.poly_canvas.set_clique(cc);
+
+        if(old_clq != new_clq) {
+            let old_route = -1;
+            for(let r of oc.routes)
+            {
+                if(!cc.routes.includes(r))
+                {
+                    old_route = r;
+                    break;
+                }
+            }
+
+            let new_route = -1;
+            for(let r of cc.routes)
+            {
+                if(!oc.routes.includes(r))
+                {
+                    new_route = r;
+                    break;
+                }
+            }
+
+            if(old_route !== -1 && new_route !== -1)
+                this.swap_box.swap_color(old_route, new_route);
+            else
+                console.warn("Old route and new clique do not differ as expected.")
+        }
         this.draw();
     }
 
@@ -156,6 +195,7 @@ export class CliqueViewer
         this.draw_clique();
         this.draw_hasse();
         this.draw_polytope();
+        this.swap_box.update_color();
     }
 
     draw_clique()
@@ -171,12 +211,12 @@ export class CliqueViewer
             ctx.draw_bez(
                 edge, 
                 this.draw_options.edge_color() + "22",
-                this.draw_options.stroke_weight(),
+                this.draw_options.edge_weight(),
                 true
             );
 
             //routes
-            let routes = this.cliques.routes_at_by_clique_idx(edge_idx, this.current_clique);
+            let routes = this.cliques.routes_at(edge_idx, this.current_clique);
             if(routes.length == 0)
                 continue;
             let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
@@ -235,26 +275,44 @@ export class CliqueViewer
         {
             if(hasse.covering_relation[i][j])
             {
+                let mid = positions[i].add(positions[j]).scale(0.5);
+                let rts = hasse.cover_routes[i][j];
+                let color1 = this.draw_options.get_route_color(rts[0]);
+                let color2 = this.draw_options.get_route_color(rts[1]);
                 ctx.draw_line(
                     positions[i],
+                    mid,
+                    color1,
+                    this.draw_options.hasse_edge_weight()
+                );
+                ctx.draw_line(
+                    mid,
                     positions[j],
-                    "#000000",
-                    5
+                    color2,
+                    this.draw_options.hasse_edge_weight()
                 );
             }
         }
 
-        for(let pos of positions)
-        {            
-            ctx.draw_node(pos);
+        for(let i = 0; i < positions.length; i++)
+        {   
+            let color = "#000000";
+            if(this.current_clique == i)
+                color = "#ffffff";
+            let pos = positions[i];
+            ctx.draw_circ(
+                pos,
+                color,
+                this.draw_options.node_radius()
+            )
         }
+        
     }
 
     draw_polytope()
     {
         this.poly_canvas.draw();
     }
-
 }
 
 function build_right_area_zones(): {

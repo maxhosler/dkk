@@ -481,7 +481,7 @@ export class FlowPolytope
             let no_flip: number[] = [];
             for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
             {
-                if(dag_cliques.route_swap(clq_idx, route_idx) == clq_idx)
+                if(dag_cliques.route_swap_by_idx_in_clq(clq_idx, route_idx) == clq_idx)
                 {
                     no_flip.push(route_idx);
                 }
