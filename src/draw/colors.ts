@@ -46,7 +46,7 @@ export function get_colors_inner(num_colors: number): string[]
 		let hue = skip_yellow(hue_idx / hue_rows);
 		
 
-		let color = hsl_to_rgb(hue, 0.85, lum);
+		let color = hsl_to_rgb(hue, 0.65, lum);
 		out.push(
 			`rgb(${color[0]}, ${color[1]}, ${color[2]})`
 		);

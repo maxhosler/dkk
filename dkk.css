@@ -7,7 +7,8 @@ html {
     --draw-border: #686868;
     --menu-background1: #f0f0f0;
 
-    --default-border: 1pt solid var(--draw-background);
+    --ui-border-color: #b0b0b0;
+    --default-border: 1pt solid var(--ui-border-color);
 }
   
 
@@ -131,7 +132,7 @@ html, body {
 .sb-subsection
 {
     border-style: solid;
-    border-color: var(--draw-background);
+    border-color: var(--ui-border-color);
     border-width: 1pt;
     padding: 8pt;
     margin-bottom: 10pt;
@@ -165,6 +166,23 @@ html, body {
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
+}
+
+.swap-dot
+{
+    height: 16px;
+    width: 16px;
+    background-color: #ffffff;
+    border: solid 2pt black;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.swap-greyed>.swap-dot
+{
+    background-color: #ffffff00;
+    border: solid 2pt #00000000;
+
 }
 
 .fullscreen
@@ -250,6 +268,12 @@ html, body {
     font-weight: bold;
 }
 
+.settings-column-table > tr > td
+{
+    vertical-align: top;
+    padding-right: 10pt;
+}
+
 .settings-table > tr:nth-child(1) > td > .settings-head
 {
     margin-top: auto;
@@ -310,3 +334,4 @@ html, body {
     flex: 100%;
     width: 100%;
 }
+
