@@ -8,7 +8,7 @@ import { SwapBox } from "../subelements/swap_box";
 import { FlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
-import { IMode } from "./mode";
+import { IMode, ModeName } from "./mode";
 
 export class CliqueViewer implements IMode
 {
@@ -27,7 +27,7 @@ export class CliqueViewer implements IMode
 
     current_clique: number = 0;
 
-    name(): string {
+    name(): ModeName {
         return "clique-viewer"
     }
 

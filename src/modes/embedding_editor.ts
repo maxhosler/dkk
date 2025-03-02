@@ -6,7 +6,7 @@ import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
-import { IMode } from "./mode";
+import { IMode, ModeName } from "./mode";
 
 type SelectionType = "none" | "vertex" | "edge";
 class Selection
@@ -46,7 +46,7 @@ export class EmbeddingEditor implements IMode
 
 	selected: Selection = Selection.none();
 
-	name(): string
+	name(): ModeName
 	{
 		return "embedding-editor";
 	}

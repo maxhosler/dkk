@@ -3,7 +3,8 @@ import { DrawOptions } from "./draw/draw_options";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 import { IMode } from "./modes/mode";
-import { OpenPopup } from "./popup/cv-open";
+import { CVOpenPopup } from "./popup/cv-open";
+import { EEOpenPopup } from "./popup/ee-open";
 import { SettingsPopup } from "./popup/settings";
 
 export class DKKProgram
@@ -35,10 +36,21 @@ export class DKKProgram
         if(this.popup_open) { return; }
 
         this.popup_open = true;
-        let popup = new OpenPopup(
-            this.body,
-            this
-        );
+        if(this.mode.name() == "clique-viewer")
+        {
+            let popup = new CVOpenPopup(
+                this.body,
+                this
+            );
+        }
+        else if(this.mode.name() == "embedding-editor")
+        {
+            let popup = new EEOpenPopup(
+                this.body,
+                this
+            );
+        }
+        
     }
 
     settings_button_click()

@@ -13,7 +13,7 @@ const PRESETS: PresetOption[] = [
 ];
 
 
-export class OpenPopup extends Popup
+export class CVOpenPopup extends Popup
 {
 	table: HTMLTableElement;
 	preset_dropdown: HTMLSelectElement;
