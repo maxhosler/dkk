@@ -8,13 +8,14 @@ import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 import { IMode, ModeName } from "./mode";
 
-type SelectionType = "none" | "vertex" | "edge";
+type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
+type SelectionInner = null|number|[number,number]
 class Selection
 {
 	readonly type: SelectionType;
-	readonly inner: null | number  ;
+	readonly inner: SelectionInner  ;
 
-	private constructor(type: SelectionType, inner: null|number)
+	private constructor(type: SelectionType, inner: SelectionInner)
 	{
 		this.type = type;
 		this.inner = inner;
@@ -34,6 +35,79 @@ class Selection
 	{
 		return new Selection("edge", num);
 	}
+
+	pair_of(
+		single: "vertex" | "edge",
+	){
+		return (this.type == "pair_verts" && single == "vertex") ||
+		       (this.type == "pair_edges" && single == "edge")
+	}
+
+	single()
+	{
+		return this.type == "vertex" || this.type == "edge";
+	}
+
+	pair()
+	{
+		return this.type == "pair_verts" || this.type == "pair_edges";
+	}
+
+	change(
+		clicked: "vertex" | "edge",
+		index: number,
+		shift_held: boolean
+	): Selection
+	{
+
+		if( this.type == "none" ||
+			!shift_held ||
+			(this.single() && this.type != clicked) ||
+			(this.pair() && !this.pair_of(clicked))
+		)
+		{
+			return new Selection(clicked, index);
+		}
+
+		//Some of these conditions are redundant,
+		//but they make it more explicit what is going on
+
+		if(shift_held && this.single() && this.type == clicked)
+		{
+			let pair: [number, number] = [this.inner as number, index];
+			if(this.type == "vertex")
+			{
+				return new Selection("pair_verts", pair)
+			}
+			else if(this.type == "edge")
+			{
+				return new Selection("pair_edges", pair)
+			}
+			else
+			{
+				throw new Error("This branch should be impossible.")
+			}
+		}
+
+		if(shift_held && this.pair() && this.pair_of(clicked))
+		{
+			let pair: [number, number] = [(this.inner as [number, number])[1], index];
+			if(this.type == "pair_verts")
+			{
+				return new Selection("pair_verts", pair);
+			}
+			else if(this.type == "pair_edges")
+			{
+				return new Selection("pair_edges", pair);
+			}
+			else
+			{
+				throw new Error("This branch should be impossible.")
+			}
+		}
+
+		throw new Error("This branch should be impossible.");
+	}
 }
 
 export class EmbeddingEditor implements IMode
@@ -45,6 +119,7 @@ export class EmbeddingEditor implements IMode
 	dag: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
+	shift_held: boolean = false;
 
 	name(): ModeName
 	{
@@ -127,27 +202,32 @@ export class EmbeddingEditor implements IMode
 	canvas_click(position: Vector)
 	{
 		let clicked_vert = this.get_vertex_at(position);
+		let clicked_edge = this.get_edge_at(position);
 		if (clicked_vert.is_some())
 		{
 			this.change_selection(
-				Selection.vertex(clicked_vert.unwrap())
+				this.selected.change(
+					"vertex",
+					clicked_vert.unwrap(),
+					this.shift_held
+				)
+			);
+		}
+		else if (clicked_edge.is_some())
+		{
+			this.change_selection(
+				this.selected.change(
+					"edge",
+					clicked_edge.unwrap(),
+					false
+				)
 			);
 		}
 		else
 		{
-			let clicked_edge = this.get_edge_at(position);
-			if(clicked_edge.is_some())
-			{
-				this.change_selection(
-					Selection.edge(clicked_edge.unwrap())
-				);
-			}
-			else
-			{
-				this.change_selection(
-					Selection.none()
-				);
-			}
+			this.change_selection(
+				Selection.none()
+			);
 		}
 			
 	}
