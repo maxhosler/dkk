@@ -72,16 +72,24 @@ class Selection
 		//Some of these conditions are redundant,
 		//but they make it more explicit what is going on
 
+		//TODO: Factor out duplication
+
 		if(shift_held && this.single() && this.type == clicked)
 		{
 			let pair: [number, number] = [this.inner as number, index];
 			if(this.type == "vertex")
 			{
-				return new Selection("pair_verts", pair)
+				if(pair[0] != pair[1])
+					return new Selection("pair_verts", pair);
+				else
+					return new Selection("vertex", pair[0])
 			}
 			else if(this.type == "edge")
 			{
-				return new Selection("pair_edges", pair)
+				if(pair[0] != pair[1])
+					return new Selection("pair_edges", pair);
+				else
+					return new Selection("edge", pair[0])
 			}
 			else
 			{
@@ -94,11 +102,17 @@ class Selection
 			let pair: [number, number] = [(this.inner as [number, number])[1], index];
 			if(this.type == "pair_verts")
 			{
-				return new Selection("pair_verts", pair);
+				if(pair[0] != pair[1])
+					return new Selection("pair_verts", pair);
+				else
+					return new Selection("vertex", pair[0])
 			}
 			else if(this.type == "pair_edges")
 			{
-				return new Selection("pair_edges", pair);
+				if(pair[0] != pair[1])
+					return new Selection("pair_edges", pair);
+				else
+					return new Selection("edge", pair[0])
 			}
 			else
 			{
@@ -119,7 +133,6 @@ export class EmbeddingEditor implements IMode
 	dag: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
-	shift_held: boolean = false;
 
 	name(): ModeName
 	{
@@ -180,7 +193,7 @@ export class EmbeddingEditor implements IMode
 		right_area.appendChild(element);
 		element.addEventListener("click",
 			(ev) => {
-				this.canvas_click(new Vector(ev.layerX, ev.layerY))
+				this.canvas_click(new Vector(ev.layerX, ev.layerY), ev.shiftKey)
 			}
 		)
 		canvas.resize_canvas();
@@ -199,7 +212,7 @@ export class EmbeddingEditor implements IMode
 		this.draw();
 	}
 
-	canvas_click(position: Vector)
+	canvas_click(position: Vector, shift_held: boolean)
 	{
 		let clicked_vert = this.get_vertex_at(position);
 		let clicked_edge = this.get_edge_at(position);
@@ -209,7 +222,7 @@ export class EmbeddingEditor implements IMode
 				this.selected.change(
 					"vertex",
 					clicked_vert.unwrap(),
-					this.shift_held
+					shift_held
 				)
 			);
 		}
@@ -219,7 +232,7 @@ export class EmbeddingEditor implements IMode
 				this.selected.change(
 					"edge",
 					clicked_edge.unwrap(),
-					false
+					shift_held
 				)
 			);
 		}
@@ -295,9 +308,18 @@ export class EmbeddingEditor implements IMode
 
 	draw_selection_vert(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
 	{
+		let verts: number[] = [];
 		if(this.selected.type == "vertex")
 		{
-			let vert = this.selected.inner as number;
+			verts = [this.selected.inner as number];
+		}
+		else if(this.selected.type == "pair_verts")
+		{
+			verts = this.selected.inner as [number, number];
+		}
+
+		for(let vert of verts)
+		{
 			if(0 > vert || vert >= data.verts.length)
 			{
 				this.change_selection(Selection.none());
@@ -313,9 +335,19 @@ export class EmbeddingEditor implements IMode
 
 	draw_selection_edge(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
 	{
+		let edges: number[] = [];
+
 		if(this.selected.type == "edge")
 		{
-			let edge = this.selected.inner as number;
+			edges = [this.selected.inner as number];
+		}
+		else if(this.selected.type == "pair_edges")
+		{
+			edges = this.selected.inner as [number, number];
+		}
+
+		for(let edge of edges)
+		{
 			if(0 > edge || edge >= data.edges.length)
 			{
 				this.change_selection(Selection.none());
