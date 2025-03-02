@@ -174,4 +174,22 @@ export class DAGCanvasContext
 		this.ctx.lineWidth = weight;
 		this.ctx.stroke()
 	}
+
+	draw_box(
+		top: Vector,
+		bot: Vector,
+		color: string
+	)
+	{
+		let t = this.parent.local_trans(top);
+		let b = this.parent.local_trans(bot);
+
+		let size = b.sub(t);
+
+		this.ctx.beginPath();
+		this.ctx.rect(t.x, t.y, size.x, size.y);
+
+		this.ctx.fillStyle = color;
+		this.ctx.fill()
+	}
 }

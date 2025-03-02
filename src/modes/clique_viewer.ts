@@ -1,7 +1,7 @@
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { BakedDAGEmbedding, FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
-import { Vector } from "../util";
+import { BoundingBox, Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGCliques } from "../routes/routes";
 import { SwapBox } from "../subelements/swap_box";
@@ -368,6 +368,24 @@ export class CliqueViewer
             rad = Math.max(p.norm(), rad);
         
         let scale = this.draw_options.hasse_mini_dag_size() / (rad * this.draw_options.scale());
+
+        let box = new BoundingBox([]);
+        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
+
+            let edge = data.edges[edge_idx].transform(
+                (v) => v.scale(scale).add(center) 
+            );
+            box.add_point(edge.start_point);
+            box.add_point(edge.cp1);
+            box.add_point(edge.cp2);
+            box.add_point(edge.end_point);
+        }
+        box.pad(0.5 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
+        ctx.draw_box(
+            box.top_corner,
+            box.bot_corner,
+            this.draw_options.background_color()
+        )
 
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
 
