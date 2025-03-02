@@ -96,7 +96,7 @@ export class DAGCanvasContext
 	{
 		this.draw_circ(pos,
 			this.parent.draw_options.vertex_color(),
-			this.parent.draw_options.node_radius()
+			this.parent.draw_options.vert_radius()
 		);
 	}
 
@@ -173,5 +173,42 @@ export class DAGCanvasContext
 		this.ctx.strokeStyle = color;
 		this.ctx.lineWidth = weight;
 		this.ctx.stroke()
+	}
+
+	draw_box(
+		top: Vector,
+		bot: Vector,
+		color: string
+	)
+	{
+		let t = this.parent.local_trans(top);
+		let b = this.parent.local_trans(bot);
+
+		let size = b.sub(t);
+
+		this.ctx.beginPath();
+		this.ctx.rect(t.x, t.y, size.x, size.y);
+
+		this.ctx.fillStyle = color;
+		this.ctx.fill()
+	}
+
+	draw_rounded_box(
+		top: Vector,
+		bot: Vector,
+		radius: number,
+		color: string
+	)
+	{
+		let t = this.parent.local_trans(top);
+		let b = this.parent.local_trans(bot);
+
+		let size = b.sub(t);
+
+		this.ctx.beginPath();
+		this.ctx.roundRect(t.x, t.y, size.x, size.y, radius);
+
+		this.ctx.fillStyle = color;
+		this.ctx.fill()
 	}
 }

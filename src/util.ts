@@ -198,10 +198,10 @@ export class BoundingBox
 	constructor(vecs: Vector[])
 	{
 		for(let v of vecs)
-			this.add_box(v);
+			this.add_point(v);
 	}
 
-	add_box(v: Vector)
+	add_point(v: Vector)
 	{
 		if(this.empty)
 		{
@@ -214,6 +214,13 @@ export class BoundingBox
 			this.top_corner = this.top_corner.min(v);
 			this.bot_corner = this.bot_corner.max(v);
 		}
+	}
+
+	pad(w: number)
+	{
+		let delta = new Vector(w,w);
+		this.top_corner = this.top_corner.sub(delta);
+		this.bot_corner = this.bot_corner.add(delta);
 	}
 
 	extent(): Vector

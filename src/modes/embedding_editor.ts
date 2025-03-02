@@ -35,7 +35,6 @@ class Selection
 	}
 }
 
-type DrawCtx = CanvasRenderingContext2D;
 export class EmbeddingEditor
 {
 	readonly draw_options: DrawOptions;
@@ -155,7 +154,7 @@ export class EmbeddingEditor
 		for(let i = 0; i < dag.verts.length; i++)
 		{
 			let vert_pos = this.canvas.local_trans(dag.verts[i]);
-			if(position.sub(vert_pos).norm() <= this.draw_options.node_radius())
+			if(position.sub(vert_pos).norm() <= this.draw_options.vert_radius())
 				return Option.some(i);
 		}
 			
@@ -221,7 +220,7 @@ export class EmbeddingEditor
 			let vpos = data.verts[vert];
 			ctx.draw_circ(vpos,
 				this.draw_options.selection_color(),
-				this.draw_options.node_radius() + 4
+				this.draw_options.vert_radius() + 4
 			)
 		}
 	}

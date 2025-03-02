@@ -143,10 +143,15 @@ class SettingsPopup extends Popup
 {
     parent: DKKProgram;
 
-    node_radius_spinner: HTMLInputElement;
+    vert_radius_spinner: HTMLInputElement;
     edge_weight_spinner: HTMLInputElement;
     route_weight_spinner: HTMLInputElement;
+
     hasse_weight_spinner: HTMLInputElement;
+    hasse_show_clique_cb: HTMLInputElement;
+    hasse_clique_spinner: HTMLInputElement;
+    hasse_vert_spinner: HTMLInputElement;
+    hasse_route_spinner: HTMLInputElement;
 
     simplrend_dropdown: HTMLSelectElement;
     dot_on_top_cb: HTMLInputElement;
@@ -181,13 +186,13 @@ class SettingsPopup extends Popup
         col1_table.className = "settings-table";
         col1.appendChild(col1_table);
 
-        SettingsPopup.add_title(col1_table, "Size and Weight");
+        SettingsPopup.add_title(col1_table, "DAG");
 
-        this.node_radius_spinner = SettingsPopup.add_stepper_row(
+        this.vert_radius_spinner = SettingsPopup.add_stepper_row(
             col1_table,
-            "Node radius",
-            "settings-node-radius",
-            (val) => this.parent.draw_options.set_node_radius(val)
+            "Vertex radius",
+            "settings-vert-radius",
+            (val) => this.parent.draw_options.set_vert_radius(val)
         );
         this.edge_weight_spinner = SettingsPopup.add_stepper_row(
             col1_table,
@@ -201,14 +206,42 @@ class SettingsPopup extends Popup
             "settings-route-weight",
             (val) => this.parent.draw_options.set_route_weight(val)
         );
+
+        SettingsPopup.add_title(col1_table, "Hasse diagram");
+
         this.hasse_weight_spinner = SettingsPopup.add_stepper_row(
             col1_table,
             "Hasse edge weight",
             "settings-hasse-weight",
             (val) => this.parent.draw_options.set_hasse_edge_weight(val)
         );
+        this.hasse_show_clique_cb = SettingsPopup.add_tickbox_row(
+            col1_table,
+            "Show cliques as nodes",
+            "settings-hasse-cliques",
+            (b) => this.parent.draw_options.set_hasse_show_cliques(b)
+        );
+        this.hasse_clique_spinner = SettingsPopup.add_stepper_row(
+            col1_table,
+            "Clique size",
+            "settings-h-clique-size",
+            (val) => this.parent.draw_options.set_hasse_mini_dag_size(val)
+        );
+        this.hasse_vert_spinner = SettingsPopup.add_stepper_row(
+            col1_table,
+            "Vertex size",
+            "settings-h-vertex-size",
+            (val) => this.parent.draw_options.set_hasse_mini_vert_rad(val)
+        );
+        this.hasse_route_spinner = SettingsPopup.add_stepper_row(
+            col1_table,
+            "Route weight",
+            "settings-h-route-weight",
+            (val) => this.parent.draw_options.set_hasse_mini_route_weight(val)
+        );
+        
 
-        SettingsPopup.add_title(col1_table, "Simplex drawing");
+        SettingsPopup.add_title(col1_table, "Polytope");
 
         this.simplrend_dropdown = SettingsPopup.add_selector_row(
             col1_table,
@@ -302,15 +335,24 @@ class SettingsPopup extends Popup
     {
         this.simplrend_dropdown.value = 
             this.parent.draw_options.simplex_render_mode();
-        this.node_radius_spinner.value = 
-            this.parent.draw_options.node_radius().toString();
+        this.vert_radius_spinner.value = 
+            this.parent.draw_options.vert_radius().toString();
         this.edge_weight_spinner.value = 
             this.parent.draw_options.edge_weight().toString();
         this.route_weight_spinner.value = 
             this.parent.draw_options.route_weight().toString();
+
         this.hasse_weight_spinner.value = 
             this.parent.draw_options.hasse_edge_weight().toString();
-            
+        this.hasse_show_clique_cb.checked = 
+            this.parent.draw_options.hasse_show_cliques();
+        this.hasse_clique_spinner.value = 
+            this.parent.draw_options.hasse_mini_dag_size().toString();    
+        this.hasse_vert_spinner.value = 
+            this.parent.draw_options.hasse_mini_vert_rad().toString();
+        this.hasse_route_spinner.value = 
+            this.parent.draw_options.hasse_mini_route_weight().toString();
+
         this.vertex_color_selector.value = 
             this.parent.draw_options.vertex_color();
         this.background_color_selector.value = 
