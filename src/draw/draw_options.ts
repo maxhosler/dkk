@@ -22,7 +22,7 @@ export class DrawOptions
 
 	//DAG
 	private f_edge_weight: number = 6;
-	private f_node_radius: number = 12;
+	private f_vert_radius: number = 12;
 	private f_route_weight: number = 8;
 	private f_edge_halo: number = 6; //Not in settings
 
@@ -30,8 +30,8 @@ export class DrawOptions
 	private f_hasse_edge_weight: number = 10;
 	private f_hasse_show_cliques: boolean = true;
 	private f_hasse_mini_dag_size: number = 80;
-	private f_hasse_mini_vert_rad: number = 5;
-	private f_hasse_mini_route_weight: number = 4;
+	private f_hasse_mini_vert_rad: number = 8;
+	private f_hasse_mini_route_weight: number = 6;
 
 	//POLYTOPE
 	private f_simplex_render_mode: SimplexRenderMode = "dots";
@@ -65,9 +65,9 @@ export class DrawOptions
 		this.change_listeners = [];
 	}
 
-	set_node_radius(rad: number)
+	set_vert_radius(rad: number)
 	{
-		this.f_node_radius = rad;
+		this.f_vert_radius = rad;
 		this.on_change();
 	}
 	set_edge_weight(weight: number)
@@ -223,9 +223,9 @@ export class DrawOptions
 	{
 		return this.f_scale;
 	}
-	node_radius(): number
+	vert_radius(): number
 	{
-		return this.f_node_radius;
+		return this.f_vert_radius;
 	}
 	edge_weight(): number
 	{
