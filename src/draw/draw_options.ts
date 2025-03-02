@@ -1,4 +1,4 @@
-import { get_cookie, set_cookie } from "../cookie";
+import { get_cookie, set_cookie } from "../util/cookie";
 import { get_colors } from "./colors";
 
 const ROUTE_RAINBOW: string[] = [

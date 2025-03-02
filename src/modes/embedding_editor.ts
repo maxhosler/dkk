@@ -6,6 +6,7 @@ import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
+import { IMode } from "./mode";
 
 type SelectionType = "none" | "vertex" | "edge";
 class Selection
@@ -35,7 +36,7 @@ class Selection
 	}
 }
 
-export class EmbeddingEditor
+export class EmbeddingEditor implements IMode
 {
 	readonly draw_options: DrawOptions;
 	readonly draw_options_box: DrawOptionsBox;
@@ -44,6 +45,11 @@ export class EmbeddingEditor
 	dag: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
+
+	name(): string
+	{
+		return "embedding-editor";
+	}
 
 	static destructive_new(
 		dag: FramedDAGEmbedding,

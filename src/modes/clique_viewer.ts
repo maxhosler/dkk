@@ -8,8 +8,9 @@ import { SwapBox } from "../subelements/swap_box";
 import { FlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
+import { IMode } from "./mode";
 
-export class CliqueViewer
+export class CliqueViewer implements IMode
 {
     readonly draw_options: DrawOptions;
 
@@ -25,6 +26,10 @@ export class CliqueViewer
     readonly poly_canvas: PolytopeCanvas;
 
     current_clique: number = 0;
+
+    name(): string {
+        return "clique-viewer"
+    }
 
     static destructive_new(
         dag: FramedDAGEmbedding,
