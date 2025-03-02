@@ -214,7 +214,7 @@ html, body {
     min-width: 2in;
     
     height: fit-content;
-    min-height: 2in;
+    min-height: 0.2in;
 }
 
 .popup-top-bar

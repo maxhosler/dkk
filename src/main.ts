@@ -1,10 +1,12 @@
-import { prebuilt_dag_embedding } from "./draw/dag_layout";
+import { FramedDAGEmbedding, prebuilt_dag_embedding } from "./draw/dag_layout";
 import { DrawOptions } from "./draw/draw_options";
+import { FramedDAG } from "./math/dag";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 import { IMode } from "./modes/mode";
 import { CVOpenPopup } from "./popup/cv-open";
 import { EEOpenPopup } from "./popup/ee-open";
+import { NewPopup } from "./popup/new";
 import { SettingsPopup } from "./popup/settings";
 
 export class DKKProgram
@@ -17,23 +19,35 @@ export class DKKProgram
 	);
     popup_open: boolean = false;
 
+    settings_button: HTMLDivElement;
+    switch_button: HTMLDivElement;
+    open_button: HTMLDivElement;
+    new_button: HTMLDivElement
+
 	constructor()
 	{
         this.body = document.getElementsByTagName("body")[0] as HTMLBodyElement;
-		let open_button: HTMLDivElement = document.getElementById("open-button") as HTMLDivElement;
-		open_button.onclick = (ev) => {
+		this.open_button = document.getElementById("open-button") as HTMLDivElement;
+		this.open_button.onclick = (ev) => {
             this.open_button_click();
 		};
 
-        let settings_button: HTMLDivElement = document.getElementById("settings-button") as HTMLDivElement;
-		settings_button.onclick = (ev) => {
+        this.settings_button = document.getElementById("settings-button") as HTMLDivElement;
+		this.settings_button.onclick = (ev) => {
             this.settings_button_click();
 		};
 
-        let switch_button: HTMLDivElement = document.getElementById("switch-button") as HTMLDivElement;
-        switch_button.onclick = (ev) => {
+        this.switch_button = document.getElementById("switch-button") as HTMLDivElement;
+        this.switch_button.onclick = (ev) => {
             this.switch_button_click();
-        }
+        };
+
+        this.new_button = document.getElementById("new-button") as HTMLDivElement;
+        this.new_button.onclick = (ev) => {
+            this.new_button_click();
+        };
+
+        this.show_hide_items();
 	}
 
     open_button_click()
@@ -89,6 +103,30 @@ export class DKKProgram
                 this.draw_options
             )
         }
+        this.show_hide_items();
+    }
+
+    new_button_click()
+    {
+        if(this.popup_open) { return; }
+
+        this.popup_open = true;
+        let popup = new NewPopup(
+            this.body,
+            this
+        );
+    }
+
+    show_hide_items()
+    {
+        if(this.mode.name() == "embedding-editor")
+        {
+            this.new_button.style.display = "block";
+        }
+        if(this.mode.name() == "clique-viewer")
+        {
+            this.new_button.style.display = "none";
+        }
     }
 
 	set_clique_viewer(idx: number)
@@ -96,4 +134,11 @@ export class DKKProgram
 		var layout = prebuilt_dag_embedding(idx);
 		this.mode = CliqueViewer.destructive_new(layout, this.draw_options);
 	}
+
+    set_new_clique(num_verts: number)
+    {
+        var newblank = new FramedDAG(num_verts);
+        let layout = new FramedDAGEmbedding(newblank);
+        this.mode = EmbeddingEditor.destructive_new(layout, this.draw_options);
+    }
 }

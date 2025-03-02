@@ -188,7 +188,7 @@ export class EmbeddingEditor implements IMode
 		
 		let {box: do_box, element: do_box_element} = DrawOptionsBox.create(draw_options);
 		sidebar_contents.appendChild(do_box_element);
-		this.draw_options_box = do_box;
+		this.draw_options_box = do_box;		
 
 		let {box: dag_box, element: dag_element} = ActionBox.create();
 		sidebar_contents.appendChild(dag_element);
