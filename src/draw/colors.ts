@@ -40,7 +40,7 @@ export function get_colors_inner(num_colors: number): string[]
 
 	for(let i = 0; i < num_colors; i++)
 	{
-		let lum_idx = i % lum_rows;
+		let lum_idx = Math.floor(i / hue_rows);
 		let hue_idx = (hue_step * i + lum_idx * row_offset) % hue_rows;
 		let lum = lums[lum_idx];
 		let hue = skip_yellow(hue_idx / hue_rows);
