@@ -139,6 +139,10 @@ export class EmbeddingEditor implements IMode
 	{
 		return "embedding-editor";
 	}
+	current_dag(): FramedDAGEmbedding {
+        return this.dag;
+    }
+
 
 	static destructive_new(
 		dag: FramedDAGEmbedding,

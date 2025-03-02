@@ -73,17 +73,19 @@ export class DKKProgram
     {
         if(this.popup_open) { return; }
 
+        let dag = this.mode.current_dag();
+
         if(this.mode.name() == "embedding-editor")
         {
             this.mode = CliqueViewer.destructive_new(
-                prebuilt_dag_embedding(0),
+                dag,
                 this.draw_options
             );
         }
         else
         {
             this.mode = EmbeddingEditor.destructive_new(
-                prebuilt_dag_embedding(0),
+                dag,
                 this.draw_options
             )
         }
