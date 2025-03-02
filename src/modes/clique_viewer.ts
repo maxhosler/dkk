@@ -77,6 +77,7 @@ export class CliqueViewer implements IMode
         this.draw_options.set_builtin_color_scheme(
             this.cliques.routes.length
         );
+
         draw_options.add_change_listener(() => {
             if(this) {
                 let nc = this.cliques.cliques[this.current_clique];

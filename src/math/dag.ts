@@ -8,16 +8,16 @@ export const dag_error_types = {
 };
 export type Edge = { start: number, end: number };
 export class FramedDAG {
-    private _num_edges: number;
-    private _num_verts: number;
+    private f_num_edges: number;
+    private f_num_verts: number;
     private out_edges: Array<Array<number>>; // out_edges[i] is the list of edges going out
                                              // of vertex v_i, in order
     private in_edges:  Array<Array<number>>; // Same as above, except with in-edges.
     private edges: Array<Edge> = [];
 
     constructor(num_verts: number) {
-        this._num_edges = 0;
-        this._num_verts = num_verts;
+        this.f_num_edges = 0;
+        this.f_num_verts = num_verts;
 
         this.out_edges = []
         this.in_edges  = []
@@ -31,22 +31,22 @@ export class FramedDAG {
 
     valid_vert(v: number): boolean
     {
-        return Number.isInteger(v) &&  v >= 0 && v < this._num_verts;
+        return Number.isInteger(v) &&  v >= 0 && v < this.f_num_verts;
     }
 
     valid_edge(v: number): boolean
     {
-        return Number.isInteger(v) &&  v >= 0 && v < this._num_edges;
+        return Number.isInteger(v) &&  v >= 0 && v < this.f_num_edges;
     }
 
     num_edges(): number
     {
-        return this._num_edges;
+        return this.f_num_edges;
     }
 
     num_verts(): number
     {
-        return this._num_verts;
+        return this.f_num_verts;
     }
 
     get_edge(i: number): Option<Edge>
@@ -85,8 +85,8 @@ export class FramedDAG {
             );
         }
 
-        let new_edge = this._num_edges;
-        this._num_edges += 1;
+        let new_edge = this.f_num_edges;
+        this.f_num_edges += 1;
 
         this.edges.push({start:start, end:end})
         this.out_edges[start].push(new_edge);
@@ -173,7 +173,7 @@ export class FramedDAG {
     {
         let out: number[] = [];
 
-        for(let i = 0; i < this._num_verts; i++)
+        for(let i = 0; i < this.f_num_verts; i++)
         {
             if(this.in_edges[i].length == 0)
                 out.push( i );
@@ -186,7 +186,7 @@ export class FramedDAG {
     {
         let out: number[] = [];
 
-        for(let i = 0; i < this._num_verts; i++)
+        for(let i = 0; i < this.f_num_verts; i++)
         {
             if(this.out_edges[i].length == 0)
                 out.push( i );
@@ -213,10 +213,10 @@ export class FramedDAG {
 
     clone(): FramedDAG
     {
-        let out = new FramedDAG(this._num_verts);
+        let out = new FramedDAG(this.f_num_verts);
         
-        out._num_verts = this._num_verts;
-        out._num_edges = this._num_edges;
+        out.f_num_verts = this.f_num_verts;
+        out.f_num_edges = this.f_num_edges;
         out.out_edges  = structuredClone(this.out_edges);
         out.in_edges   = structuredClone(this.in_edges);
         out.edges      = structuredClone(this.edges);
