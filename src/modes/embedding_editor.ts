@@ -1,12 +1,13 @@
 import { BakedDAGEmbedding } from "../draw/dag_layout";
 import { Vector } from "../util/num";
-import { Option } from "../util/result";
+import { Option, ResultError } from "../util/result";
 import { FramedDAGEmbedding } from "../draw/dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 import { IMode, ModeName } from "./mode";
+import { ActionBox } from "../subelements/action_box";
 
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
@@ -181,17 +182,32 @@ export class EmbeddingEditor implements IMode
 
 		sidebar_head.innerText = "Embedding Editor";
 		
-		let {box, element: box_element} = DrawOptionsBox.create(draw_options);
-		sidebar_contents.appendChild(box_element);
-		this.draw_options_box = box;
+		let {box: do_box, element: do_box_element} = DrawOptionsBox.create(draw_options);
+		sidebar_contents.appendChild(do_box_element);
+		this.draw_options_box = do_box;
+
+		let {box: dag_box, element: dag_element} = ActionBox.create();
+		sidebar_contents.appendChild(dag_element);
+		dag_box.add_title("DAG Edit");
+		dag_box.add_tip("Warning: Using any of these options will reset any changes made to layout.");
+		dag_box.add_button(
+			"Add edge",
+			() => {
+				if(this.selected.type == "pair_verts")
+				{
+					let [start, end] = this.selected.inner as [number, number];
+					this.add_edge(start, end);
+				}
+			}
+		)
 
 		//TODO: Node editor
 
 		//TODO: Edge editor
 
-		let {canvas, element} = DAGCanvas.create(draw_options);
-		right_area.appendChild(element);
-		element.addEventListener("click",
+		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
+		right_area.appendChild(can_element);
+		can_element.addEventListener("click",
 			(ev) => {
 				this.canvas_click(new Vector(ev.layerX, ev.layerY), ev.shiftKey)
 			}
@@ -275,6 +291,34 @@ export class EmbeddingEditor implements IMode
 		}
 			
 		return Option.none();
+	}
+
+	show_err(err: ResultError)
+	{
+		console.warn(err);
+		//TODO:
+	}
+
+	/*
+	Operations
+	*/
+
+	add_edge(start: number, end: number)
+	{
+		
+		let dag = this.dag.base_dag;
+		let try_add_res = dag.add_edge(start,end);
+
+		if(try_add_res.is_ok())
+		{
+			let new_framed = new FramedDAGEmbedding(dag);
+			this.dag = new_framed;
+			this.draw();
+		}
+		else
+		{
+			this.show_err(try_add_res.error())
+		}
 	}
 
 	/*

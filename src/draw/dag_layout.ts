@@ -149,6 +149,15 @@ export class FramedDAGEmbedding
 			edges: edges
 		};
 	}
+
+	copy_in_data(vd: VertData[], ed: EdgeData[])
+	{
+		for(let i = 0; i < Math.min(vd.length, this.vert_data.length); i++)
+			this.vert_data[i] = vd[i];
+		
+		for(let i = 0; i < Math.min(ed.length, this.edge_data.length); i++)
+			this.edge_data[i] = ed[i];
+	}
 }
 
 function all_depths(
