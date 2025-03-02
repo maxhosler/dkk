@@ -231,7 +231,7 @@ export class CliqueViewer
                 edge, 
                 this.draw_options.edge_color() + "22",
                 this.draw_options.edge_weight(),
-                true
+                false
             );
 
             //routes
