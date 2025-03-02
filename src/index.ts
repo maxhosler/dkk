@@ -149,6 +149,7 @@ class SettingsPopup extends Popup
 
     hasse_weight_spinner: HTMLInputElement;
     hasse_show_clique_cb: HTMLInputElement;
+    hasse_clique_spinner: HTMLInputElement;
 
     simplrend_dropdown: HTMLSelectElement;
     dot_on_top_cb: HTMLInputElement;
@@ -217,6 +218,12 @@ class SettingsPopup extends Popup
             "Show cliques as nodes",
             "settings-hasse-cliques",
             (b) => this.parent.draw_options.set_hasse_show_cliques(b)
+        );
+        this.hasse_clique_spinner = SettingsPopup.add_stepper_row(
+            col1_table,
+            "Clique node size",
+            "settings-h-clique-size",
+            (val) => this.parent.draw_options.set_hasse_mini_dag_size(val)
         );
 
         SettingsPopup.add_title(col1_table, "Polytope");
@@ -324,6 +331,8 @@ class SettingsPopup extends Popup
             this.parent.draw_options.hasse_edge_weight().toString();
         this.hasse_show_clique_cb.checked = 
             this.parent.draw_options.hasse_show_cliques();
+        this.hasse_clique_spinner.value = 
+            this.parent.draw_options.hasse_mini_dag_size().toString();    
 
         this.vertex_color_selector.value = 
             this.parent.draw_options.vertex_color();

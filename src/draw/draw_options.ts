@@ -29,6 +29,9 @@ export class DrawOptions
 	//HASSE
 	private f_hasse_edge_weight: number = 10;
 	private f_hasse_show_cliques: boolean = true;
+	private f_hasse_mini_dag_size: number = 80;
+	private f_hasse_mini_vert_rad: number = 5;
+	private f_hasse_mini_route_weight: number = 4;
 
 	//POLYTOPE
 	private f_simplex_render_mode: SimplexRenderMode = "dots";
@@ -87,6 +90,21 @@ export class DrawOptions
 		this.f_hasse_show_cliques = b;
 		this.on_change();
 	}
+	set_hasse_mini_vert_rad(r: number)
+	{
+		this.f_hasse_mini_vert_rad = r;
+		this.on_change();
+	}
+	set_hasse_mini_route_weight(r: number)
+	{
+		this.f_hasse_mini_route_weight = r;
+		this.on_change();
+	} 
+	set_hasse_mini_dag_size(r: number)
+	{
+		this.f_hasse_mini_dag_size = r;
+		this.on_change()
+	}
 
 	set_scale(scale: number)
 	{
@@ -132,6 +150,19 @@ export class DrawOptions
 	{
 		this.f_simplex_color = color;
 		this.on_change();
+	}
+
+	hasse_mini_vert_rad(): number
+	{
+		return this.f_hasse_mini_vert_rad;
+	}
+	hasse_mini_route_weight(): number
+	{
+		return this.f_hasse_mini_route_weight;
+	}
+	hasse_mini_dag_size(): number
+	{
+		return this.f_hasse_mini_dag_size;
 	}
 
 	set_dot_shade(b: boolean)

@@ -1,5 +1,5 @@
-import { DAGCanvas } from "../subelements/dag_canvas";
-import { FramedDAGEmbedding } from "../dag_layout";
+import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
+import { BakedDAGEmbedding, FramedDAGEmbedding } from "../dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Vector } from "../util";
 import { DrawOptionBox } from "../subelements/draw_option_box";
@@ -270,7 +270,7 @@ export class CliqueViewer
     {
         let ctx = this.hasse_canvas.get_ctx();
         ctx.clear();
-        const PADDING: number = 100;
+        const PADDING: number = 100; //TODO: make parameter
 
         let v_width = Math.max(1,
             this.hasse_canvas.width() - 2*PADDING
@@ -313,24 +313,101 @@ export class CliqueViewer
             }
         }
 
-        for(let i = 0; i < positions.length; i++)
-        {   
-            let color = "#000000";
-            if(this.current_clique == i)
-                color = "#ffffff";
-            let pos = positions[i];
-            ctx.draw_circ(
-                pos,
-                color,
-                this.draw_options.node_radius()
-            )
+        //TODO: Add to draw options
+        const UNSEL_NODE_COLOR = "#000000";
+        const SEL_NODE_COLOR = "#ffffff";
+        const NODE_SIZE = 12;
+
+        if(!this.draw_options.hasse_show_cliques())
+        {
+            for(let i = 0; i < positions.length; i++)
+            {   
+                let color = UNSEL_NODE_COLOR;
+                if(this.current_clique == i)
+                    color = SEL_NODE_COLOR;
+                let pos = positions[i];
+                ctx.draw_circ(
+                    pos,
+                    color,
+                    NODE_SIZE
+                )
+            }
         }
+        else
+        {
+            let data = this.dag.bake();
+            for(let i = 0; i < positions.length; i++)
+            {   
+                let pos = positions[i];
+                this.draw_mini_clique(
+                    pos,
+                    i,
+                    data,
+                    ctx
+                );
+            }
+        }
+        
         
     }
 
     draw_polytope()
     {
         this.poly_canvas.draw();
+    }
+
+    draw_mini_clique(
+        center: Vector,
+        clique_idx: number,
+        data: BakedDAGEmbedding,
+        ctx: DAGCanvasContext
+    )
+    {
+        let rad = 1.0;
+        for(let p of data.verts)
+            rad = Math.max(p.norm(), rad);
+        
+        let scale = this.draw_options.hasse_mini_dag_size() / (rad * this.draw_options.scale());
+
+        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
+
+            let edge = data.edges[edge_idx].transform(
+                (v) => v.scale(scale).add(center) 
+            );
+
+            let routes = this.cliques.routes_at(edge_idx, clique_idx);
+            if(routes.length == 0)
+                continue;
+
+            let full_width = this.draw_options.hasse_mini_route_weight() * Math.pow(routes.length, 0.8);
+            let width = full_width / routes.length * 1.01;
+            for(let i = 0; i < routes.length; i++)
+            {
+                let r = routes[i];
+                let color = this.draw_options.get_route_color(r);
+                let offset = Vector.zero();
+                if(routes.length > 1)
+                {
+                    let percent = i / (routes.length - 1) - 0.5;
+                    offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
+                }
+                ctx.draw_bez(
+                    edge.transform((v) => v.add(offset)),
+                    color,
+                    width,
+                    false
+                )
+            }
+        }
+
+        for(let pos of data.verts)
+        {
+            ctx.draw_circ(
+                pos.scale(scale).add(center),
+                "#000000",
+                this.draw_options.hasse_mini_vert_rad()
+            )
+        }
     }
 }
 
