@@ -71,39 +71,31 @@ export class FramedDAGEmbedding
 			}
 		}
 
-		let sources = this.base_dag.sources();
-		let sinks = this.base_dag.sinks();
 
-		let depths: {[key: number]: number} = {}
-		for(let src of this.base_dag.sources())
-			all_depths(this.base_dag, src, 0, depths);
-
-		let depths_arr: [number, number][] = []
+		let depths_arr: number[] = []
 
 		for(let i = 0; i < this.base_dag.num_verts(); i++)
 		{
-			depths_arr.push([depths[i], i])
+			depths_arr.push(i)
 		}
 		depths_arr.sort(
 			(a,b) => {
-				if(sources.includes(a[1]) && !sources.includes(b[1]))
+				if( this.base_dag.preceeds(a,b))
+				{
 					return -1;
-				if(sources.includes(b[1]) && !sources.includes(a[1]))
+				}
+				else if (this.base_dag.preceeds(b,a))
+				{
 					return 1;
-				
-				if(sinks.includes(b[1]) && !sinks.includes(a[1]))
-					return -1;
-				if(sinks.includes(a[1]) && !sinks.includes(b[1]))
-					return 1;
+				}
 
-				if(a[0] < b[0]) { return -1; }
-				if(a[0] > b[0]) { return 1; }
-				return a[1] - b[1];
+				return a-b;
+
 			}
 		);
 		for(let j = 0; j < depths_arr.length; j++)
 		{
-			let index = depths_arr[j][1];
+			let index = depths_arr[j];
 			let vd = this.vert_data[index];
 			vd.position = new Vector(j - (depths_arr.length-1)/2,0);
 		}
