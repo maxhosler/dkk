@@ -192,4 +192,23 @@ export class DAGCanvasContext
 		this.ctx.fillStyle = color;
 		this.ctx.fill()
 	}
+
+	draw_rounded_box(
+		top: Vector,
+		bot: Vector,
+		radius: number,
+		color: string
+	)
+	{
+		let t = this.parent.local_trans(top);
+		let b = this.parent.local_trans(bot);
+
+		let size = b.sub(t);
+
+		this.ctx.beginPath();
+		this.ctx.roundRect(t.x, t.y, size.x, size.y, radius);
+
+		this.ctx.fillStyle = color;
+		this.ctx.fill()
+	}
 }

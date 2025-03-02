@@ -46,6 +46,7 @@ export class DrawOptions
 	private f_simplex_color: string = "#c9e8f4";
 	private f_selection_color: string = "#2160c487"; //Not in settings box
 	private f_edge_color: string = "#222222"; //Not in settings box
+	private f_hasse_current_color: string = "#cdcdcd";
 
 	//AUXILIARY
 	private change_listeners: (()=>void)[] = [];
@@ -271,6 +272,10 @@ export class DrawOptions
 	simplex_color(): string
 	{
 		return this.f_simplex_color;
+	}
+	hasse_current_color(): string
+	{
+		return this.f_hasse_current_color;
 	}
 
 	simplex_render_mode(): SimplexRenderMode

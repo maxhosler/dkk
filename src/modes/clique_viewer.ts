@@ -380,12 +380,21 @@ export class CliqueViewer
             box.add_point(edge.cp2);
             box.add_point(edge.end_point);
         }
-        box.pad(0.5 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
+        box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
         ctx.draw_box(
             box.top_corner,
             box.bot_corner,
             this.draw_options.background_color()
         )
+        if(clique_idx == this.current_clique)
+        {
+            ctx.draw_rounded_box(
+                box.top_corner,
+                box.bot_corner,
+                10,
+                this.draw_options.hasse_current_color()
+            );
+        }
 
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
 
