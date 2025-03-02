@@ -1,4 +1,4 @@
-import { caracol, Edge, FramedDAG, prebuilt_dag } from "./dag";
+import { caracol, Edge, FramedDAG, prebuilt_dag } from "../math/dag";
 import { Option } from "../util/result";
 import { Bezier, clamp, Vector } from "../util/num";
 

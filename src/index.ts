@@ -1,4 +1,4 @@
-import { caracol_emb, prebuilt_dag_embedding } from "./dag/dag_layout";
+import { caracol_emb, prebuilt_dag_embedding } from "./draw/dag_layout";
 import { DrawOptions } from "./draw/draw_options";
 import { CliqueViewer } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
