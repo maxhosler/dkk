@@ -11,7 +11,7 @@ export class DKKProgram
 {
     body: HTMLBodyElement;
 	draw_options = new DrawOptions(true, true);
-	mode: IMode = CliqueViewer.destructive_new(
+	mode: IMode = EmbeddingEditor.destructive_new(
 		prebuilt_dag_embedding(0),
 		this.draw_options
 	);
