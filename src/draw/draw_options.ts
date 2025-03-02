@@ -17,28 +17,34 @@ type ColorSchemeMode = "computed";
 export class DrawOptions
 {
 	private f_scale: number = 200;
-	private f_node_radius: number = 12;
 	
-	private f_edge_weight: number = 6;
-	private f_edge_halo: number = 6;
-	private f_route_weight: number = 8;
-	private f_hasse_edge_weight: number = 10;
-
 	private f_scheme_mode: {mode: ColorSchemeMode, index: number} = {mode: "computed", index:2};
+
+	//DAG
+	private f_edge_weight: number = 6;
+	private f_node_radius: number = 12;
+	private f_route_weight: number = 8;
+	private f_edge_halo: number = 6; //Not in settings
+
+	//HASSE
+	private f_hasse_edge_weight: number = 10;
+	private f_hasse_show_cliques: boolean = true;
+
+	//POLYTOPE
 	private f_simplex_render_mode: SimplexRenderMode = "dots";
-
-	private f_background_color: string = "#b0b0b0";
-	private f_selection_color: string = "#2160c487";
-	private f_edge_color: string = "#222222";
-	private f_vertex_color: string = "#000000";
-
-	private f_polytope_color: string = "#de5ed4";
-	private f_simplex_color: string = "#c9e8f4";
-
 	private f_dot_shade: boolean = false;
 	private f_dot_on_top: boolean = true;
 	private f_dot_radius: number = 5;
+	
+	//COLORS
+	private f_background_color: string = "#b0b0b0";
+	private f_vertex_color: string = "#000000";
+	private f_polytope_color: string = "#de5ed4";
+	private f_simplex_color: string = "#c9e8f4";
+	private f_selection_color: string = "#2160c487"; //Not in settings box
+	private f_edge_color: string = "#222222"; //Not in settings box
 
+	//AUXILIARY
 	private change_listeners: (()=>void)[] = [];
 	private do_sync_css: boolean;
 
@@ -76,6 +82,12 @@ export class DrawOptions
 		this.f_hasse_edge_weight = weight;
 		this.on_change();
 	}
+	set_hasse_show_cliques(b: boolean)
+	{
+		this.f_hasse_show_cliques = b;
+		this.on_change();
+	}
+
 	set_scale(scale: number)
 	{
 		this.f_scale = scale;
@@ -199,6 +211,10 @@ export class DrawOptions
 	hasse_edge_weight(): number
 	{
 		return this.f_hasse_edge_weight;
+	}
+	hasse_show_cliques(): boolean
+	{
+		return this.f_hasse_show_cliques;
 	}
 
 	background_color(): string

@@ -146,7 +146,9 @@ class SettingsPopup extends Popup
     node_radius_spinner: HTMLInputElement;
     edge_weight_spinner: HTMLInputElement;
     route_weight_spinner: HTMLInputElement;
+
     hasse_weight_spinner: HTMLInputElement;
+    hasse_show_clique_cb: HTMLInputElement;
 
     simplrend_dropdown: HTMLSelectElement;
     dot_on_top_cb: HTMLInputElement;
@@ -181,7 +183,7 @@ class SettingsPopup extends Popup
         col1_table.className = "settings-table";
         col1.appendChild(col1_table);
 
-        SettingsPopup.add_title(col1_table, "Size and Weight");
+        SettingsPopup.add_title(col1_table, "DAG");
 
         this.node_radius_spinner = SettingsPopup.add_stepper_row(
             col1_table,
@@ -201,14 +203,23 @@ class SettingsPopup extends Popup
             "settings-route-weight",
             (val) => this.parent.draw_options.set_route_weight(val)
         );
+
+        SettingsPopup.add_title(col1_table, "Hasse diagram");
+
         this.hasse_weight_spinner = SettingsPopup.add_stepper_row(
             col1_table,
             "Hasse edge weight",
             "settings-hasse-weight",
             (val) => this.parent.draw_options.set_hasse_edge_weight(val)
         );
+        this.hasse_show_clique_cb = SettingsPopup.add_tickbox_row(
+            col1_table,
+            "Show cliques as nodes",
+            "settings-hasse-cliques",
+            (b) => this.parent.draw_options.set_hasse_show_cliques(b)
+        );
 
-        SettingsPopup.add_title(col1_table, "Simplex drawing");
+        SettingsPopup.add_title(col1_table, "Polytope");
 
         this.simplrend_dropdown = SettingsPopup.add_selector_row(
             col1_table,
@@ -308,9 +319,12 @@ class SettingsPopup extends Popup
             this.parent.draw_options.edge_weight().toString();
         this.route_weight_spinner.value = 
             this.parent.draw_options.route_weight().toString();
+
         this.hasse_weight_spinner.value = 
             this.parent.draw_options.hasse_edge_weight().toString();
-            
+        this.hasse_show_clique_cb.checked = 
+            this.parent.draw_options.hasse_show_cliques();
+
         this.vertex_color_selector.value = 
             this.parent.draw_options.vertex_color();
         this.background_color_selector.value = 
