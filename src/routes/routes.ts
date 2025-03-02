@@ -1,5 +1,5 @@
-import { FramedDAG } from "../dag";
-import { Option } from "../result";
+import { FramedDAG } from "../dag/dag";
+import { Option } from "../util/result";
 import { HasseDiagram } from "./hasse";
 class Route
 {

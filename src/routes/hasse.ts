@@ -1,4 +1,4 @@
-import { BoundingBox, Vector } from "../util";
+import { BoundingBox, Vector } from "../util/num";
 import { Clique } from "./routes";
 
 export class HasseDiagram

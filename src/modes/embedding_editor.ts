@@ -1,7 +1,7 @@
-import { BakedDAGEmbedding } from "../dag_layout";
-import { Vector } from "../util";
-import { Option } from "../result";
-import { FramedDAGEmbedding } from "../dag_layout";
+import { BakedDAGEmbedding } from "../dag/dag_layout";
+import { Vector } from "../util/num";
+import { Option } from "../util/result";
+import { FramedDAGEmbedding } from "../dag/dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { DrawOptions } from "../draw/draw_options";

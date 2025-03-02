@@ -1,6 +1,6 @@
 import { caracol, Edge, FramedDAG, prebuilt_dag } from "./dag";
-import { Option } from "./result";
-import { Bezier, clamp, Vector } from "./util";
+import { Option } from "../util/result";
+import { Bezier, clamp, Vector } from "../util/num";
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],

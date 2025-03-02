@@ -1,4 +1,4 @@
-import { Result, Option } from "./result";
+import { Result, Option } from "../util/result";
 
 
 export const dag_error_types = {

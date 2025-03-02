@@ -1,4 +1,4 @@
-import { Bezier, Vector } from "../util";
+import { Bezier, Vector } from "../util/num";
 import { DrawOptions } from "../draw/draw_options";
 
 export class DAGCanvas
