@@ -29,6 +29,11 @@ export class DKKProgram
 		settings_button.onclick = (ev) => {
             this.settings_button_click();
 		};
+
+        let switch_button: HTMLDivElement = document.getElementById("switch-button") as HTMLDivElement;
+        switch_button.onclick = (ev) => {
+            this.switch_button_click();
+        }
 	}
 
     open_button_click()
@@ -62,6 +67,26 @@ export class DKKProgram
             this.body,
             this
         );
+    }
+
+    switch_button_click()
+    {
+        if(this.popup_open) { return; }
+
+        if(this.mode.name() == "embedding-editor")
+        {
+            this.mode = CliqueViewer.destructive_new(
+                prebuilt_dag_embedding(0),
+                this.draw_options
+            );
+        }
+        else
+        {
+            this.mode = EmbeddingEditor.destructive_new(
+                prebuilt_dag_embedding(0),
+                this.draw_options
+            )
+        }
     }
 
 	set_clique_viewer(idx: number)
