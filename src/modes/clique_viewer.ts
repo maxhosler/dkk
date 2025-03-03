@@ -136,7 +136,15 @@ export class CliqueViewer implements IMode
 
         //Draw and setup redraw
         this.draw();
-        addEventListener("resize", (event) => {
+        h_canvas_element.addEventListener("resize", (event) => {
+            if(this)
+            this.draw();
+        });
+        p_canvas_element.addEventListener("resize", (event) => {
+            if(this)
+            this.draw();
+        });
+        c_canvas_element.addEventListener("resize", (event) => {
             if(this)
             this.draw();
         });

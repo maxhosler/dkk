@@ -23,7 +23,7 @@ export class DAGCanvas
 		this.draw_options = draw_options;
 		
 		this.resize_canvas();
-		addEventListener("resize", (event) => {
+		this.canvas.addEventListener("resize", (event) => {
 			if(this)
 			this.resize_canvas();
 		});

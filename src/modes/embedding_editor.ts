@@ -193,7 +193,7 @@ export class EmbeddingEditor implements IMode
 	{
 		this.dag = dag;
 		this.draw_options = draw_options;
-		draw_options.add_change_listener(() => {if(this) this.draw()})
+		draw_options.add_change_listener(this.draw)
 
 		sidebar_head.innerText = "Embedding Editor";
 		
@@ -232,7 +232,12 @@ export class EmbeddingEditor implements IMode
 				this.try_drag_start(new Vector(ev.layerX, ev.layerY));
 			}
 		)
-		addEventListener("mouseup",
+		can_element.addEventListener("mouseup",
+			(ev) => {
+				this.drag_end(new Vector(ev.layerX, ev.layerY));
+			}
+		)
+		can_element.addEventListener("mouseleave",
 			(ev) => {
 				this.drag_end(new Vector(ev.layerX, ev.layerY));
 			}
@@ -247,8 +252,7 @@ export class EmbeddingEditor implements IMode
 		this.canvas = canvas;
 
 		this.draw();
-		addEventListener("resize", (event) => {
-			if(this)
+		can_element.addEventListener("resize", (event) => {
 			this.draw();
 		});
 	}
