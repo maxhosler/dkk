@@ -3,7 +3,7 @@ import { Result, Option } from "../util/result";
 
 export const dag_error_types = {
     NoSuchVertex: "NoSuchVertex",
-    IllegalCycle: "IllegalCycle"
+    IllegalCycle: "IllegalCycle",
 
 };
 export type Edge = { start: number, end: number };

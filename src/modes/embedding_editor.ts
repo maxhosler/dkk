@@ -125,6 +125,12 @@ class Selection
 	}
 }
 
+type VertDragState =
+{
+	dragging: boolean,
+	vert: number
+}
+
 export class EmbeddingEditor implements IMode
 {
 	readonly draw_options: DrawOptions;
@@ -134,6 +140,11 @@ export class EmbeddingEditor implements IMode
 	dag: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
+	v_drag: VertDragState = {
+		dragging: false,
+		vert: 0
+	};
+	mouse_pos: Vector = Vector.zero();
 
 	name(): ModeName
 	{
@@ -216,6 +227,22 @@ export class EmbeddingEditor implements IMode
 				this.canvas_click(new Vector(ev.layerX, ev.layerY), ev.shiftKey)
 			}
 		)
+		can_element.addEventListener("mousedown",
+			(ev) => {
+				this.try_drag_start(new Vector(ev.layerX, ev.layerY));
+			}
+		)
+		addEventListener("mouseup",
+			(ev) => {
+				this.drag_end(new Vector(ev.layerX, ev.layerY));
+			}
+		)
+		can_element.addEventListener("mousemove",
+			(ev) => {
+				this.mouse_pos = new Vector(ev.layerX, ev.layerY);
+				if(this.v_drag.dragging) this.draw()
+			}
+		)
 		canvas.resize_canvas();
 		this.canvas = canvas;
 
@@ -265,6 +292,36 @@ export class EmbeddingEditor implements IMode
 			
 	}
 
+	try_drag_start(position: Vector)
+	{
+		let v = this.get_vertex_at(position);
+		if(v.is_some())
+		{
+			let vert = v.unwrap();
+			this.v_drag = {
+				dragging: true,
+				vert
+			};
+		}
+	}
+
+	drag_end(position: Vector)
+	{
+		let v = this.get_vertex_at(position);
+
+		if(v.is_some())
+		{
+			let vert = v.unwrap();
+			
+			this.add_edge(
+				this.v_drag.vert,
+				vert
+			);
+		}
+
+		this.v_drag.dragging = false;
+	}
+
 	//TODO: provide baked optional
 	get_vertex_at(position: Vector): Option<number>
 	{
@@ -309,7 +366,8 @@ export class EmbeddingEditor implements IMode
 
 	add_edge(start: number, end: number)
 	{
-		
+		if(start == end) return;
+
 		let dag = this.dag.base_dag;
 		let try_add_res = dag.add_edge(start,end);
 
@@ -346,6 +404,8 @@ export class EmbeddingEditor implements IMode
 		); }
 
 		this.draw_selection_edge(data, ctx);
+
+		this.draw_drag_edge(data, ctx)
 
 		for(let vert of data.verts)
 		{ ctx.draw_node(vert); }
@@ -410,5 +470,20 @@ export class EmbeddingEditor implements IMode
 				false
 			)
 		}
+	}
+
+	draw_drag_edge(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
+	{
+		if(!this.v_drag.dragging) return;
+
+		let start = data.verts[this.v_drag.vert];
+		let end = this.canvas.local_trans_inv(this.mouse_pos);
+
+		ctx.draw_line(
+			start,
+			end,
+			this.draw_options.edge_color(),
+			this.draw_options.edge_weight()
+		)
 	}
 }

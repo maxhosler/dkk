@@ -165,20 +165,6 @@ export class FramedDAGEmbedding
 	}
 }
 
-function all_depths(
-	framed_dag: FramedDAG,
-	vert: number,
-	vert_depth: number,
-	depths: {[key: number]: number})
-{
-	depths[vert] = Math.min(vert_depth, depths[vert] || Infinity);
-	for(let edge of framed_dag.get_out_edges(vert).unwrap())
-	{
-		let next = framed_dag.get_edge(edge).unwrap().end;
-		all_depths(framed_dag, next, vert_depth+1, depths);
-	}
-}
-
 function spread_percent(
 	edge_data: EdgeData
 ): [start: number, end: number]
