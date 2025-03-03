@@ -95,6 +95,36 @@ export class FramedDAG {
         return Result.ok(new_edge);
     }
 
+    remove_edge(idx: number): boolean
+    {
+        if(idx < 0 && idx >= this.edges.length)
+            return false;
+
+        const clear = (lis: number[]) => 
+        {
+            let out = [];
+            for(let x of lis)
+            {
+                if(x < idx)
+                    out.push(x)
+                if(x > idx)
+                    out.push(x-1)
+            }
+            return out;
+        };
+
+        this.edges.splice(idx, 1);
+        this.f_num_edges -= 1;
+
+        for(let i = 0; i < this.f_num_verts; i++)
+        {
+            this.in_edges[i]  = clear(this.in_edges[i]);
+            this.out_edges[i] = clear(this.out_edges[i]);
+        }
+
+        return true;
+    }
+
     //checks if there is a path from start to end; err if verts not valid
     preceeds(start: number, end: number): Result<boolean>
     {

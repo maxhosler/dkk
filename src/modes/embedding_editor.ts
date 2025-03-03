@@ -248,6 +248,10 @@ export class EmbeddingEditor implements IMode
 				if(this.v_drag.dragging) this.draw()
 			}
 		)
+		//TODO: delete when goes away!
+		addEventListener("keydown",
+			(ev) => this.handle_keypress(ev.key)
+		)
 		canvas.resize_canvas();
 		this.canvas = canvas;
 
@@ -326,6 +330,19 @@ export class EmbeddingEditor implements IMode
 		this.v_drag.dragging = false;
 	}
 
+	handle_keypress(key: string)
+	{
+		if(key == "Backspace")
+		{
+			if(this.selected.type == "edge")
+			{
+				let sel = this.selected.inner as number;
+				this.selected = Selection.none();
+				this.remove_edge(sel);
+			}
+		}
+	}
+
 	//TODO: provide baked optional
 	get_vertex_at(position: Vector): Option<number>
 	{
@@ -384,6 +401,19 @@ export class EmbeddingEditor implements IMode
 		else
 		{
 			this.show_err(try_add_res.error())
+		}
+	}
+
+	remove_edge(idx: number)
+	{
+		let dag = this.dag.base_dag;
+		let try_add_res = dag.remove_edge(idx);
+
+		if(try_add_res)
+		{
+			let new_framed = new FramedDAGEmbedding(dag);
+			this.dag = new_framed;
+			this.draw();
 		}
 	}
 
