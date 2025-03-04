@@ -1,17 +1,6 @@
 import { DKKProgram } from "../main";
+import { PRESETS } from "../preset";
 import { Popup } from "./popup";
-
-type PresetOption = {name: string, idx: number};
-const PRESETS: PresetOption[] = [
-	{name: "cube", idx: 0},
-	{name: "cube-twist", idx: 1},
-	{name: "square", idx: 5},
-	{name: "caracol-4", idx: 2},
-	{name: "caracol-5", idx: 6},
-	{name: "test-c-4", idx: 3},
-	{name: "psuedopants", idx: 4}
-];
-
 
 export class CVOpenPopup extends Popup
 {
@@ -32,7 +21,7 @@ export class CVOpenPopup extends Popup
 		for(let preset of PRESETS)
 		{
 			let opt = document.createElement("option");
-			opt.value = preset.idx.toString();
+			opt.value = preset.name;
 			opt.innerText = preset.name;
 			preset_dropdown.appendChild(opt);
 		}
@@ -46,8 +35,8 @@ export class CVOpenPopup extends Popup
 
 	load_preset()
 	{
-		let idx = Number.parseInt(this.preset_dropdown.value);
-		this.parent.set_clique_viewer(idx);
+		let name = this.preset_dropdown.value;
+		this.parent.set_clique_viewer(name);
 		this.close();
 	}
 

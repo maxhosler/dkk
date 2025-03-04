@@ -1,4 +1,4 @@
-import { FramedDAGEmbedding, prebuilt_dag_embedding } from "./draw/dag_layout";
+import { FramedDAGEmbedding } from "./draw/dag_layout";
 import { DrawOptions } from "./draw/draw_options";
 import { FramedDAG } from "./math/dag";
 import { CliqueViewer } from "./modes/clique_viewer";
@@ -8,13 +8,14 @@ import { CVOpenPopup } from "./popup/cv-open";
 import { EEOpenPopup } from "./popup/ee-open";
 import { NewPopup } from "./popup/new";
 import { SettingsPopup } from "./popup/settings";
+import { preset_dag_embedding } from "./preset";
 
 export class DKKProgram
 {
     body: HTMLBodyElement;
 	draw_options = new DrawOptions(true, true);
 	mode: IMode = EmbeddingEditor.destructive_new(
-		prebuilt_dag_embedding(0),
+		preset_dag_embedding("cube"),
 		this.draw_options
 	);
     popup_open: boolean = false;
@@ -129,9 +130,9 @@ export class DKKProgram
         }
     }
 
-	set_clique_viewer(idx: number)
+	set_clique_viewer(name: string)
 	{
-		var layout = prebuilt_dag_embedding(idx);
+		var layout = preset_dag_embedding(name);
 		this.mode = CliqueViewer.destructive_new(layout, this.draw_options);
 	}
 
