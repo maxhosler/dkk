@@ -1,7 +1,7 @@
 import { DrawOptions } from "../draw/draw_options";
 import { FlowPolytope } from "../math/polytope";
 import { Clique } from "../math/routes";
-import { Vector } from "../util/num";
+import { Vector2 } from "../util/num";
 import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
 

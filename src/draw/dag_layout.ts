@@ -1,6 +1,6 @@
 import { Edge, FramedDAG } from "../math/dag";
 import { Option } from "../util/result";
-import { Bezier, clamp, Vector } from "../util/num";
+import { Bezier, clamp, Vector2 } from "../util/num";
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
@@ -11,7 +11,7 @@ export type EdgeData = {
 }
 
 export type VertData = {
-	position: Vector,
+	position: Vector2,
 	spread: number
 }
 
@@ -28,7 +28,7 @@ export class FramedDAGEmbedding
 		this.vert_data = Array.from(
 			{length:dag.num_verts()},
 			() => ({
-				position: Vector.zero(),
+				position: Vector2.zero(),
 				spread: Math.PI / 2
 			})
 		);
@@ -97,13 +97,13 @@ export class FramedDAGEmbedding
 		{
 			let index = depths_arr[j];
 			let vd = this.vert_data[index];
-			vd.position = new Vector(j - (depths_arr.length-1)/2,0);
+			vd.position = new Vector2(j - (depths_arr.length-1)/2,0);
 		}
 	}
 
 	bake(): BakedDAGEmbedding
 	{
-		let verts: Vector[] = [];
+		let verts: Vector2[] = [];
 		let edges: Bezier[] = [];
 
 		for(let x of this.vert_data)
@@ -181,7 +181,7 @@ function spread_percent(
 
 export type BakedDAGEmbedding = 
 {
-	verts: Vector[],
+	verts: Vector2[],
 	edges: Bezier[]
 };
 

@@ -1,5 +1,5 @@
 import { BakedDAGEmbedding } from "../draw/dag_layout";
-import { Vector } from "../util/num";
+import { Vector2 } from "../util/num";
 import { Option, ResultError } from "../util/result";
 import { FramedDAGEmbedding } from "../draw/dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
@@ -151,7 +151,7 @@ export class EmbeddingEditor implements IMode
 		dragging: false,
 		vert: 0
 	};
-	mouse_pos: Vector = Vector.zero();
+	mouse_pos: Vector2 = Vector2.zero();
 
 	name(): ModeName
 	{
@@ -238,27 +238,27 @@ export class EmbeddingEditor implements IMode
 		right_area.appendChild(can_element);
 		can_element.addEventListener("click",
 			(ev) => {
-				this.canvas_click(new Vector(ev.layerX, ev.layerY), ev.shiftKey)
+				this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
 			}
 		)
 		can_element.addEventListener("mousedown",
 			(ev) => {
-				this.try_drag_start(new Vector(ev.layerX, ev.layerY));
+				this.try_drag_start(new Vector2(ev.layerX, ev.layerY));
 			}
 		)
 		can_element.addEventListener("mouseup",
 			(ev) => {
-				this.drag_end(new Vector(ev.layerX, ev.layerY));
+				this.drag_end(new Vector2(ev.layerX, ev.layerY));
 			}
 		)
 		can_element.addEventListener("mouseleave",
 			(ev) => {
-				this.drag_end(new Vector(ev.layerX, ev.layerY));
+				this.drag_end(new Vector2(ev.layerX, ev.layerY));
 			}
 		)
 		can_element.addEventListener("mousemove",
 			(ev) => {
-				this.mouse_pos = new Vector(ev.layerX, ev.layerY);
+				this.mouse_pos = new Vector2(ev.layerX, ev.layerY);
 				if(this.v_drag.dragging) this.draw()
 			}
 		)
@@ -281,7 +281,7 @@ export class EmbeddingEditor implements IMode
 		this.draw();
 	}
 
-	canvas_click(position: Vector, shift_held: boolean)
+	canvas_click(position: Vector2, shift_held: boolean)
 	{
 		let clicked_vert = this.get_vertex_at(position);
 		let clicked_edge = this.get_edge_at(position);
@@ -314,7 +314,7 @@ export class EmbeddingEditor implements IMode
 			
 	}
 
-	try_drag_start(position: Vector)
+	try_drag_start(position: Vector2)
 	{
 		let v = this.get_vertex_at(position);
 		if(v.is_some())
@@ -327,7 +327,7 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
-	drag_end(position: Vector)
+	drag_end(position: Vector2)
 	{
 		let v = this.get_vertex_at(position);
 
@@ -613,7 +613,7 @@ export class EmbeddingEditor implements IMode
 	*/
 
 	
-	get_vertex_at(position: Vector): Option<number>
+	get_vertex_at(position: Vector2): Option<number>
 	{
 		let dag = this.dag.bake();
 		
@@ -627,14 +627,14 @@ export class EmbeddingEditor implements IMode
 		return Option.none();
 	}
 
-	get_edge_at(position: Vector): Option<number>
+	get_edge_at(position: Vector2): Option<number>
 	{
 		let dag = this.dag.bake();
 		
 		for(let i = dag.edges.length - 1; i >= 0; i--)
 		{
 			let bez = dag.edges[i].transform
-				((v: Vector) => this.canvas.local_trans(v));
+				((v: Vector2) => this.canvas.local_trans(v));
 
 			if(bez.distance_to(position) <= this.draw_options.edge_weight())
 				return Option.some(i);

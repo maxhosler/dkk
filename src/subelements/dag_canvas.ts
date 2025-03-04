@@ -1,4 +1,4 @@
-import { Bezier, Vector } from "../util/num";
+import { Bezier, Vector2 } from "../util/num";
 import { DrawOptions } from "../draw/draw_options";
 
 export class DAGCanvas
@@ -46,19 +46,19 @@ export class DAGCanvas
 		return new DAGCanvasContext(this);
 	}
 
-	get_offset(): Vector
+	get_offset(): Vector2
 	{
-		return new Vector( this.canvas.width/2, this.canvas.height/2 );
+		return new Vector2( this.canvas.width/2, this.canvas.height/2 );
 	}
 
-	local_trans(vec: Vector)
+	local_trans(vec: Vector2)
 	{
 		return vec
 			.scale(this.draw_options.scale())
 			.add(this.get_offset());
 	}
 
-	local_trans_inv(vec: Vector)
+	local_trans_inv(vec: Vector2)
 	{
 		return vec
 			.sub(this.get_offset())
@@ -92,7 +92,7 @@ export class DAGCanvasContext
 		this.ctx.clearRect(0, 0, this.parent.canvas.width, this.parent.canvas.height)
 	}
 
-	draw_node(pos: Vector)
+	draw_node(pos: Vector2)
 	{
 		this.draw_circ(pos,
 			this.parent.draw_options.vertex_color(),
@@ -100,7 +100,7 @@ export class DAGCanvasContext
 		);
 	}
 
-	draw_circ(pos: Vector, color: string, size: number)
+	draw_circ(pos: Vector2, color: string, size: number)
 	{
 		let scaled = this.parent.local_trans(pos);
 
@@ -119,7 +119,7 @@ export class DAGCanvasContext
 	draw_bez(edge: Bezier, color: string, weight: number, halo: boolean)
 	{
 		let e = edge.transform
-			((v: Vector) => this.parent.local_trans(v));
+			((v: Vector2) => this.parent.local_trans(v));
 
 		this.ctx.beginPath();
 		this.ctx.moveTo(e.start_point.x, e.start_point.y);
@@ -157,8 +157,8 @@ export class DAGCanvasContext
 	}
 
 	draw_line(
-		start: Vector,
-		end: Vector,
+		start: Vector2,
+		end: Vector2,
 		color: string,
 		weight: number
 	)
@@ -176,8 +176,8 @@ export class DAGCanvasContext
 	}
 
 	draw_box(
-		top: Vector,
-		bot: Vector,
+		top: Vector2,
+		bot: Vector2,
 		color: string
 	)
 	{
@@ -194,8 +194,8 @@ export class DAGCanvasContext
 	}
 
 	draw_rounded_box(
-		top: Vector,
-		bot: Vector,
+		top: Vector2,
+		bot: Vector2,
 		radius: number,
 		color: string
 	)

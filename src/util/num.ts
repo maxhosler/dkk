@@ -1,5 +1,5 @@
-export type Matrix = [[number,number], [number, number]];
-export class Vector
+export type Matrix2x2 = [[number,number], [number, number]];
+export class Vector2
 {
 	readonly x: number;
 	readonly y: number;
@@ -10,46 +10,46 @@ export class Vector
 		this.y=y;
 	}
 
-	static zero(): Vector
+	static zero(): Vector2
 	{
-		return new Vector(0,0);
+		return new Vector2(0,0);
 	}
 
-	scale(s: number): Vector
+	scale(s: number): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			this.x * s,
 			this.y * s
 		);
 	}
 
-	add(v: Vector): Vector
+	add(v: Vector2): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			this.x + v.x,
 			this.y + v.y
 		);
 	}
 
-	sub(v: Vector): Vector
+	sub(v: Vector2): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			this.x - v.x,
 			this.y - v.y
 		);
 	}
 
-	rot90(): Vector
+	rot90(): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			-this.y,
 			this.x
 		);
 	}
 
-	rot(d: number): Vector
+	rot(d: number): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			this.x * Math.cos(d) - this.y * Math.sin(d),
 			this.x * Math.sin(d) + this.y * Math.cos(d)
 		);
@@ -63,47 +63,47 @@ export class Vector
 		);
 	}
 
-	normalized(): Vector
+	normalized(): Vector2
 	{
 		let n = this.norm();
 		if (Math.abs(n) < 0.00000000001) {
 			console.warn("Tried to normalize zero vector.")
-			return Vector.zero();
+			return Vector2.zero();
 		}
 		return this.scale(1/n);
 	}
 
-	transform(m: Matrix): Vector
+	transform(m: Matrix2x2): Vector2
 	{
-		let c1 = new Vector(m[0][0], m[1][0]);
-		let c2 = new Vector(m[0][1], m[1][1]);
+		let c1 = new Vector2(m[0][0], m[1][0]);
+		let c2 = new Vector2(m[0][1], m[1][1]);
 		return c1.scale(this.x).add( c2.scale(this.y) )
 	}
 
-	clone(): Vector
+	clone(): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			this.x,
 			this.y
 		);
 	}
 
-	static right(): Vector
+	static right(): Vector2
 	{
-		return new Vector(1,0);
+		return new Vector2(1,0);
 	}
 
-	min(other: Vector): Vector
+	min(other: Vector2): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			Math.min(this.x, other.x),
 			Math.min(this.y, other.y)
 		)
 	}
 
-	max(other: Vector): Vector
+	max(other: Vector2): Vector2
 	{
-		return new Vector(
+		return new Vector2(
 			Math.max(this.x, other.x),
 			Math.max(this.y, other.y)
 		)
@@ -112,12 +112,12 @@ export class Vector
 
 export class Bezier 
 {
-	readonly start_point: Vector;
-	readonly end_point: Vector;
-	readonly cp1: Vector;
-	readonly cp2: Vector;
+	readonly start_point: Vector2;
+	readonly end_point: Vector2;
+	readonly cp1: Vector2;
+	readonly cp2: Vector2;
 
-	constructor(st: Vector, cp1: Vector, cp2: Vector, end: Vector)
+	constructor(st: Vector2, cp1: Vector2, cp2: Vector2, end: Vector2)
 	{
 		this.start_point = st;
 		this.end_point = end,
@@ -125,7 +125,7 @@ export class Bezier
 		this.cp2 = cp2;
 	}
 
-	transform(trans: (v: Vector) => Vector): Bezier
+	transform(trans: (v: Vector2) => Vector2): Bezier
 	{
 		return new Bezier
 		(
@@ -136,7 +136,7 @@ export class Bezier
 		)
 	}
 
-	get_point(t: number): Vector
+	get_point(t: number): Vector2
 	{
 		let it = 1-t;
 		return this.start_point.scale( it * it * it)
@@ -145,7 +145,7 @@ export class Bezier
 			.add( this.end_point.scale( t * t * t ) );
 	}
 
-	distance_to(position: Vector): number
+	distance_to(position: Vector2): number
 	{
 		const EPSILON = 0.001;
 		const STEP = 0.02;
@@ -192,16 +192,16 @@ export class Bezier
 export class BoundingBox
 {
 	empty: boolean = true;
-	top_corner: Vector = Vector.zero();
-	bot_corner: Vector = Vector.zero();
+	top_corner: Vector2 = Vector2.zero();
+	bot_corner: Vector2 = Vector2.zero();
 
-	constructor(vecs: Vector[])
+	constructor(vecs: Vector2[])
 	{
 		for(let v of vecs)
 			this.add_point(v);
 	}
 
-	add_point(v: Vector)
+	add_point(v: Vector2)
 	{
 		if(this.empty)
 		{
@@ -218,12 +218,12 @@ export class BoundingBox
 
 	pad(w: number)
 	{
-		let delta = new Vector(w,w);
+		let delta = new Vector2(w,w);
 		this.top_corner = this.top_corner.sub(delta);
 		this.bot_corner = this.bot_corner.add(delta);
 	}
 
-	extent(): Vector
+	extent(): Vector2
 	{
 		let x = Math.max(
 			Math.abs(this.top_corner.x),
@@ -234,7 +234,7 @@ export class BoundingBox
 			Math.abs(this.bot_corner.y)
 		);
 
-		return new Vector(x,y);
+		return new Vector2(x,y);
 	}
 }
 
