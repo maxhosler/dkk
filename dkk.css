@@ -366,3 +366,10 @@ html, body {
     font-weight: bold;
     padding-right: 10pt;
 }
+
+#notes
+{
+    position: absolute;
+    font-size: small;
+    bottom: 12pt;
+}
