@@ -345,3 +345,11 @@ html, body {
     font-style: italic;
     font-size: small;
 }
+
+#ee-error-zone
+{
+    color: red;
+    font-style: italic;
+    font-size: small;
+    height: 25pt;
+}

@@ -136,6 +136,8 @@ export class EmbeddingEditor implements IMode
 	readonly draw_options: DrawOptions;
 	readonly draw_options_box: DrawOptionsBox;
 
+	error_box: HTMLDivElement;
+
 	canvas: DAGCanvas;
 	dag: FramedDAGEmbedding;
 
@@ -201,6 +203,10 @@ export class EmbeddingEditor implements IMode
 		sidebar_contents.appendChild(do_box_element);
 		this.draw_options_box = do_box;		
 
+		this.error_box = document.createElement("div");
+		this.error_box.id = "ee-error-zone";
+		sidebar_contents.appendChild(this.error_box);
+
 		let {box: dag_box, element: dag_element} = ActionBox.create();
 		sidebar_contents.appendChild(dag_element);
 		dag_box.add_title("DAG Edit");
@@ -212,6 +218,16 @@ export class EmbeddingEditor implements IMode
 				{
 					let [start, end] = this.selected.inner as [number, number];
 					this.add_edge(start, end);
+				}
+			}
+		)
+		dag_box.add_button(
+			"Remove edge",
+			() => {
+				if(this.selected.type == "edge")
+				{
+					let start = this.selected.inner as number;
+					this.remove_edge(start);
 				}
 			}
 		)
@@ -337,7 +353,6 @@ export class EmbeddingEditor implements IMode
 			if(this.selected.type == "edge")
 			{
 				let sel = this.selected.inner as number;
-				this.selected = Selection.none();
 				this.remove_edge(sel);
 			}
 		}
@@ -377,8 +392,12 @@ export class EmbeddingEditor implements IMode
 
 	show_err(err: ResultError)
 	{
-		console.warn(err);
-		//TODO:
+		this.error_box.innerText = err.err_message;
+	}
+
+	clear_err()
+	{
+		this.error_box.innerText = "";
 	}
 
 	/*
@@ -394,9 +413,11 @@ export class EmbeddingEditor implements IMode
 
 		if(try_add_res.is_ok())
 		{
+			this.selected = Selection.none();
 			let new_framed = new FramedDAGEmbedding(dag);
 			this.dag = new_framed;
 			this.draw();
+			this.clear_err();
 		}
 		else
 		{
@@ -411,9 +432,11 @@ export class EmbeddingEditor implements IMode
 
 		if(try_add_res)
 		{
+			this.selected = Selection.none();
 			let new_framed = new FramedDAGEmbedding(dag);
 			this.dag = new_framed;
 			this.draw();
+			this.clear_err();
 		}
 	}
 

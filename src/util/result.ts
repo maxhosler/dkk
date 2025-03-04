@@ -4,8 +4,8 @@
 
 export type ResultError =
 {
-    readonly err_name: String,
-    readonly err_message: String
+    readonly err_name: string,
+    readonly err_message: string
 }
 
 export class Result<T> {
@@ -41,7 +41,7 @@ export class Result<T> {
         return new Result<T>(true, t, undefined);
     }
 
-    public static err<T>(err_name: String, err_message: String): Result<T>
+    public static err<T>(err_name: string, err_message: string): Result<T>
     {
         let err: ResultError = {
             err_message: err_message,
