@@ -126,7 +126,7 @@ export function caracol_emb(num_verts: number): FramedDAGEmbedding
 	for(let i = 0; i < num_verts-2; i++)
 	{
 		let j = i + 2 * num_verts-3;
-		let ang = -ang_max * ( i/(num_verts-2) );
+		let ang = -ang_max * ( (i+1)/(num_verts-2) );
 		emb.edge_data[j].end_ang_override = Option.some(ang);
 	}
 
