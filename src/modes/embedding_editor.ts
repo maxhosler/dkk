@@ -1,5 +1,5 @@
 import { BakedDAGEmbedding } from "../draw/dag_layout";
-import { Vector2 } from "../util/num";
+import { clamp, Vector2 } from "../util/num";
 import { Option, ResultError } from "../util/result";
 import { FramedDAGEmbedding } from "../draw/dag_layout";
 import { SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA } from "../html_elems";
@@ -247,17 +247,17 @@ export class EmbeddingEditor implements IMode
 			[
 				["Add edge", "E"],
 				["Remove edge", "Backspace"],
-				["Swap framing at start","S"],
-				["Swap framing at end","Shift+S"]
+				["Swap framing at start","D"],
+				["Swap framing at end","Shift+D"]
 			]
 		);
 
 		let {box: emb_box, element: emb_element} = ActionBox.create();
 		sidebar_contents.appendChild(emb_element);
 		emb_box.add_title("Embedding Edit");
-		emb_box.add_tip("Coming soon")
+		emb_box.add_tip("Shift+Left Click and drag to move vertices.")
 		emb_box.add_shortcut_popup([
-			["Coming", "Soon :)"]
+			["Move vertex", "Shift+Left Click, drag"]
 		]);
 
 		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
@@ -454,6 +454,16 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
+	change_out_angle_selected(delta: number)
+	{
+		if(this.selected.type != "vertex") return;
+
+		let v = this.selected.inner as number;
+		this.dag.vert_data[v].spread =
+			clamp(this.dag.vert_data[v].spread + delta, 0, Math.PI);
+		this.draw();
+	}
+
 	enable_disable_buttons()
 	{
 		this.add_edge_button.disabled = this.selected.type != "pair_verts";
@@ -486,15 +496,20 @@ export class EmbeddingEditor implements IMode
 			this.add_edge_selected()
 		}
 
-		if(ev.key.toLowerCase() == "s" && !ev.shiftKey)
+		if(ev.key.toLowerCase() == "d" && !ev.shiftKey)
 		{
 			this.swap_at_start_selected()
 		}
 
-		if(ev.key.toLowerCase() == "s" && ev.shiftKey)
+		if(ev.key.toLowerCase() == "d" && ev.shiftKey)
 		{
 			this.swap_at_end_selected()	
 		}
+
+		if(ev.key.toLowerCase() == "w")
+			this.change_out_angle_selected(Math.PI/16);
+		if(ev.key.toLowerCase() == "s")
+			this.change_out_angle_selected(-Math.PI/16);
 	}
 
 	show_err(err: ResultError)
