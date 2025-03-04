@@ -140,8 +140,8 @@ export class EmbeddingEditor implements IMode
 
 	readonly add_edge_button: HTMLButtonElement;
 	readonly remove_edge_button: HTMLButtonElement;
-	readonly swap_edges_start: HTMLButtonElement;
-	readonly swap_edges_end: HTMLButtonElement;
+	readonly swap_start_button: HTMLButtonElement;
+	readonly swap_end_button: HTMLButtonElement;
 
 	readonly resize_event: (ev: UIEvent) => void;
 	readonly keydown_event: (ev: KeyboardEvent) => void;
@@ -227,11 +227,11 @@ export class EmbeddingEditor implements IMode
 			"Remove edge",
 			() => this.remove_edge_selected()
 		);
-		this.swap_edges_start = dag_box.add_button(
+		this.swap_start_button = dag_box.add_button(
 			"Swap framing at start",
 			() => this.swap_at_start_selected()
 		)
-		this.swap_edges_end = dag_box.add_button(
+		this.swap_end_button = dag_box.add_button(
 			"Swap framing at end",
 			() => this.swap_at_end_selected()
 		)
@@ -256,16 +256,19 @@ export class EmbeddingEditor implements IMode
 		right_area.appendChild(can_element);
 		can_element.addEventListener("click",
 			(ev) => {
+				if(ev.button == 0)
 				this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
 			}
 		)
 		can_element.addEventListener("mousedown",
 			(ev) => {
+				if(ev.button == 0)
 				this.try_drag_start(new Vector2(ev.layerX, ev.layerY));
 			}
 		)
 		can_element.addEventListener("mouseup",
 			(ev) => {
+				if(ev.button == 0)
 				this.drag_end(new Vector2(ev.layerX, ev.layerY));
 			}
 		)
@@ -292,6 +295,8 @@ export class EmbeddingEditor implements IMode
 		this.keydown_event = (ev) => this.handle_keypress(ev);
 		addEventListener("resize", this.resize_event);
 		addEventListener("keydown", this.keydown_event);
+
+		this.enable_disable_buttons();
 	}
 
 	clear_global_events(): void {
@@ -303,6 +308,7 @@ export class EmbeddingEditor implements IMode
 	{
 		this.selected = sel;
 		this.draw();
+		this.enable_disable_buttons();
 	}
 
 	canvas_click(position: Vector2, shift_held: boolean)
@@ -404,6 +410,26 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
+	enable_disable_buttons()
+	{
+		this.add_edge_button.disabled = this.selected.type != "pair_verts";
+		this.remove_edge_button.disabled = this.selected.type != "edge";
+		
+		if(this.selected.type == "pair_edges")
+		{
+			let [i,j] = this.selected.inner as [number,number];
+			this.swap_end_button.disabled =
+				this.edges_shared_end(i,j).is_none();
+			this.swap_start_button.disabled =
+				this.edges_shared_start(i,j).is_none();
+		}
+		else
+		{
+			this.swap_end_button.disabled = true;
+			this.swap_start_button.disabled = true;	
+		}
+	}
+
 	handle_keypress(ev: KeyboardEvent)
 	{
 		if(ev.key == "Backspace")
@@ -478,7 +504,7 @@ export class EmbeddingEditor implements IMode
 
 	swap_at_start(e1: number, e2: number)
 	{
-		let start_opt = this.edges_share_start(e1, e2);
+		let start_opt = this.edges_shared_start(e1, e2);
 		if(start_opt.is_none()) return;
 
 		let start = start_opt.unwrap();
@@ -504,7 +530,7 @@ export class EmbeddingEditor implements IMode
 
 	swap_at_end(e1: number, e2: number)
 	{
-		let end_opt = this.edges_share_end(e1, e2);
+		let end_opt = this.edges_shared_end(e1, e2);
 		if(end_opt.is_none()) return;
 
 		let end = end_opt.unwrap();
@@ -673,7 +699,7 @@ export class EmbeddingEditor implements IMode
 		return Option.none();
 	}
 
-	edges_share_start(e1: number, e2: number): Option<number>
+	edges_shared_start(e1: number, e2: number): Option<number>
 	{
 		let edge1 = this.dag.base_dag.get_edge(e1);
 		let edge2 = this.dag.base_dag.get_edge(e2);
@@ -690,7 +716,7 @@ export class EmbeddingEditor implements IMode
 			return Option.none();
 	}
 
-	edges_share_end(e1: number, e2: number): Option<number>
+	edges_shared_end(e1: number, e2: number): Option<number>
 	{
 		let edge1 = this.dag.base_dag.get_edge(e1);
 		let edge2 = this.dag.base_dag.get_edge(e2);
