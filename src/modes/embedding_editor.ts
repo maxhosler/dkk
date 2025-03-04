@@ -125,12 +125,16 @@ class Selection
 	}
 }
 
-type VertDragState =
+type EdgeDragState =
 {
 	dragging: boolean,
 	vert: number
 }
-
+type VertMoveDragState = 
+{
+	dragging: boolean,
+	vert: number
+}
 export class EmbeddingEditor implements IMode
 {
 	readonly draw_options: DrawOptions;
@@ -150,10 +154,14 @@ export class EmbeddingEditor implements IMode
 	dag: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
-	v_drag: VertDragState = {
+	e_drag: EdgeDragState = {
 		dragging: false,
 		vert: 0
 	};
+	v_drag: VertMoveDragState = {
+		dragging: false, 
+		vert: 0
+	}
 	mouse_pos: Vector2 = Vector2.zero();
 
 	name(): ModeName
@@ -257,30 +265,36 @@ export class EmbeddingEditor implements IMode
 		can_element.addEventListener("click",
 			(ev) => {
 				if(ev.button == 0)
-				this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
+					this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
 			}
 		)
 		can_element.addEventListener("mousedown",
 			(ev) => {
-				if(ev.button == 0)
-				this.try_drag_start(new Vector2(ev.layerX, ev.layerY));
+				if(ev.button == 0 && !ev.shiftKey)
+					this.try_edge_drag_start(new Vector2(ev.layerX, ev.layerY));
+				else if(ev.button == 0)
+					this.try_vert_drag_start(new Vector2(ev.layerX, ev.layerY));
 			}
 		)
 		can_element.addEventListener("mouseup",
 			(ev) => {
-				if(ev.button == 0)
-				this.drag_end(new Vector2(ev.layerX, ev.layerY));
+				if(ev.button == 0) {
+					this.edge_drag_end(new Vector2(ev.layerX, ev.layerY));
+					this.vert_drag_end();
+				}
 			}
 		)
 		can_element.addEventListener("mouseleave",
 			(ev) => {
-				this.drag_end(new Vector2(ev.layerX, ev.layerY));
+				this.edge_drag_end(new Vector2(ev.layerX, ev.layerY));
+				this.vert_drag_end();
 			}
 		)
 		can_element.addEventListener("mousemove",
 			(ev) => {
 				this.mouse_pos = new Vector2(ev.layerX, ev.layerY);
-				if(this.v_drag.dragging) this.draw()
+				this.move_dragged_vert();
+				if(this.e_drag.dragging || this.v_drag.dragging) this.draw()
 			}
 		)
 
@@ -344,7 +358,20 @@ export class EmbeddingEditor implements IMode
 			
 	}
 
-	try_drag_start(position: Vector2)
+	try_edge_drag_start(position: Vector2)
+	{
+		let v = this.get_vertex_at(position);
+		if(v.is_some())
+		{
+			let vert = v.unwrap();
+			this.e_drag = {
+				dragging: true,
+				vert
+			};
+		}
+	}
+
+	try_vert_drag_start(position: Vector2)
 	{
 		let v = this.get_vertex_at(position);
 		if(v.is_some())
@@ -357,8 +384,10 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
-	drag_end(position: Vector2)
+	edge_drag_end(position: Vector2)
 	{
+		if(!this.e_drag.dragging) return;
+
 		let v = this.get_vertex_at(position);
 
 		if(v.is_some())
@@ -366,12 +395,27 @@ export class EmbeddingEditor implements IMode
 			let vert = v.unwrap();
 			
 			this.add_edge(
-				this.v_drag.vert,
+				this.e_drag.vert,
 				vert
 			);
 		}
 
+		this.e_drag.dragging = false;
+	}
+
+	vert_drag_end()
+	{
+		if(!this.v_drag.dragging) return;
+
 		this.v_drag.dragging = false;
+		this.selected = Selection.vertex(this.v_drag.vert);
+	}
+
+	move_dragged_vert()
+	{
+		if(!this.v_drag.dragging) return;
+		this.dag.vert_data[this.v_drag.vert].position = 
+			this.canvas.local_trans_inv(this.mouse_pos);
 	}
 
 	add_edge_selected()
@@ -651,9 +695,9 @@ export class EmbeddingEditor implements IMode
 
 	draw_drag_edge(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
 	{
-		if(!this.v_drag.dragging) return;
+		if(!this.e_drag.dragging) return;
 
-		let start = data.verts[this.v_drag.vert];
+		let start = data.verts[this.e_drag.vert];
 		let end = this.canvas.local_trans_inv(this.mouse_pos);
 
 		ctx.draw_line(

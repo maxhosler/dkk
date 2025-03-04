@@ -246,6 +246,10 @@ export class CliqueViewer implements IMode
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++)
         {
             let edge = data.edges[edge_idx];
+            let orthog = edge.end_point
+                .sub(edge.start_point)
+                .rot90()
+                .normalized();
             ctx.draw_bez(
                 edge, 
                 this.draw_options.edge_color() + "22",
@@ -267,7 +271,7 @@ export class CliqueViewer implements IMode
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = new Vector2(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
+                    offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
                 ctx.draw_bez(
                     edge.transform((v) => v.add(offset)),
@@ -424,6 +428,10 @@ export class CliqueViewer implements IMode
             let edge = data.edges[edge_idx].transform(
                 (v) => v.scale(scale).add(center) 
             );
+            let orthog = edge.end_point
+                .sub(edge.start_point)
+                .rot90()
+                .normalized();
 
             let routes = this.cliques.routes_at(edge_idx, clique_idx);
             if(routes.length == 0)
@@ -439,7 +447,7 @@ export class CliqueViewer implements IMode
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = new Vector2(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
+                    offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
                 ctx.draw_bez(
                     edge.transform((v) => v.add(offset)),
