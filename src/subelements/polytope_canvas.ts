@@ -1,7 +1,7 @@
 import { DrawOptions } from "../draw/draw_options";
-import { FlowPolytope } from "../routes/polytope";
-import { Clique } from "../routes/routes";
-import { Vector } from "../util/num";
+import { FlowPolytope } from "../math/polytope";
+import { Clique } from "../math/routes";
+import { Vector2 } from "../util/num";
 import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
 
@@ -125,15 +125,15 @@ export class PolytopeCanvas
         this.program = init_shader_prog(this.ctx);
 
         this.resize_canvas();
-        addEventListener("resize", (event) => {
-            if(this)
+        this.canvas.addEventListener("resize", (event) => {
             this.resize_canvas();
         });
 
-        addEventListener("mouseup", (ev) => this.drag = false);
+        this.canvas.addEventListener("mouseup", (ev) => this.drag = false);
+        this.canvas.addEventListener("mouseleave", (ev) => this.drag = false);
         this.canvas.addEventListener("mousedown", (ev) => this.drag = true);
-        addEventListener("mousemove", (ev) => {
-            if(this && this.drag)
+        this.canvas.addEventListener("mousemove", (ev) => {
+            if(this.drag)
                 this.drag_rotate([ev.movementX, -ev.movementY]);
         })
     }

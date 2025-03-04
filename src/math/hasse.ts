@@ -1,4 +1,4 @@
-import { BoundingBox, Vector } from "../util/num";
+import { BoundingBox, Vector2 } from "../util/num";
 import { Clique } from "./routes";
 
 export class HasseDiagram
@@ -6,7 +6,7 @@ export class HasseDiagram
     readonly poset_size: number;
     readonly covering_relation: boolean[][];
     
-    readonly layout_rows: Vector[];
+    readonly layout_rows: Vector2[];
     readonly bounding_box: BoundingBox;
     
     readonly minimal_elt: number;
@@ -115,7 +115,7 @@ export class HasseDiagram
     private static compute_layout_rows(
         min: number,
         covering_relation: boolean[][]
-    ): Vector[]
+    ): Vector2[]
     {
     
         let max_depths: number[] = [];
@@ -245,10 +245,10 @@ export class HasseDiagram
                 break;
         }
 
-        let positions: Vector[] = [];
+        let positions: Vector2[] = [];
         for(let i = 0; i < covering_relation.length; i++)
         {
-            positions.push(Vector.zero())
+            positions.push(Vector2.zero())
         }
         for(let row_depth = 0; row_depth < extended_rows.length; row_depth++)
         {
@@ -259,13 +259,13 @@ export class HasseDiagram
                 if(idx < 0) continue;
                 let y = row_depth;
                 let x = j - (row.length - 1)/2;
-                positions[idx] = new Vector(x,y);
+                positions[idx] = new Vector2(x,y);
             }
         }
 
         let avg = positions.reduce(
             (acc, nw) => acc.add(nw),
-            Vector.zero()
+            Vector2.zero()
         ).scale(1/positions.length);
 
         return positions

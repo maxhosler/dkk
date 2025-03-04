@@ -1,6 +1,6 @@
-import { caracol, Edge, FramedDAG, prebuilt_dag } from "./dag";
+import { Edge, FramedDAG } from "../math/dag";
 import { Option } from "../util/result";
-import { Bezier, clamp, Vector } from "../util/num";
+import { Bezier, clamp, Vector2 } from "../util/num";
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
@@ -11,7 +11,7 @@ export type EdgeData = {
 }
 
 export type VertData = {
-	position: Vector,
+	position: Vector2,
 	spread: number
 }
 
@@ -28,7 +28,7 @@ export class FramedDAGEmbedding
 		this.vert_data = Array.from(
 			{length:dag.num_verts()},
 			() => ({
-				position: Vector.zero(),
+				position: Vector2.zero(),
 				spread: Math.PI / 2
 			})
 		);
@@ -71,34 +71,39 @@ export class FramedDAGEmbedding
 			}
 		}
 
-		let depths: {[key: number]: number} = {}
-		for(let src of this.base_dag.sources())
-			all_depths(this.base_dag, src, 0, depths);
 
-		let depths_arr: [number, number][] = []
+		let depths_arr: number[] = []
 
 		for(let i = 0; i < this.base_dag.num_verts(); i++)
 		{
-			depths_arr.push([depths[i], i])
+			depths_arr.push(i)
 		}
 		depths_arr.sort(
 			(a,b) => {
-				if(a[0] < b[0]) { return -1; }
-				if(a[0] > b[0]) { return 1; }
-				return a[1] - b[1];
+				if( this.base_dag.preceeds(a,b))
+				{
+					return -1;
+				}
+				else if (this.base_dag.preceeds(b,a))
+				{
+					return 1;
+				}
+
+				return a-b;
+
 			}
 		);
 		for(let j = 0; j < depths_arr.length; j++)
 		{
-			let index = depths_arr[j][1];
+			let index = depths_arr[j];
 			let vd = this.vert_data[index];
-			vd.position = new Vector(j - (depths_arr.length-1)/2,0);
+			vd.position = new Vector2(j - (depths_arr.length-1)/2,0);
 		}
 	}
 
 	bake(): BakedDAGEmbedding
 	{
-		let verts: Vector[] = [];
+		let verts: Vector2[] = [];
 		let edges: Bezier[] = [];
 
 		for(let x of this.vert_data)
@@ -149,19 +154,14 @@ export class FramedDAGEmbedding
 			edges: edges
 		};
 	}
-}
 
-function all_depths(
-	framed_dag: FramedDAG,
-	vert: number,
-	vert_depth: number,
-	depths: {[key: number]: number})
-{
-	depths[vert] = Math.min(vert_depth, depths[vert] || Infinity);
-	for(let edge of framed_dag.get_out_edges(vert).unwrap())
+	copy_in_data(vd: VertData[], ed: EdgeData[])
 	{
-		let next = framed_dag.get_edge(edge).unwrap().end;
-		all_depths(framed_dag, next, vert_depth+1, depths);
+		for(let i = 0; i < Math.min(vd.length, this.vert_data.length); i++)
+			this.vert_data[i] = vd[i];
+		
+		for(let i = 0; i < Math.min(ed.length, this.edge_data.length); i++)
+			this.edge_data[i] = ed[i];
 	}
 }
 
@@ -181,59 +181,7 @@ function spread_percent(
 
 export type BakedDAGEmbedding = 
 {
-	verts: Vector[],
+	verts: Vector2[],
 	edges: Bezier[]
 };
 
-export function prebuilt_dag_embedding(num: number): FramedDAGEmbedding
-{
-	let dag = prebuilt_dag(num);
-	let emb = new FramedDAGEmbedding(dag);
-
-	if(num == 2)
-	{
-		for(let i of [2,3,4]){
-			emb.edge_data[i].start_ang_override = Option.some(0);
-			emb.edge_data[i].end_ang_override = Option.some(0);
-		}
-		emb.edge_data[1].start_ang_override = Option.some(-Math.PI/8);
-		emb.edge_data[5].end_ang_override = Option.some(-Math.PI/8);
-	}
-	else if (num == 6)
-	{
-		emb = caracol_emb(5);
-	}
-
-	return emb;
-}
-
-export function caracol_emb(num_verts: number): FramedDAGEmbedding
-{
-    let dag = caracol(num_verts);
-    let emb = new FramedDAGEmbedding(dag);
-
-	let excess = clamp(num_verts-4, 0, 4);
-	let ang_max = Math.PI/4 + excess * Math.PI/16;
-
-	for(let i = 0; i < num_verts-2; i++)
-	{
-		let ang = -ang_max * ( 1 - i/(num_verts-2) );
-		emb.edge_data[i].start_ang_override = Option.some(ang);
-	}
-
-	//spine: [num_verts-2..2*num_verts-3]
-	for(let i = num_verts-2; i < 2 * num_verts-3; i++)
-	{
-		emb.edge_data[i].start_ang_override = Option.some(0);
-		emb.edge_data[i].end_ang_override = Option.some(0);
-	}
-
-	for(let i = 0; i < num_verts-2; i++)
-	{
-		let j = i + 2 * num_verts-3;
-		let ang = -ang_max * ( i/(num_verts-2) );
-		emb.edge_data[j].end_ang_override = Option.some(ang);
-	}
-
-    return emb;
-}

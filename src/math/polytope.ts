@@ -1,5 +1,135 @@
 import { DAGCliques } from "./routes";
 
+export class FlowPolytope
+{
+    readonly dim: number;
+    readonly vertices: NVector[]
+    readonly external_simplices: number[][];
+
+    constructor(dag_cliques: DAGCliques)
+    {
+        let unreduced_dim = dag_cliques.dag.num_edges();
+        this.dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
+
+        let unred_vertices: NVector[] = [];
+        for(let route of dag_cliques.routes)
+        {
+            let vertex = NVector.zero(unreduced_dim);
+            for(let edge of route.edges)
+                vertex.coordinates[edge] = 1;
+            unred_vertices.push(vertex);
+        }
+
+        let max_clique = dag_cliques.cliques[
+            dag_cliques.hasse.maximal_elt
+        ];
+        let center = unred_vertices[max_clique.routes[0]];
+        let basis  = max_clique.routes.slice(1)
+            .map((idx: number) => {
+                return unred_vertices[idx].sub(center)
+        });
+ 
+        let centered_vertices = unred_vertices
+            .map((v: NVector) => v.sub(center));
+
+        let A = Matrix.from_columns(basis);
+        let E = Matrix.id(unreduced_dim);
+
+        let swap_both = (i: number, j: number) => 
+        {
+            A.swap_rows(i,j);
+            E.swap_rows(i,j);
+        }
+        let scale_both = (i: number, scalar: number) =>
+        {
+            A.scale_row(i,scalar);
+            E.scale_row(i,scalar);
+        }
+        let add_scaled_both = (add_to: number, add_from: number, scalar: number) => 
+        {
+            A.add_scaled_row(add_to, add_from, scalar);
+            E.add_scaled_row(add_to, add_from, scalar);
+        }
+
+        for(let c = 0; c < A.width; c++)
+        {
+            if(A.get_entry(c,c) == 0)
+            {
+                for(let r = c+1; r < A.height; r++) {
+                    if(A.get_entry(r, c) != 0) {
+                        swap_both(c,r);
+                        break;
+                    }
+                }
+            }
+
+            scale_both(c,1/A.get_entry(c,c));
+            
+            for(let i = 0; i < A.height; i++)
+            {
+                if(c == i) continue;
+                add_scaled_both(
+                    i, c,
+                    -A.get_entry(i,c)
+                );
+            }
+        }
+
+        let projected_vertices = centered_vertices
+            .map((v) => E.apply_to(v).trunc(this.dim));
+        
+        if(this.dim == 3 || this.dim == 2)
+        {
+            let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
+
+            let B = cholesky_decomposition(A.inv());
+            //This has the property that B^T A B = I
+            //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
+            //(x-c)^TA(x-c)=1 to the unit sphere.
+
+            this.vertices = projected_vertices
+                .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
+        }
+        else
+        {
+            this.vertices = projected_vertices;
+        }
+
+        let external_simplices: number[][] = [];
+        for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
+        {
+            if (this.dim == 2)
+            {
+                external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
+                continue;
+            }
+
+            let clq = dag_cliques.cliques[clq_idx];
+            let no_flip: number[] = [];
+            for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
+            {
+                if(dag_cliques.route_swap_by_idx_in_clq(clq_idx, route_idx) == clq_idx)
+                {
+                    no_flip.push(route_idx);
+                }
+            }
+
+            for(let skip of no_flip)
+            {
+                let simpl: number[] = [];
+                for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
+                {
+                    if(route_idx == skip) continue;
+                    simpl.push(clq.routes[route_idx]);
+                }
+                external_simplices.push(simpl);
+            }
+            
+        }
+        this.external_simplices = external_simplices;
+    }
+}
+
 class NVector
 {
     coordinates: number[]
@@ -370,136 +500,6 @@ class Matrix
             out += "\n"
         }
         return out;
-    }
-}
-
-export class FlowPolytope
-{
-    readonly dim: number;
-    readonly vertices: NVector[]
-    readonly external_simplices: number[][];
-
-    constructor(dag_cliques: DAGCliques)
-    {
-        let unreduced_dim = dag_cliques.dag.num_edges();
-        this.dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
-
-        let unred_vertices: NVector[] = [];
-        for(let route of dag_cliques.routes)
-        {
-            let vertex = NVector.zero(unreduced_dim);
-            for(let edge of route.edges)
-                vertex.coordinates[edge] = 1;
-            unred_vertices.push(vertex);
-        }
-
-        let max_clique = dag_cliques.cliques[
-            dag_cliques.hasse.maximal_elt
-        ];
-        let center = unred_vertices[max_clique.routes[0]];
-        let basis  = max_clique.routes.slice(1)
-            .map((idx: number) => {
-                return unred_vertices[idx].sub(center)
-        });
- 
-        let centered_vertices = unred_vertices
-            .map((v: NVector) => v.sub(center));
-
-        let A = Matrix.from_columns(basis);
-        let E = Matrix.id(unreduced_dim);
-
-        let swap_both = (i: number, j: number) => 
-        {
-            A.swap_rows(i,j);
-            E.swap_rows(i,j);
-        }
-        let scale_both = (i: number, scalar: number) =>
-        {
-            A.scale_row(i,scalar);
-            E.scale_row(i,scalar);
-        }
-        let add_scaled_both = (add_to: number, add_from: number, scalar: number) => 
-        {
-            A.add_scaled_row(add_to, add_from, scalar);
-            E.add_scaled_row(add_to, add_from, scalar);
-        }
-
-        for(let c = 0; c < A.width; c++)
-        {
-            if(A.get_entry(c,c) == 0)
-            {
-                for(let r = c+1; r < A.height; r++) {
-                    if(A.get_entry(r, c) != 0) {
-                        swap_both(c,r);
-                        break;
-                    }
-                }
-            }
-
-            scale_both(c,1/A.get_entry(c,c));
-            
-            for(let i = 0; i < A.height; i++)
-            {
-                if(c == i) continue;
-                add_scaled_both(
-                    i, c,
-                    -A.get_entry(i,c)
-                );
-            }
-        }
-
-        let projected_vertices = centered_vertices
-            .map((v) => E.apply_to(v).trunc(this.dim));
-        
-        if(this.dim == 3 || this.dim == 2)
-        {
-            let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
-
-            let B = cholesky_decomposition(A.inv());
-            //This has the property that B^T A B = I
-            //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
-            //(x-c)^TA(x-c)=1 to the unit sphere.
-
-            this.vertices = projected_vertices
-                .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
-        }
-        else
-        {
-            this.vertices = projected_vertices;
-        }
-
-        let external_simplices: number[][] = [];
-        for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
-        {
-            if (this.dim == 2)
-            {
-                external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
-                continue;
-            }
-
-            let clq = dag_cliques.cliques[clq_idx];
-            let no_flip: number[] = [];
-            for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
-            {
-                if(dag_cliques.route_swap_by_idx_in_clq(clq_idx, route_idx) == clq_idx)
-                {
-                    no_flip.push(route_idx);
-                }
-            }
-
-            for(let skip of no_flip)
-            {
-                let simpl: number[] = [];
-                for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
-                {
-                    if(route_idx == skip) continue;
-                    simpl.push(clq.routes[route_idx]);
-                }
-                external_simplices.push(simpl);
-            }
-            
-        }
-        this.external_simplices = external_simplices;
     }
 }
 

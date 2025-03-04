@@ -1,15 +1,16 @@
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
-import { BakedDAGEmbedding, FramedDAGEmbedding } from "../dag/dag_layout";
+import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
-import { BoundingBox, Vector } from "../util/num";
+import { BoundingBox, Vector2 } from "../util/num";
 import { DrawOptionBox } from "../subelements/draw_option_box";
-import { DAGCliques } from "../routes/routes";
+import { DAGCliques } from "../math/routes";
 import { SwapBox } from "../subelements/swap_box";
-import { FlowPolytope } from "../routes/polytope";
+import { FlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
+import { IMode, ModeName } from "./mode";
 
-export class CliqueViewer
+export class CliqueViewer implements IMode
 {
     readonly draw_options: DrawOptions;
 
@@ -25,6 +26,13 @@ export class CliqueViewer
     readonly poly_canvas: PolytopeCanvas;
 
     current_clique: number = 0;
+
+    name(): ModeName {
+        return "clique-viewer"
+    }
+    current_dag(): FramedDAGEmbedding {
+        return this.dag;
+    }
 
     static destructive_new(
         dag: FramedDAGEmbedding,
@@ -69,6 +77,7 @@ export class CliqueViewer
         this.draw_options.set_builtin_color_scheme(
             this.cliques.routes.length
         );
+
         draw_options.add_change_listener(() => {
             if(this) {
                 let nc = this.cliques.cliques[this.current_clique];
@@ -106,7 +115,7 @@ export class CliqueViewer
 		segments.clique.appendChild(c_canvas_element);
 		c_canvas_element.addEventListener("click",
 			(ev) => {
-				this.clique_canvas_click(new Vector(ev.layerX, ev.layerY))
+				this.clique_canvas_click(new Vector2(ev.layerX, ev.layerY))
 			}
 		)
         clique_canvas.resize_canvas();
@@ -127,7 +136,15 @@ export class CliqueViewer
 
         //Draw and setup redraw
         this.draw();
-        addEventListener("resize", (event) => {
+        h_canvas_element.addEventListener("resize", (event) => {
+            if(this)
+            this.draw();
+        });
+        p_canvas_element.addEventListener("resize", (event) => {
+            if(this)
+            this.draw();
+        });
+        c_canvas_element.addEventListener("resize", (event) => {
             if(this)
             this.draw();
         });
@@ -140,7 +157,7 @@ export class CliqueViewer
     }
 
 
-    clique_canvas_click(position: Vector)
+    clique_canvas_click(position: Vector2)
     {
         this.draw_clique()
     }
@@ -244,11 +261,11 @@ export class CliqueViewer
             {
                 let r = routes[i];
                 let color = this.draw_options.get_route_color(r);
-                let offset = Vector.zero();
+                let offset = Vector2.zero();
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
+                    offset = new Vector2(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
                 }
                 ctx.draw_bez(
                     edge.transform((v) => v.add(offset)),
@@ -357,7 +374,7 @@ export class CliqueViewer
     }
 
     draw_mini_clique(
-        center: Vector,
+        center: Vector2,
         clique_idx: number,
         data: BakedDAGEmbedding,
         ctx: DAGCanvasContext
@@ -412,11 +429,11 @@ export class CliqueViewer
             {
                 let r = routes[i];
                 let color = this.draw_options.get_route_color(r);
-                let offset = Vector.zero();
+                let offset = Vector2.zero();
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = new Vector(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
+                    offset = new Vector2(0, percent * (full_width - width)).scale(1/this.draw_options.scale());
                 }
                 ctx.draw_bez(
                     edge.transform((v) => v.add(offset)),
