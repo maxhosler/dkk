@@ -3,29 +3,26 @@ import { Popup } from "./popup";
 
 export class ShortcutsPopup extends Popup
 {
-	constructor(base: HTMLElement)
+	constructor(base: HTMLElement, data: [string,string][])
 	{
 		super(base, "Shortcuts", () => {});
+		
+		let table = document.createElement("table");
+		table.id = "shortcuts-table";
+		this.popup_body.appendChild(table);
+		
+		for(let row_data of data)
+		{
+			let row = document.createElement("tr");
+			table.appendChild(row);
 
-		this.popup_body.innerHTML = `
-			<table id="shortcuts-table">
-				<tr>
-					<td>Add edge</td>
-					<td>E</td>
-				</tr>
-				<tr>
-					<td>Remove edge</td>
-					<td>Backspace</td>
-				</tr>
-				<tr>
-					<td>Swap framing at start</td>
-					<td>S</td>
-				</tr>
-				<tr>
-					<td>Swap framing at end</td>
-					<td>Shift+S</td>
-				</tr>
-			</table>
-		`;
+			let col1 = document.createElement("td");
+			col1.innerText = row_data[0];
+			let col2 = document.createElement("td");
+			col2.innerText = row_data[1];
+
+			row.appendChild(col1);
+			row.appendChild(col2);
+		}
 	}
 }

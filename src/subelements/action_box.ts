@@ -61,8 +61,10 @@ export class ActionBox
 		return button;
 	}
 
-	add_shortcut_popup(main_body: HTMLBodyElement)
+	add_shortcut_popup(data: [string, string][])
 	{
+		let main_body = document.getElementsByTagName("body")[0] as HTMLBodyElement;
+
 		let row = document.createElement("tr");
 		let place = document.createElement("td");
 		row.appendChild(place);
@@ -70,7 +72,7 @@ export class ActionBox
 		let link = document.createElement("a");
 		link.innerText = "Shortcuts";
 		link.className = "small-link";
-		link.onclick = (ev) => new ShortcutsPopup(main_body);
+		link.onclick = (ev) => new ShortcutsPopup(main_body, data);
 		place.appendChild(link);
 
 		this.table.appendChild(row);

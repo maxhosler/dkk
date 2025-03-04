@@ -235,7 +235,22 @@ export class EmbeddingEditor implements IMode
 			"Swap framing at end",
 			() => this.swap_at_end_selected()
 		)
-		dag_box.add_shortcut_popup(document.getElementsByTagName("body")[0] as HTMLBodyElement);
+		dag_box.add_shortcut_popup(
+			[
+				["Add edge", "E"],
+				["Remove edge", "Backspace"],
+				["Swap framing at start","S"],
+				["Swap framing at end","Shift+S"]
+			]
+		);
+
+		let {box: emb_box, element: emb_element} = ActionBox.create();
+		sidebar_contents.appendChild(emb_element);
+		emb_box.add_title("Embedding Edit");
+		emb_box.add_tip("Coming soon")
+		emb_box.add_shortcut_popup([
+			["Coming", "Soon :)"]
+		]);
 
 		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
 		right_area.appendChild(can_element);
