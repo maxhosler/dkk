@@ -218,35 +218,19 @@ export class EmbeddingEditor implements IMode
 		dag_box.add_tip("Warning: Using any of these options will reset any changes made to layout.");
 		this.add_edge_button = dag_box.add_button(
 			"Add edge",
-			() => {
-				if(this.selected.type == "pair_verts")
-				{
-					let [start, end] = this.selected.inner as [number, number];
-					this.add_edge(start, end);
-				}
-			}
+			() => this.add_edge_selected()
 		);
 		this.remove_edge_button = dag_box.add_button(
 			"Remove edge",
-			() => {
-				if(this.selected.type == "edge")
-				{
-					let start = this.selected.inner as number;
-					this.remove_edge(start);
-				}
-			}
+			() => this.remove_edge_selected()
 		);
 		this.swap_edges_start = dag_box.add_button(
 			"Swap framing at start",
-			() => {
-				//TODO:
-			}
+			() => this.swap_at_start_selected()
 		)
 		this.swap_edges_end = dag_box.add_button(
 			"Swap framing at end",
-			() => {
-				//TODO:
-			}
+			() => this.swap_at_end_selected()
 		)
 		dag_box.add_shortcut_popup(document.getElementsByTagName("body")[0] as HTMLBodyElement);
 
@@ -280,7 +264,7 @@ export class EmbeddingEditor implements IMode
 		)
 		//TODO: delete when goes away!
 		addEventListener("keydown",
-			(ev) => this.handle_keypress(ev.key)
+			(ev) => this.handle_keypress(ev)
 		)
 		canvas.resize_canvas();
 		this.canvas = canvas;
@@ -360,19 +344,65 @@ export class EmbeddingEditor implements IMode
 		this.v_drag.dragging = false;
 	}
 
-	handle_keypress(key: string)
+	add_edge_selected()
 	{
-		if(key == "Backspace")
+		if(this.selected.type == "pair_verts")
 		{
-			if(this.selected.type == "edge")
-			{
-				let sel = this.selected.inner as number;
-				this.remove_edge(sel);
-			}
+			let [start, end] = this.selected.inner as [number, number];
+			this.add_edge(start, end);
 		}
 	}
 
-	//TODO: provide baked optional
+	remove_edge_selected()
+	{
+		if(this.selected.type == "edge")
+		{
+			let start = this.selected.inner as number;
+			this.remove_edge(start);
+		}
+	}
+
+	swap_at_start_selected()
+	{
+		if(this.selected.type == "pair_edges")
+		{
+			let [i,j] = this.selected.inner as [number, number];
+			this.swap_at_start(i,j);
+		}
+	}
+
+	swap_at_end_selected()
+	{
+		if(this.selected.type == "pair_edges")
+		{
+			let [i,j] = this.selected.inner as [number, number];
+			this.swap_at_end(i,j);
+		}
+	}
+
+	handle_keypress(ev: KeyboardEvent)
+	{
+		if(ev.key == "Backspace")
+		{
+			this.remove_edge_selected()
+		}
+
+		if(ev.key.toLowerCase() == "e")
+		{
+			this.add_edge_selected()
+		}
+
+		if(ev.key.toLowerCase() == "s" && !ev.shiftKey)
+		{
+			this.swap_at_start_selected()
+		}
+
+		if(ev.key.toLowerCase() == "s" && ev.shiftKey)
+		{
+			this.swap_at_end_selected()	
+		}
+	}
+
 	get_vertex_at(position: Vector): Option<number>
 	{
 		let dag = this.dag.bake();
@@ -387,7 +417,6 @@ export class EmbeddingEditor implements IMode
 		return Option.none();
 	}
 
-	//TODO: provide baked optional
 	get_edge_at(position: Vector): Option<number>
 	{
 		let dag = this.dag.bake();
@@ -427,7 +456,6 @@ export class EmbeddingEditor implements IMode
 
 		if(try_add_res.is_ok())
 		{
-			this.selected = Selection.none();
 			let new_framed = new FramedDAGEmbedding(dag);
 			this.dag = new_framed;
 			this.draw();
@@ -452,6 +480,16 @@ export class EmbeddingEditor implements IMode
 			this.draw();
 			this.clear_err();
 		}
+	}
+
+	swap_at_start(e1: number, e2: number)
+	{
+
+	}
+
+	swap_at_end(e1: number, e2: number)
+	{
+
 	}
 
 	/*
