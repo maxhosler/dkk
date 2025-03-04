@@ -403,36 +403,6 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
-	get_vertex_at(position: Vector): Option<number>
-	{
-		let dag = this.dag.bake();
-		
-		for(let i = 0; i < dag.verts.length; i++)
-		{
-			let vert_pos = this.canvas.local_trans(dag.verts[i]);
-			if(position.sub(vert_pos).norm() <= this.draw_options.vert_radius())
-				return Option.some(i);
-		}
-			
-		return Option.none();
-	}
-
-	get_edge_at(position: Vector): Option<number>
-	{
-		let dag = this.dag.bake();
-		
-		for(let i = dag.edges.length - 1; i >= 0; i--)
-		{
-			let bez = dag.edges[i].transform
-				((v: Vector) => this.canvas.local_trans(v));
-
-			if(bez.distance_to(position) <= this.draw_options.edge_weight())
-				return Option.some(i);
-		}
-			
-		return Option.none();
-	}
-
 	show_err(err: ResultError)
 	{
 		this.error_box.innerText = err.err_message;
@@ -484,12 +454,54 @@ export class EmbeddingEditor implements IMode
 
 	swap_at_start(e1: number, e2: number)
 	{
+		let start_opt = this.edges_share_start(e1, e2);
+		if(start_opt.is_none()) return;
 
+		let start = start_opt.unwrap();
+		
+		let dag = this.dag.base_dag;
+
+		let frame = this.dag.base_dag.get_out_edges(start).unwrap();
+		for(let i = 0; i < frame.length; i++)
+		{
+			if(frame[i] == e1) frame[i] = e2;
+			else if(frame[i] == e2) frame[i] = e1;
+		}
+		let success = dag.reorder_out_edges(start, frame);
+
+		if(success)
+		{
+			let new_framed = new FramedDAGEmbedding(dag);
+			this.dag = new_framed;
+			this.draw();
+			this.clear_err();
+		}
 	}
 
 	swap_at_end(e1: number, e2: number)
 	{
+		let end_opt = this.edges_share_end(e1, e2);
+		if(end_opt.is_none()) return;
 
+		let end = end_opt.unwrap();
+
+		let dag = this.dag.base_dag;
+
+		let frame = this.dag.base_dag.get_in_edges(end).unwrap();
+		for(let i = 0; i < frame.length; i++)
+		{
+			if(frame[i] == e1) frame[i] = e2;
+			else if(frame[i] == e2) frame[i] = e1;
+		}
+		let success = dag.reorder_in_edges(end, frame);
+
+		if(success)
+		{
+			let new_framed = new FramedDAGEmbedding(dag);
+			this.dag = new_framed;
+			this.draw();
+			this.clear_err();
+		}
 	}
 
 	/*
@@ -594,5 +606,74 @@ export class EmbeddingEditor implements IMode
 			this.draw_options.edge_color(),
 			this.draw_options.edge_weight()
 		)
+	}
+
+	/*
+	Utility functions
+	*/
+
+	
+	get_vertex_at(position: Vector): Option<number>
+	{
+		let dag = this.dag.bake();
+		
+		for(let i = 0; i < dag.verts.length; i++)
+		{
+			let vert_pos = this.canvas.local_trans(dag.verts[i]);
+			if(position.sub(vert_pos).norm() <= this.draw_options.vert_radius())
+				return Option.some(i);
+		}
+			
+		return Option.none();
+	}
+
+	get_edge_at(position: Vector): Option<number>
+	{
+		let dag = this.dag.bake();
+		
+		for(let i = dag.edges.length - 1; i >= 0; i--)
+		{
+			let bez = dag.edges[i].transform
+				((v: Vector) => this.canvas.local_trans(v));
+
+			if(bez.distance_to(position) <= this.draw_options.edge_weight())
+				return Option.some(i);
+		}
+			
+		return Option.none();
+	}
+
+	edges_share_start(e1: number, e2: number): Option<number>
+	{
+		let edge1 = this.dag.base_dag.get_edge(e1);
+		let edge2 = this.dag.base_dag.get_edge(e2);
+
+		if(edge1.is_none() || edge2.is_none())
+			return Option.none();
+
+		let start1 = edge1.unwrap().start;
+		let start2 = edge2.unwrap().start;
+	
+		if(start1 == start2)
+			return Option.some(start1)
+		else
+			return Option.none();
+	}
+
+	edges_share_end(e1: number, e2: number): Option<number>
+	{
+		let edge1 = this.dag.base_dag.get_edge(e1);
+		let edge2 = this.dag.base_dag.get_edge(e2);
+
+		if(edge1.is_none() || edge2.is_none())
+			return Option.none();
+
+		let end1 = edge1.unwrap().end;
+		let end2 = edge2.unwrap().end;
+	
+		if(end1 == end2)
+			return Option.some(end1)
+		else
+			return Option.none();
 	}
 }
