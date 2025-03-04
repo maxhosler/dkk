@@ -5,4 +5,5 @@ export interface IMode
 {
 	name(): ModeName;
 	current_dag(): FramedDAGEmbedding;
+	clear_global_events(): void;
 }

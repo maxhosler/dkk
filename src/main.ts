@@ -58,14 +58,14 @@ export class DKKProgram
         this.popup_open = true;
         if(this.mode.name() == "clique-viewer")
         {
-            let popup = new CVOpenPopup(
+            new CVOpenPopup(
                 this.body,
                 this
             );
         }
         else if(this.mode.name() == "embedding-editor")
         {
-            let popup = new EEOpenPopup(
+            new EEOpenPopup(
                 this.body,
                 this
             );
@@ -78,7 +78,7 @@ export class DKKProgram
         if(this.popup_open) { return; }
 
         this.popup_open = true;
-        let popup = new SettingsPopup(
+        new SettingsPopup(
             this.body,
             this
         );
@@ -89,6 +89,7 @@ export class DKKProgram
         if(this.popup_open) { return; }
 
         let dag = this.mode.current_dag();
+        this.mode.clear_global_events();
 
         if(this.mode.name() == "embedding-editor")
         {

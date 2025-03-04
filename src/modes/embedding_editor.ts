@@ -143,6 +143,9 @@ export class EmbeddingEditor implements IMode
 	readonly swap_edges_start: HTMLButtonElement;
 	readonly swap_edges_end: HTMLButtonElement;
 
+	readonly resize_event: (ev: UIEvent) => void;
+	readonly keydown_event: (ev: KeyboardEvent) => void;
+
 	canvas: DAGCanvas;
 	dag: FramedDAGEmbedding;
 
@@ -200,7 +203,7 @@ export class EmbeddingEditor implements IMode
 	{
 		this.dag = dag;
 		this.draw_options = draw_options;
-		draw_options.add_change_listener(this.draw)
+		draw_options.add_change_listener(() => this.draw())
 
 		sidebar_head.innerText = "Embedding Editor";
 		
@@ -262,17 +265,23 @@ export class EmbeddingEditor implements IMode
 				if(this.v_drag.dragging) this.draw()
 			}
 		)
-		//TODO: delete when goes away!
-		addEventListener("keydown",
-			(ev) => this.handle_keypress(ev)
-		)
+
 		canvas.resize_canvas();
 		this.canvas = canvas;
-
 		this.draw();
-		can_element.addEventListener("resize", (event) => {
+		
+		this.resize_event = (event) => {
+			this.canvas.resize_canvas();
 			this.draw();
-		});
+		}
+		this.keydown_event = (ev) => this.handle_keypress(ev);
+		addEventListener("resize", this.resize_event);
+		addEventListener("keydown", this.keydown_event);
+	}
+
+	clear_global_events(): void {
+		removeEventListener("resize", this.resize_event);
+        removeEventListener("keydown", this.keydown_event);
 	}
 
 	change_selection(sel: Selection)
@@ -530,6 +539,12 @@ export class EmbeddingEditor implements IMode
 
 		for(let vert of data.verts)
 		{ ctx.draw_node(vert); }
+
+		if(this.draw_options.label_framing())
+			ctx.decorate_edges(
+				this.dag.base_dag,
+				data
+			);
 
 		this.draw_selection_vert(data, ctx);
 
