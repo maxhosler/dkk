@@ -353,3 +353,16 @@ html, body {
     font-size: small;
     height: 25pt;
 }
+
+.small-link
+{
+    font-size: small;
+    color: blue;
+    text-decoration-line: underline;
+}
+
+#shortcuts-table td:nth-child(1)
+{
+    font-weight: bold;
+    padding-right: 10pt;
+}

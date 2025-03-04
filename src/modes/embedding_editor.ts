@@ -136,7 +136,12 @@ export class EmbeddingEditor implements IMode
 	readonly draw_options: DrawOptions;
 	readonly draw_options_box: DrawOptionsBox;
 
-	error_box: HTMLDivElement;
+	readonly error_box: HTMLDivElement;
+
+	readonly add_edge_button: HTMLButtonElement;
+	readonly remove_edge_button: HTMLButtonElement;
+	readonly swap_edges_start: HTMLButtonElement;
+	readonly swap_edges_end: HTMLButtonElement;
 
 	canvas: DAGCanvas;
 	dag: FramedDAGEmbedding;
@@ -211,7 +216,7 @@ export class EmbeddingEditor implements IMode
 		sidebar_contents.appendChild(dag_element);
 		dag_box.add_title("DAG Edit");
 		dag_box.add_tip("Warning: Using any of these options will reset any changes made to layout.");
-		dag_box.add_button(
+		this.add_edge_button = dag_box.add_button(
 			"Add edge",
 			() => {
 				if(this.selected.type == "pair_verts")
@@ -220,8 +225,8 @@ export class EmbeddingEditor implements IMode
 					this.add_edge(start, end);
 				}
 			}
-		)
-		dag_box.add_button(
+		);
+		this.remove_edge_button = dag_box.add_button(
 			"Remove edge",
 			() => {
 				if(this.selected.type == "edge")
@@ -230,11 +235,20 @@ export class EmbeddingEditor implements IMode
 					this.remove_edge(start);
 				}
 			}
+		);
+		this.swap_edges_start = dag_box.add_button(
+			"Swap framing at start",
+			() => {
+				//TODO:
+			}
 		)
-
-		//TODO: Node editor
-
-		//TODO: Edge editor
+		this.swap_edges_end = dag_box.add_button(
+			"Swap framing at end",
+			() => {
+				//TODO:
+			}
+		)
+		dag_box.add_shortcut_popup(document.getElementsByTagName("body")[0] as HTMLBodyElement);
 
 		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
 		right_area.appendChild(can_element);

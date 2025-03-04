@@ -1,3 +1,5 @@
+import { ShortcutsPopup } from "../popup/shortcuts";
+
 export class ActionBox
 {
 	box: HTMLDivElement;
@@ -47,13 +49,30 @@ export class ActionBox
 	add_button(
 		name: string,
 		action: () => void
-	)
+	): HTMLButtonElement
 	{
 		let row = document.createElement("tr");
 		let button = document.createElement("button");
 		button.innerText = name;
 		button.onclick = (ev) => action();
 		row.appendChild(button);
+		this.table.appendChild(row);
+
+		return button;
+	}
+
+	add_shortcut_popup(main_body: HTMLBodyElement)
+	{
+		let row = document.createElement("tr");
+		let place = document.createElement("td");
+		row.appendChild(place);
+
+		let link = document.createElement("a");
+		link.innerText = "Shortcuts";
+		link.className = "small-link";
+		link.onclick = (ev) => new ShortcutsPopup(main_body);
+		place.appendChild(link);
+
 		this.table.appendChild(row);
 	}
 
