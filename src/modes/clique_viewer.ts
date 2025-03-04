@@ -25,6 +25,8 @@ export class CliqueViewer implements IMode
     readonly hasse_canvas: DAGCanvas;
     readonly poly_canvas: PolytopeCanvas;
 
+    readonly resize_event: (ev: UIEvent) => void;
+
     current_clique: number = 0;
 
     name(): ModeName {
@@ -135,25 +137,25 @@ export class CliqueViewer implements IMode
         this.poly_canvas = poly_canvas;
 
         //Draw and setup redraw
+        this.resize_event = (event) => {
+            this.clique_canvas.resize_canvas();
+            this.hasse_canvas.resize_canvas();
+            this.poly_canvas.resize_canvas();
+
+            this.draw()
+        };
         this.draw();
-        h_canvas_element.addEventListener("resize", (event) => {
-            if(this)
-            this.draw();
-        });
-        p_canvas_element.addEventListener("resize", (event) => {
-            if(this)
-            this.draw();
-        });
-        c_canvas_element.addEventListener("resize", (event) => {
-            if(this)
-            this.draw();
-        });
+        addEventListener("resize", this.resize_event);
 
         let cc = this.cliques.cliques[ this.current_clique ];
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
 
         this.update_route_enabled()
+    }
+
+    clear_global_events(): void {
+        removeEventListener("resize", this.resize_event);
     }
 
 
@@ -276,7 +278,11 @@ export class CliqueViewer implements IMode
             }
         }
 
-
+        if(this.draw_options.label_framing())
+			ctx.decorate_edges(
+				this.dag.base_dag,
+				data
+			);
 
         for(let vert of data.verts)
         { ctx.draw_node(vert); }

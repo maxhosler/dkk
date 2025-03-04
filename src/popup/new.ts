@@ -25,7 +25,7 @@ export class NewPopup extends Popup
 
 		let label = document.createElement("label");
 		label.htmlFor = "new-num";
-		label.innerText = "Number of nodes";
+		label.innerText = "Number of vertices";
 		col1.appendChild(label);
 
 		this.input = document.createElement("input");

@@ -1,5 +1,7 @@
 import { Bezier, Vector2 } from "../util/num";
 import { DrawOptions } from "../draw/draw_options";
+import { FramedDAG } from "../math/dag";
+import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
 
 export class DAGCanvas
 {
@@ -156,6 +158,24 @@ export class DAGCanvasContext
 		this.ctx.stroke()
 	}
 
+	draw_text(text: string, pos: Vector2, color: string, stroke: string, size: number)
+	{
+		this.ctx.font = size.toString() + "px Arial";
+		this.ctx.fillStyle = color;
+		this.ctx.strokeStyle = stroke;
+		this.ctx.lineWidth = 6;
+
+
+		let measure = this.ctx.measureText(text);
+
+		let scaled = this.parent.local_trans(pos);
+		let position = new Vector2(scaled.x - measure.width/2, scaled.y + size/2 -2);// + size/2);
+
+		this.ctx.strokeText(text, position.x, position.y)
+		this.ctx.fillText(text, position.x, position.y)
+
+	}
+
 	draw_line(
 		start: Vector2,
 		end: Vector2,
@@ -210,5 +230,33 @@ export class DAGCanvasContext
 
 		this.ctx.fillStyle = color;
 		this.ctx.fill()
+	}
+
+	decorate_edges(
+		dag: FramedDAG,
+		baked: BakedDAGEmbedding,
+	)
+	{
+		
+		for(let vert = 0; vert < dag.num_verts(); vert++)
+		{
+			let out_frame = dag.get_out_edges(vert).unwrap();
+			for(let edge_idx = 0; edge_idx < out_frame.length; edge_idx++)
+			{
+				let edge = out_frame[edge_idx];
+				let bez = baked.edges[edge];
+				let pos = bez.get_point(0.09);
+				this.draw_text(edge_idx.toString(), pos, "#ffffff", "#000000", 20);
+			}
+
+			let in_frame = dag.get_in_edges(vert).unwrap();
+			for(let edge_idx = 0; edge_idx < in_frame.length; edge_idx++)
+			{
+				let edge = in_frame[edge_idx];
+				let bez = baked.edges[edge];
+				let pos = bez.get_point(0.91);
+				this.draw_text(edge_idx.toString(), pos, "#ffffff", "#000000", 20);
+			}
+		}
 	}
 }

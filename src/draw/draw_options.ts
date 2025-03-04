@@ -25,6 +25,7 @@ export class DrawOptions
 	private f_vert_radius: number = 12;
 	private f_route_weight: number = 8;
 	private f_edge_halo: number = 6; //Not in settings
+	private f_label_framing: boolean = true;
 
 	//HASSE
 	private f_hasse_edge_weight: number = 10;
@@ -46,7 +47,7 @@ export class DrawOptions
 	private f_simplex_color: string = "#c9e8f4";
 	private f_selection_color: string = "#2160c487"; //Not in settings box
 	private f_edge_color: string = "#222222"; //Not in settings box
-	private f_hasse_current_color: string = "#cdcdcd";
+	private f_hasse_current_color: string = "#cdcdcd"; //Not in settings
 
 	//AUXILIARY
 	private change_listeners: (()=>void)[] = [];
@@ -74,6 +75,11 @@ export class DrawOptions
 	set_edge_weight(weight: number)
 	{
 		this.f_edge_weight = weight;
+		this.on_change();
+	}
+	set_label_framing(b: boolean)
+	{
+		this.f_label_framing = b;
 		this.on_change();
 	}
 	set_route_weight(weight: number)
@@ -235,6 +241,10 @@ export class DrawOptions
 	edge_halo(): number
 	{
 		return this.f_edge_halo;
+	}
+	label_framing(): boolean
+	{
+		return this.f_label_framing;
 	}
 	route_weight(): number
 	{
