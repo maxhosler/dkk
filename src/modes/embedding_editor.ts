@@ -257,7 +257,12 @@ export class EmbeddingEditor implements IMode
 		emb_box.add_title("Embedding Edit");
 		emb_box.add_tip("Shift+Left Click and drag to move vertices.")
 		emb_box.add_shortcut_popup([
-			["Move vertex", "Shift+Left Click, drag"]
+			["Move vertex", "Shift+Left Click, drag"],
+			["Increase in-spread", "W"],
+			["Decrease in-spread", "S"],
+			["Increase out-spread", "Shift+W"],
+			["Decrease out-spread", "Shift+S"],
+
 		]);
 
 		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
@@ -459,8 +464,18 @@ export class EmbeddingEditor implements IMode
 		if(this.selected.type != "vertex") return;
 
 		let v = this.selected.inner as number;
-		this.dag.vert_data[v].spread =
-			clamp(this.dag.vert_data[v].spread + delta, 0, Math.PI);
+		this.dag.vert_data[v].spread_out =
+			clamp(this.dag.vert_data[v].spread_out + delta, 0, Math.PI);
+		this.draw();
+	}
+
+	change_in_angle_selected(delta: number)
+	{
+		if(this.selected.type != "vertex") return;
+
+		let v = this.selected.inner as number;
+		this.dag.vert_data[v].spread_in =
+			clamp(this.dag.vert_data[v].spread_in + delta, 0, Math.PI);
 		this.draw();
 	}
 
@@ -506,10 +521,15 @@ export class EmbeddingEditor implements IMode
 			this.swap_at_end_selected()	
 		}
 
-		if(ev.key.toLowerCase() == "w")
+		if(ev.key.toLowerCase() == "w" && ev.shiftKey)
 			this.change_out_angle_selected(Math.PI/16);
-		if(ev.key.toLowerCase() == "s")
+		if(ev.key.toLowerCase() == "s" && ev.shiftKey)
 			this.change_out_angle_selected(-Math.PI/16);
+
+		if(ev.key.toLowerCase() == "w" && !ev.shiftKey)
+			this.change_in_angle_selected(Math.PI/16);
+		if(ev.key.toLowerCase() == "s" && !ev.shiftKey)
+			this.change_in_angle_selected(-Math.PI/16);
 	}
 
 	show_err(err: ResultError)

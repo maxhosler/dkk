@@ -12,7 +12,8 @@ export type EdgeData = {
 
 export type VertData = {
 	position: Vector2,
-	spread: number
+	spread_out: number,
+	spread_in: number
 }
 
 export class FramedDAGEmbedding
@@ -29,7 +30,8 @@ export class FramedDAGEmbedding
 			{length:dag.num_verts()},
 			() => ({
 				position: Vector2.zero(),
-				spread: Math.PI / 2
+				spread_out: Math.PI / 2,
+				spread_in: Math.PI / 2
 			})
 		);
 		this.edge_data = Array.from(
@@ -125,10 +127,10 @@ export class FramedDAGEmbedding
 
 			let spread_percents = spread_percent(edge_data);
 			let start_ang = edge_data.start_ang_override.unwrap_or(
-				spread_percents[0] * start_data.spread
+				spread_percents[0] * start_data.spread_out
 			)
 			let end_ang = edge_data.end_ang_override.unwrap_or(
-				-spread_percents[1] * end_data.spread
+				-spread_percents[1] * end_data.spread_in
 			)
 
 			let start_tan = delta.rot(start_ang)
