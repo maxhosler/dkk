@@ -74,7 +74,7 @@ export class CliqueViewer implements IMode
     {
         this.dag = dag;
         this.draw_options = draw_options;
-        this.cliques = new DAGCliques(dag.base_dag);
+        this.cliques = new DAGCliques(dag.dag);
         this.polytope = new FlowPolytope(this.cliques);
         this.draw_options.set_builtin_color_scheme(
             this.cliques.routes.length
@@ -284,7 +284,7 @@ export class CliqueViewer implements IMode
 
         if(this.draw_options.label_framing())
 			ctx.decorate_edges(
-				this.dag.base_dag,
+				this.dag.dag,
 				data
 			);
 

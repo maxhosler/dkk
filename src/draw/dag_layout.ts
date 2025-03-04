@@ -18,14 +18,14 @@ export type VertData = {
 
 export class FramedDAGEmbedding
 {
-	readonly base_dag: FramedDAG;
+	readonly dag: FramedDAG;
 	
 	vert_data: Array<VertData>;
 	edge_data: Array<EdgeData>;
 
 	constructor(dag: FramedDAG)
 	{
-		this.base_dag = dag.clone();
+		this.dag = dag.clone();
 		this.vert_data = Array.from(
 			{length:dag.num_verts()},
 			() => ({
@@ -49,10 +49,25 @@ export class FramedDAGEmbedding
 
 	default_layout()
 	{
+		this.default_edges();
+		this.default_verts();
+	}
+
+	default_edges()
+	{
+		this.edge_data = Array.from(
+			{length:this.dag.num_edges()},
+			() => ({ 
+				start_list_pos: [1,1],
+				end_list_pos: [1,1],
+				start_ang_override: Option.none(),
+				end_ang_override: Option.none(),
+			})
+		);
 		let edge_mid_heights: {[key:number]:number} = {};
-		for(let v = 0; v < this.base_dag.num_verts(); v++)
+		for(let v = 0; v < this.dag.num_verts(); v++)
 		{
-			let out_edges: number[] = this.base_dag.get_out_edges(v).unwrap();
+			let out_edges: number[] = this.dag.get_out_edges(v).unwrap();
 			for(let i = 0; i < out_edges.length; i++)
 			{
 				let edge = out_edges[i];
@@ -62,7 +77,7 @@ export class FramedDAGEmbedding
 					edge_mid_heights[edge] += i / (out_edges.length-1) - 0.5;
 			}
 
-			let in_edges: number[] = this.base_dag.get_in_edges(v).unwrap();
+			let in_edges: number[] = this.dag.get_in_edges(v).unwrap();
 			for(let i = 0; i < in_edges.length; i++)
 			{
 				let edge = in_edges[i];
@@ -72,21 +87,32 @@ export class FramedDAGEmbedding
 					edge_mid_heights[edge] += i / (in_edges.length-1) - 0.5;
 			}
 		}
+	}
 
+	default_verts()
+	{
+		this.vert_data = Array.from(
+			{length:this.dag.num_verts()},
+			() => ({
+				position: Vector2.zero(),
+				spread_out: Math.PI / 2,
+				spread_in: Math.PI / 2
+			})
+		);
 
 		let depths_arr: number[] = []
 
-		for(let i = 0; i < this.base_dag.num_verts(); i++)
+		for(let i = 0; i < this.dag.num_verts(); i++)
 		{
 			depths_arr.push(i)
 		}
 		depths_arr.sort(
 			(a,b) => {
-				if( this.base_dag.preceeds(a,b))
+				if( this.dag.preceeds(a,b))
 				{
 					return -1;
 				}
-				else if (this.base_dag.preceeds(b,a))
+				else if (this.dag.preceeds(b,a))
 				{
 					return 1;
 				}
@@ -111,9 +137,9 @@ export class FramedDAGEmbedding
 		for(let x of this.vert_data)
 			verts.push(x.position.clone());
 		
-		for(let i = 0; i < this.base_dag.num_edges(); i++)
+		for(let i = 0; i < this.dag.num_edges(); i++)
 		{
-			let edge: Edge = this.base_dag.get_edge(i).unwrap();
+			let edge: Edge = this.dag.get_edge(i).unwrap();
 			let edge_data = this.edge_data[i];
 
 			let start_data = this.vert_data[edge.start];

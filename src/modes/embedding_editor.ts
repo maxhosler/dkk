@@ -8,6 +8,7 @@ import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 import { IMode, ModeName } from "./mode";
 import { ActionBox } from "../subelements/action_box";
+import { FramedDAG } from "../math/dag";
 
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
@@ -75,9 +76,11 @@ class Selection
 
 		//TODO: Factor out duplication
 
+		console.log(shift_held, this.single(), this.type == clicked)
 		if(shift_held && this.single() && this.type == clicked)
 		{
 			let pair: [number, number] = [this.inner as number, index];
+			console.log(pair);
 			if(this.type == "vertex")
 			{
 				if(pair[0] != pair[1])
@@ -151,7 +154,7 @@ export class EmbeddingEditor implements IMode
 	readonly keydown_event: (ev: KeyboardEvent) => void;
 
 	canvas: DAGCanvas;
-	dag: FramedDAGEmbedding;
+	embedding: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
 	e_drag: EdgeDragState = {
@@ -169,7 +172,7 @@ export class EmbeddingEditor implements IMode
 		return "embedding-editor";
 	}
 	current_dag(): FramedDAGEmbedding {
-        return this.dag;
+        return this.embedding;
     }
 
 
@@ -209,7 +212,7 @@ export class EmbeddingEditor implements IMode
 		right_area: HTMLDivElement
 	)
 	{
-		this.dag = dag;
+		this.embedding = dag;
 		this.draw_options = draw_options;
 		draw_options.add_change_listener(() => this.draw())
 
@@ -226,7 +229,7 @@ export class EmbeddingEditor implements IMode
 		let {box: dag_box, element: dag_element} = ActionBox.create();
 		sidebar_contents.appendChild(dag_element);
 		dag_box.add_title("DAG Edit");
-		dag_box.add_tip("Warning: Using any of these options will reset any changes made to layout.");
+		dag_box.add_tip("Warning: Using any of these options will reset changes made to edges.");
 		this.add_edge_button = dag_box.add_button(
 			"Add edge",
 			() => this.add_edge_selected()
@@ -267,12 +270,6 @@ export class EmbeddingEditor implements IMode
 
 		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
 		right_area.appendChild(can_element);
-		can_element.addEventListener("click",
-			(ev) => {
-				if(ev.button == 0)
-					this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
-			}
-		)
 		can_element.addEventListener("mousedown",
 			(ev) => {
 				if(ev.button == 0 && !ev.shiftKey)
@@ -284,8 +281,10 @@ export class EmbeddingEditor implements IMode
 		can_element.addEventListener("mouseup",
 			(ev) => {
 				if(ev.button == 0) {
+					this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
 					this.edge_drag_end(new Vector2(ev.layerX, ev.layerY));
 					this.vert_drag_end();
+					this.draw();
 				}
 			}
 		)
@@ -293,6 +292,7 @@ export class EmbeddingEditor implements IMode
 			(ev) => {
 				this.edge_drag_end(new Vector2(ev.layerX, ev.layerY));
 				this.vert_drag_end();
+				this.draw();
 			}
 		)
 		can_element.addEventListener("mousemove",
@@ -419,7 +419,7 @@ export class EmbeddingEditor implements IMode
 	move_dragged_vert()
 	{
 		if(!this.v_drag.dragging) return;
-		this.dag.vert_data[this.v_drag.vert].position = 
+		this.embedding.vert_data[this.v_drag.vert].position = 
 			this.canvas.local_trans_inv(this.mouse_pos);
 	}
 
@@ -464,8 +464,8 @@ export class EmbeddingEditor implements IMode
 		if(this.selected.type != "vertex") return;
 
 		let v = this.selected.inner as number;
-		this.dag.vert_data[v].spread_out =
-			clamp(this.dag.vert_data[v].spread_out + delta, 0, Math.PI);
+		this.embedding.vert_data[v].spread_out =
+			clamp(this.embedding.vert_data[v].spread_out + delta, 0, Math.PI);
 		this.draw();
 	}
 
@@ -474,8 +474,8 @@ export class EmbeddingEditor implements IMode
 		if(this.selected.type != "vertex") return;
 
 		let v = this.selected.inner as number;
-		this.dag.vert_data[v].spread_in =
-			clamp(this.dag.vert_data[v].spread_in + delta, 0, Math.PI);
+		this.embedding.vert_data[v].spread_in =
+			clamp(this.embedding.vert_data[v].spread_in + delta, 0, Math.PI);
 		this.draw();
 	}
 
@@ -550,13 +550,12 @@ export class EmbeddingEditor implements IMode
 	{
 		if(start == end) return;
 
-		let dag = this.dag.base_dag;
+		let dag = this.embedding.dag;
 		let try_add_res = dag.add_edge(start,end);
 
 		if(try_add_res.is_ok())
 		{
-			let new_framed = new FramedDAGEmbedding(dag);
-			this.dag = new_framed;
+			this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -568,14 +567,12 @@ export class EmbeddingEditor implements IMode
 
 	remove_edge(idx: number)
 	{
-		let dag = this.dag.base_dag;
+		let dag = this.embedding.dag;
 		let try_add_res = dag.remove_edge(idx);
 
 		if(try_add_res)
 		{
-			this.selected = Selection.none();
-			let new_framed = new FramedDAGEmbedding(dag);
-			this.dag = new_framed;
+			this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -588,9 +585,9 @@ export class EmbeddingEditor implements IMode
 
 		let start = start_opt.unwrap();
 		
-		let dag = this.dag.base_dag;
+		let dag = this.embedding.dag;
 
-		let frame = this.dag.base_dag.get_out_edges(start).unwrap();
+		let frame = this.embedding.dag.get_out_edges(start).unwrap();
 		for(let i = 0; i < frame.length; i++)
 		{
 			if(frame[i] == e1) frame[i] = e2;
@@ -600,8 +597,7 @@ export class EmbeddingEditor implements IMode
 
 		if(success)
 		{
-			let new_framed = new FramedDAGEmbedding(dag);
-			this.dag = new_framed;
+			this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -614,9 +610,9 @@ export class EmbeddingEditor implements IMode
 
 		let end = end_opt.unwrap();
 
-		let dag = this.dag.base_dag;
+		let dag = this.embedding.dag;
 
-		let frame = this.dag.base_dag.get_in_edges(end).unwrap();
+		let frame = this.embedding.dag.get_in_edges(end).unwrap();
 		for(let i = 0; i < frame.length; i++)
 		{
 			if(frame[i] == e1) frame[i] = e2;
@@ -626,8 +622,7 @@ export class EmbeddingEditor implements IMode
 
 		if(success)
 		{
-			let new_framed = new FramedDAGEmbedding(dag);
-			this.dag = new_framed;
+			this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -641,7 +636,7 @@ export class EmbeddingEditor implements IMode
 	draw()
 	{	
 		let ctx = this.canvas.get_ctx();
-		let data = this.dag.bake();
+		let data = this.embedding.bake();
 
 		ctx.clear();
 
@@ -662,7 +657,7 @@ export class EmbeddingEditor implements IMode
 
 		if(this.draw_options.label_framing())
 			ctx.decorate_edges(
-				this.dag.base_dag,
+				this.embedding.dag,
 				data
 			);
 
@@ -750,7 +745,7 @@ export class EmbeddingEditor implements IMode
 	
 	get_vertex_at(position: Vector2): Option<number>
 	{
-		let dag = this.dag.bake();
+		let dag = this.embedding.bake();
 		
 		for(let i = 0; i < dag.verts.length; i++)
 		{
@@ -764,7 +759,7 @@ export class EmbeddingEditor implements IMode
 
 	get_edge_at(position: Vector2): Option<number>
 	{
-		let dag = this.dag.bake();
+		let dag = this.embedding.bake();
 		
 		for(let i = dag.edges.length - 1; i >= 0; i--)
 		{
@@ -780,8 +775,8 @@ export class EmbeddingEditor implements IMode
 
 	edges_shared_start(e1: number, e2: number): Option<number>
 	{
-		let edge1 = this.dag.base_dag.get_edge(e1);
-		let edge2 = this.dag.base_dag.get_edge(e2);
+		let edge1 = this.embedding.dag.get_edge(e1);
+		let edge2 = this.embedding.dag.get_edge(e2);
 
 		if(edge1.is_none() || edge2.is_none())
 			return Option.none();
@@ -797,8 +792,8 @@ export class EmbeddingEditor implements IMode
 
 	edges_shared_end(e1: number, e2: number): Option<number>
 	{
-		let edge1 = this.dag.base_dag.get_edge(e1);
-		let edge2 = this.dag.base_dag.get_edge(e2);
+		let edge1 = this.embedding.dag.get_edge(e1);
+		let edge2 = this.embedding.dag.get_edge(e2);
 
 		if(edge1.is_none() || edge2.is_none())
 			return Option.none();
