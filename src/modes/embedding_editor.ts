@@ -259,6 +259,13 @@ export class EmbeddingEditor implements IMode
 		sidebar_contents.appendChild(emb_element);
 		emb_box.add_title("Embedding Edit");
 		emb_box.add_tip("Shift+Left Click and drag to move vertices.")
+		emb_box.add_button(
+			"Reset to default",
+			() => {
+				this.embedding.default_layout();
+				this.draw();
+			}
+		)
 		emb_box.add_shortcut_popup([
 			["Move vertex", "Shift+Left Click, drag"],
 			["Increase in-spread", "W"],

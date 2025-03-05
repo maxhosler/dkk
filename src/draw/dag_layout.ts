@@ -134,9 +134,45 @@ export class FramedDAGEmbedding
 		let verts: Vector2[] = [];
 		let edges: Bezier[] = [];
 
+		let vert_in_out: [Vector2,Vector2][] = [];
+
 		for(let x of this.vert_data)
 			verts.push(x.position.clone());
 		
+		for(let i = 0; i < this.dag.num_verts(); i++)
+		{
+			let before: number[] = [];
+			for(let edge of this.dag.get_in_edges(i).unwrap())
+			{
+				let start = this.dag.get_edge(edge).unwrap().start;
+				if(!before.includes(start))
+					before.push(start)
+			}
+
+			let after: number[] = [];
+			for(let edge of this.dag.get_out_edges(i).unwrap())
+			{
+				let end = this.dag.get_edge(edge).unwrap().end;
+				if(!after.includes(end))
+					after.push(end)
+			}
+
+			let before_avg = Vector2.zero();
+			let after_avg = Vector2.zero();
+
+			for(let b of before)
+				before_avg = before_avg.add(verts[b].scale(1/before.length))
+			for(let a of after)
+				after_avg = after_avg.add(verts[a].scale(1/after.length))
+
+			vert_in_out.push(
+				[
+					verts[i].sub(before_avg).normalized(),
+					after_avg.sub(verts[i]).normalized(),
+				]
+			)
+		}
+
 		for(let i = 0; i < this.dag.num_edges(); i++)
 		{
 			let edge: Edge = this.dag.get_edge(i).unwrap();
@@ -148,7 +184,6 @@ export class FramedDAGEmbedding
 			let start_pos = start_data.position;
 			let end_pos = end_data.position;
 			let delta = end_pos.sub(start_pos);
-			
 			let tan_len = delta.norm() / 2;
 
 			let spread_percents = spread_percent(edge_data);
@@ -159,10 +194,12 @@ export class FramedDAGEmbedding
 				-spread_percents[1] * end_data.spread_in
 			)
 
-			let start_tan = delta.rot(start_ang)
-				.normalized().scale(tan_len);
-			let end_tan = delta.rot(end_ang)
-				.normalized().scale(tan_len);
+			let start_tan = vert_in_out[edge.start][1]
+				.rot(start_ang)
+				.scale(tan_len);
+			let end_tan = vert_in_out[edge.end][0]
+				.rot(end_ang)
+				.scale(tan_len);
 
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
