@@ -2,12 +2,52 @@ import { Edge, FramedDAG } from "../math/dag";
 import { Option } from "../util/result";
 import { Bezier, clamp, Vector2 } from "../util/num";
 
+export type AngleOverrideType = "none" | "absolute" | "relative";
+export class AngleOverride
+{
+	readonly type: AngleOverrideType;
+	readonly angle: number;
+
+	constructor(type: AngleOverrideType, angle: number)
+	{
+		this.type = type;
+		this.angle = angle;
+	}
+
+	get_vector(
+		default_angle: number,
+		direction_vec: Vector2
+	): Vector2
+	{
+		if(this.type == "none")
+			return direction_vec.rot(default_angle)
+		if(this.type == "relative")
+			return direction_vec.rot(this.angle)
+		if(this.type == "absolute")
+			return Vector2.right().rot(this.angle)
+		throw new Error("Unhandled branch");
+	}
+
+	static none(): AngleOverride
+	{
+		return new AngleOverride("none", 0);
+	}
+	static absolute(ang: number): AngleOverride
+	{
+		return new AngleOverride("absolute", ang);
+	}
+	static relative(ang: number): AngleOverride
+	{
+		return new AngleOverride("relative", ang);
+	}
+}
+
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
 	end_list_pos:   [pos: number, out_of: number],
 
-	start_ang_override: Option<number>,
-	end_ang_override:   Option<number>,
+	start_ang_override: AngleOverride,
+	end_ang_override:   AngleOverride,
 }
 
 export type VertData = {
@@ -39,8 +79,8 @@ export class FramedDAGEmbedding
 			() => ({ 
 				start_list_pos: [1,1],
 				end_list_pos: [1,1],
-				start_ang_override: Option.none(),
-				end_ang_override: Option.none(),
+				start_ang_override: AngleOverride.none(),
+				end_ang_override: AngleOverride.none(),
 			})
 		);
 
@@ -60,8 +100,8 @@ export class FramedDAGEmbedding
 			() => ({ 
 				start_list_pos: [1,1],
 				end_list_pos: [1,1],
-				start_ang_override: Option.none(),
-				end_ang_override: Option.none(),
+				start_ang_override: AngleOverride.none(),
+				end_ang_override: AngleOverride.none(),
 			})
 		);
 		let edge_mid_heights: {[key:number]:number} = {};
@@ -187,19 +227,17 @@ export class FramedDAGEmbedding
 			let tan_len = delta.norm() / 2;
 
 			let spread_percents = spread_percent(edge_data);
-			let start_ang = edge_data.start_ang_override.unwrap_or(
-				spread_percents[0] * start_data.spread_out
-			)
-			let end_ang = edge_data.end_ang_override.unwrap_or(
-				-spread_percents[1] * end_data.spread_in
-			)
 
-			let start_tan = vert_in_out[edge.start][1]
-				.rot(start_ang)
-				.scale(tan_len);
-			let end_tan = vert_in_out[edge.end][0]
-				.rot(end_ang)
-				.scale(tan_len);
+			let start_tan = edge_data.start_ang_override
+				.get_vector(
+					spread_percents[0] * start_data.spread_out,
+					vert_in_out[edge.start][1]
+				).scale(tan_len);
+			let end_tan = edge_data.end_ang_override
+				.get_vector(
+					-spread_percents[1] * end_data.spread_in,
+					vert_in_out[edge.end][0]
+				).scale(tan_len);
 
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
