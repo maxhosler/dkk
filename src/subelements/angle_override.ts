@@ -95,7 +95,7 @@ export class AngleOverrideController
 		} 
 		else
 		{
-			this.vec_spinner.set_value(Vector2.right())
+			this.vec_spinner.set_value(Vector2.right().scale(0.3))
 		}
 
 		this.dropdown.value = ov.type;

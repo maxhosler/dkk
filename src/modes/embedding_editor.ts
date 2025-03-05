@@ -137,6 +137,12 @@ type VertMoveDragState =
 	dragging: boolean,
 	vert: number
 }
+type HandleDragState = 
+{
+	dragging: boolean,
+	edge: number,
+	side: "start" | "end"
+}
 export class EmbeddingEditor implements IMode
 {
 	readonly draw_options: DrawOptions;
@@ -175,6 +181,12 @@ export class EmbeddingEditor implements IMode
 		dragging: false, 
 		vert: 0
 	};
+	h_drag: HandleDragState = {
+		dragging: false, 
+		edge: 0,
+		side: "start"
+	};
+	
 	mouse_pos: Vector2 = Vector2.zero();
 
 	name(): ModeName
@@ -286,7 +298,7 @@ export class EmbeddingEditor implements IMode
 		let {box: emb_box, element: emb_element} = ActionBox.create();
 		sidebar_contents.appendChild(emb_element);
 		emb_box.add_title("Embedding Edit");
-		emb_box.add_tip("Shift+Left Click and drag to move vertices.")
+		emb_box.add_tip("Ctrl+Drag to move vertices.")
 		emb_box.add_button(
 			"Reset to default",
 			() => {
@@ -323,7 +335,7 @@ export class EmbeddingEditor implements IMode
 		emb_box.add_row(this.end_angle_override.base);
 
 		emb_box.add_shortcut_popup([
-			["Move vertex", "Shift+Left Click, drag"],
+			["Move vertex", "Ctrl+Drag"],
 			["Increase in-spread", "W"],
 			["Decrease in-spread", "S"],
 			["Increase out-spread", "Shift+W"],
@@ -335,18 +347,26 @@ export class EmbeddingEditor implements IMode
 		right_area.appendChild(can_element);
 		can_element.addEventListener("mousedown",
 			(ev) => {
-				if(ev.button == 0 && !ev.shiftKey)
-					this.try_edge_drag_start(new Vector2(ev.layerX, ev.layerY));
-				else if(ev.button == 0)
-					this.try_vert_drag_start(new Vector2(ev.layerX, ev.layerY));
+				let pos = new Vector2(ev.layerX, ev.layerY)
+				if(ev.button == 0 && !ev.ctrlKey && !ev.shiftKey) {
+					this.try_handle_drag_start(pos);
+					if(!this.h_drag.dragging)
+						this.try_edge_drag_start(pos);
+				}
+				if(ev.button == 0 && ev.ctrlKey && !ev.shiftKey)
+					this.try_vert_drag_start(pos);
 			}
 		)
 		can_element.addEventListener("mouseup",
 			(ev) => {
 				if(ev.button == 0) {
-					this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
 					this.edge_drag_end(new Vector2(ev.layerX, ev.layerY));
 					this.vert_drag_end();
+					let skip_click = this.handle_drag_end();
+
+					if(!skip_click)
+						this.canvas_click(new Vector2(ev.layerX, ev.layerY), ev.shiftKey)
+
 					this.draw();
 				}
 			}
@@ -355,6 +375,7 @@ export class EmbeddingEditor implements IMode
 			(ev) => {
 				this.edge_drag_end(new Vector2(ev.layerX, ev.layerY));
 				this.vert_drag_end();
+				this.handle_drag_end();
 				this.draw();
 			}
 		)
@@ -362,7 +383,8 @@ export class EmbeddingEditor implements IMode
 			(ev) => {
 				this.mouse_pos = new Vector2(ev.layerX, ev.layerY);
 				this.move_dragged_vert();
-				if(this.e_drag.dragging || this.v_drag.dragging) this.draw()
+				this.move_dragged_handle();
+				if(this.e_drag.dragging || this.v_drag.dragging || this.h_drag.dragging) this.draw()
 			}
 		)
 
@@ -395,8 +417,11 @@ export class EmbeddingEditor implements IMode
 
 	canvas_click(position: Vector2, shift_held: boolean)
 	{
+
 		let clicked_vert = this.get_vertex_at(position);
 		let clicked_edge = this.get_edge_at(position);
+
+
 		if (clicked_vert.is_some())
 		{
 			this.change_selection(
@@ -424,6 +449,20 @@ export class EmbeddingEditor implements IMode
 			);
 		}
 			
+	}
+
+	try_handle_drag_start(position: Vector2)
+	{
+		let clicked_handle = this.get_handle_at(position);
+		if(clicked_handle.is_some())
+		{
+			let handle = clicked_handle.unwrap();
+			this.h_drag = {
+				dragging: true,
+				edge: handle.edge,
+				side: handle.side
+			}
+		}
 	}
 
 	try_edge_drag_start(position: Vector2)
@@ -479,11 +518,42 @@ export class EmbeddingEditor implements IMode
 		this.selected = Selection.vertex(this.v_drag.vert);
 	}
 
+	handle_drag_end(): boolean
+	{
+		if(!this.h_drag.dragging) return false;
+
+		this.h_drag.dragging = false;
+		this.selected = Selection.edge(this.h_drag.edge);
+		return true;
+	}
+
 	move_dragged_vert()
 	{
 		if(!this.v_drag.dragging) return;
 		this.embedding.vert_data[this.v_drag.vert].position = 
 			this.canvas.local_trans_inv(this.mouse_pos);
+	}
+
+	move_dragged_handle()
+	{
+		if(!this.h_drag.dragging) return;
+		
+		let dagspace_mp = this.canvas.local_trans_inv(this.mouse_pos);
+		let edge_idx = this.h_drag.edge;
+		let edge = this.embedding.dag.get_edge(edge_idx).unwrap();
+		if(this.h_drag.side == "start")
+		{
+			let base_position = this.embedding.vert_data[edge.start].position;
+			let tangent = dagspace_mp.sub(base_position);
+			this.embedding.edge_data[edge_idx].start_ang_override = AngleOverride.vec_abs(tangent);
+		}
+		if(this.h_drag.side == "end")
+		{
+			let base_position = this.embedding.vert_data[edge.end].position;
+			let tangent = base_position.sub(dagspace_mp);
+			this.embedding.edge_data[edge_idx].end_ang_override = AngleOverride.vec_abs(tangent);
+		}
+		this.update_sidebar();
 	}
 
 	add_edge_selected()
@@ -799,7 +869,7 @@ export class EmbeddingEditor implements IMode
 			);
 		
 		this.draw_selection_vert(data, ctx);
-
+		this.draw_tangent_handles(data, ctx);
 	}
 
 	draw_selection_vert(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
@@ -875,6 +945,44 @@ export class EmbeddingEditor implements IMode
 		)
 	}
 
+	draw_tangent_handles(data: BakedDAGEmbedding, ctx: DAGCanvasContext)
+	{
+		if(this.selected.type != "edge") return;
+
+		let edge = this.selected.inner as number;
+		let edge_data = this.embedding.edge_data[edge];
+		let bez = data.edges[edge];
+		if(edge_data.start_ang_override.type == "vec-abs")
+		{
+			ctx.draw_line(
+				bez.start_point,
+				bez.cp1,
+				this.draw_options.handle_color() + "88",
+				this.draw_options.tangent_arm_weight()
+			);
+			ctx.draw_circ(
+				bez.cp1,
+				this.draw_options.handle_color(),
+				this.draw_options.tangent_handle_size()
+			);
+		}
+
+		if(edge_data.end_ang_override.type == "vec-abs")
+		{
+			ctx.draw_line(
+				bez.end_point,
+				bez.cp2,
+				this.draw_options.handle_color() + "88",
+				this.draw_options.tangent_arm_weight()
+			);
+			ctx.draw_circ(
+				bez.cp2,
+				this.draw_options.handle_color(),
+				this.draw_options.tangent_handle_size()
+			);
+		}
+	}
+
 	/*
 	Utility functions
 	*/
@@ -942,6 +1050,31 @@ export class EmbeddingEditor implements IMode
 			return Option.some(end1)
 		else
 			return Option.none();
+	}
+
+	get_handle_at(position: Vector2): Option<{edge: number, side: "start" | "end"}>
+	{
+		if(this.selected.type != "edge") return Option.none();
+		let idx = this.selected.inner as number;
+		let ed = this.embedding.edge_data[idx];
+		if(ed.end_ang_override.type != "vec-abs" && ed.start_ang_override.type != "vec-abs")
+			return Option.none();
+		
+		let dag = this.embedding.bake();
+		if(ed.start_ang_override.type == "vec-abs")
+		{
+			let point = this.canvas.local_trans(dag.edges[idx].cp1);
+			if(position.sub(point).norm() <= this.draw_options.tangent_handle_size())
+				return Option.some({edge: idx, side: "start"});
+		}
+		if(ed.end_ang_override.type == "vec-abs")
+		{
+			let point = this.canvas.local_trans(dag.edges[idx].cp2);
+			if(position.sub(point).norm() <= this.draw_options.tangent_handle_size())
+				return Option.some({edge: idx, side: "end"});
+		}
+
+		return Option.none();
 	}
 }
 
