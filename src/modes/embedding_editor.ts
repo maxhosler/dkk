@@ -266,6 +266,16 @@ export class EmbeddingEditor implements IMode
 				this.draw();
 			}
 		)
+		emb_box.add_dual_spinner(
+			"In-spread",
+			"emb-in-spread",
+			[15, 180],
+			(val) => {},
+			"Out-spread",
+			"emb-out-spread",
+			[15, 180],
+			(val) => {},
+		)
 		emb_box.add_shortcut_popup([
 			["Move vertex", "Shift+Left Click, drag"],
 			["Increase in-spread", "W"],
