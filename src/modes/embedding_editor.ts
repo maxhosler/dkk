@@ -270,11 +270,11 @@ export class EmbeddingEditor implements IMode
 			"In-spread",
 			"emb-in-spread",
 			[15, 180],
-			(val) => {},
+			(val) => this.set_in_angle_selected(val * (Math.PI / 180)),
 			"Out-spread",
 			"emb-out-spread",
 			[15, 180],
-			(val) => {},
+			(val) => this.set_out_angle_selected(val * (Math.PI / 180)),
 		)
 		emb_box.add_shortcut_popup([
 			["Move vertex", "Shift+Left Click, drag"],
@@ -493,6 +493,24 @@ export class EmbeddingEditor implements IMode
 		let v = this.selected.inner as number;
 		this.embedding.vert_data[v].spread_in =
 			clamp(this.embedding.vert_data[v].spread_in + delta, 0, Math.PI);
+		this.draw();
+	}
+
+	set_out_angle_selected(angle: number)
+	{
+		if(this.selected.type != "vertex") return;
+
+		let v = this.selected.inner as number;
+		this.embedding.vert_data[v].spread_out = angle;
+		this.draw();
+	}
+
+	set_in_angle_selected(angle: number)
+	{
+		if(this.selected.type != "vertex") return;
+
+		let v = this.selected.inner as number;
+		this.embedding.vert_data[v].spread_in = angle;
 		this.draw();
 	}
 
