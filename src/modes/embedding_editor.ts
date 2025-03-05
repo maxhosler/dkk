@@ -501,6 +501,7 @@ export class EmbeddingEditor implements IMode
 		{
 			let start = this.selected.inner as number;
 			this.remove_edge(start);
+			this.change_selection(Selection.none());
 		}
 	}
 
@@ -628,6 +629,8 @@ export class EmbeddingEditor implements IMode
 
 	handle_keypress(ev: KeyboardEvent)
 	{
+		if(in_typable_box()) return;
+
 		if(ev.key == "Backspace")
 		{
 			this.remove_edge_selected()
@@ -940,4 +943,20 @@ export class EmbeddingEditor implements IMode
 		else
 			return Option.none();
 	}
+}
+
+const TYPABLE: string[] = [
+	"number", "email", "password", "text"
+]
+function in_typable_box(): boolean
+{
+	let active = document.activeElement;
+	if(!active) return false;
+	if(active.nodeName != "INPUT") return false;
+	let a_input = active as HTMLInputElement;
+
+	return TYPABLE.includes(
+		a_input.type.toLowerCase()
+	)
+	
 }
