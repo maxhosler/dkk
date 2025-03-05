@@ -1,4 +1,4 @@
-import { BakedDAGEmbedding } from "../draw/dag_layout";
+import { AngleOverride, BakedDAGEmbedding } from "../draw/dag_layout";
 import { clamp, Vector2 } from "../util/num";
 import { Option, ResultError } from "../util/result";
 import { FramedDAGEmbedding } from "../draw/dag_layout";
@@ -8,7 +8,7 @@ import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 import { IMode, ModeName } from "./mode";
 import { ActionBox } from "../subelements/action_box";
-import { FramedDAG } from "../math/dag";
+import { AngleOverrideController } from "../subelements/angleoverride";
 
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
@@ -151,6 +151,8 @@ export class EmbeddingEditor implements IMode
 	readonly inout: HTMLElement;
 	readonly in_spread_spinner: HTMLInputElement;
 	readonly out_spread_spinner: HTMLInputElement;
+	readonly start_angle_override: AngleOverrideController;
+	readonly end_angle_override: AngleOverrideController;
 
 	readonly resize_event: (ev: UIEvent) => void;
 	readonly keydown_event: (ev: KeyboardEvent) => void;
@@ -166,7 +168,7 @@ export class EmbeddingEditor implements IMode
 	v_drag: VertMoveDragState = {
 		dragging: false, 
 		vert: 0
-	}
+	};
 	mouse_pos: Vector2 = Vector2.zero();
 
 	name(): ModeName
@@ -283,6 +285,19 @@ export class EmbeddingEditor implements IMode
 		this.inout = inout_row;
 		this.in_spread_spinner = in_spinner;
 		this.out_spread_spinner = out_spinner;
+
+		this.start_angle_override = new AngleOverrideController("Start");
+		this.start_angle_override.add_change_listeners(
+			(ov) => this.change_start_override_selected(ov)
+		);
+		emb_box.add_row(this.start_angle_override.base);
+
+		this.end_angle_override = new AngleOverrideController("End");
+		this.end_angle_override.add_change_listeners(
+			(ov) => this.change_end_override_selected(ov)
+		);
+		emb_box.add_row(this.end_angle_override.base);
+
 		emb_box.add_shortcut_popup([
 			["Move vertex", "Shift+Left Click, drag"],
 			["Increase in-spread", "W"],
@@ -503,6 +518,22 @@ export class EmbeddingEditor implements IMode
 		this.draw();
 	}
 
+	change_start_override_selected(val: AngleOverride)
+	{
+		if(this.selected.type != "edge") return;
+		let edge_idx = this.selected.inner as number;
+		this.embedding.edge_data[edge_idx].start_ang_override = val;
+		this.draw();
+	}
+
+	change_end_override_selected(val: AngleOverride)
+	{
+		if(this.selected.type != "edge") return;
+		let edge_idx = this.selected.inner as number;
+		this.embedding.edge_data[edge_idx].end_ang_override = val;
+		this.draw();
+	}
+
 	set_out_angle_selected(angle: number)
 	{
 		if(this.selected.type != "vertex") return;
@@ -547,11 +578,27 @@ export class EmbeddingEditor implements IMode
 			let vd = this.embedding.vert_data[i];
 			this.in_spread_spinner.value = Math.round(vd.spread_in * (180 / Math.PI) ).toString()
 			this.out_spread_spinner.value = Math.round(vd.spread_out * (180 / Math.PI) ).toString()
-
 		}
 		else
 		{
 			this.inout.style.display = "none"
+		}
+
+		if(this.selected.type == "edge")
+		{
+			this.start_angle_override.set_visible(true);
+			this.end_angle_override.set_visible(true);
+
+			let i = this.selected.inner as number;
+			let vd = this.embedding.edge_data[i];
+
+			this.start_angle_override.set_value(vd.start_ang_override);
+			this.end_angle_override.set_value(vd.end_ang_override);
+		}
+		else
+		{
+			this.start_angle_override.set_visible(false);
+			this.end_angle_override.set_visible(false);
 		}
 	}
 

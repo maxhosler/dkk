@@ -145,4 +145,10 @@ export class ActionBox
 		this.table.appendChild(row);
 	}
 
+	add_row(elem: HTMLElement)
+	{
+		let row = document.createElement("tr");
+		row.appendChild(elem);
+		this.table.appendChild(row);
+	}
 }
