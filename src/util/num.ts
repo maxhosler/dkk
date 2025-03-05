@@ -136,6 +136,15 @@ export class Bezier
 		)
 	}
 
+	get_direc(t: number): Vector2
+	{
+		let it = 1-t;
+		return this.start_point.scale( -3 * it * it)
+			.add( this.cp1.scale( 3 * (1 - 3 * t) * it  ) )
+			.add( this.cp2.scale( 3 * (2 - 3 * t) * t ) )
+			.add( this.end_point.scale( 3 * t * t ) );
+	}
+
 	get_point(t: number): Vector2
 	{
 		let it = 1-t;

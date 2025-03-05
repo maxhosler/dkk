@@ -641,26 +641,29 @@ export class EmbeddingEditor implements IMode
 		ctx.clear();
 
 		for(let edge of data.edges)
-		{ ctx.draw_bez(
-			edge, 
-			this.draw_options.edge_color(), 
-			this.draw_options.edge_weight(), 
-			true
-		); }
+			ctx.draw_bez(
+				edge, 
+				this.draw_options.edge_color(), 
+				this.draw_options.edge_weight(), 
+				true
+			); 
+
+		if(this.draw_options.arrows())
+			ctx.decorate_edges_arrow(data);
 
 		this.draw_selection_edge(data, ctx);
 
 		this.draw_drag_edge(data, ctx)
 
 		for(let vert of data.verts)
-		{ ctx.draw_node(vert); }
+			ctx.draw_node(vert);
 
 		if(this.draw_options.label_framing())
-			ctx.decorate_edges(
+			ctx.decorate_edges_num(
 				this.embedding.dag,
 				data
 			);
-
+		
 		this.draw_selection_vert(data, ctx);
 
 	}

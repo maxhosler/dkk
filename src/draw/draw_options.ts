@@ -26,6 +26,7 @@ export class DrawOptions
 	private f_route_weight: number = 8;
 	private f_edge_halo: number = 6; //Not in settings
 	private f_label_framing: boolean = true;
+	private f_arrows: boolean = true;
 
 	//HASSE
 	private f_hasse_edge_weight: number = 10;
@@ -80,6 +81,11 @@ export class DrawOptions
 	set_label_framing(b: boolean)
 	{
 		this.f_label_framing = b;
+		this.on_change();
+	}
+	set_arrows(b: boolean)
+	{
+		this.f_arrows = b;
 		this.on_change();
 	}
 	set_route_weight(weight: number)
@@ -243,9 +249,10 @@ export class DrawOptions
 		return this.f_edge_halo;
 	}
 	label_framing(): boolean
-	{
-		return this.f_label_framing;
-	}
+	{	return this.f_label_framing; }
+	arrows(): boolean
+	{	return this.f_arrows;  }
+
 	route_weight(): number
 	{
 		return this.f_route_weight;

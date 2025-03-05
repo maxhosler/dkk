@@ -283,7 +283,7 @@ export class CliqueViewer implements IMode
         }
 
         if(this.draw_options.label_framing())
-			ctx.decorate_edges(
+			ctx.decorate_edges_num(
 				this.dag.dag,
 				data
 			);

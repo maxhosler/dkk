@@ -9,6 +9,7 @@ export class SettingsPopup extends Popup
 	edge_weight_spinner: HTMLInputElement;
 	route_weight_spinner: HTMLInputElement;
 	label_checkbox: HTMLInputElement;
+	arrow_checkbox: HTMLInputElement;
 
 	hasse_weight_spinner: HTMLInputElement;
 	hasse_show_clique_cb: HTMLInputElement;
@@ -74,6 +75,12 @@ export class SettingsPopup extends Popup
 			"Framing labels",
 			"settings-labels-cb",
 			(val) => this.parent.draw_options.set_label_framing(val)
+		)
+		this.arrow_checkbox = SettingsPopup.add_tickbox_row(
+			col1_table,
+			"Direction arrows",
+			"settings-arrows-cb",
+			(val) => this.parent.draw_options.set_arrows(val)
 		)
 
 		SettingsPopup.add_title(col1_table, "Hasse diagram");
@@ -212,6 +219,8 @@ export class SettingsPopup extends Popup
 			this.parent.draw_options.route_weight().toString();
 		this.label_checkbox.checked = 
 			this.parent.draw_options.label_framing();
+		this.arrow_checkbox.checked = 
+			this.parent.draw_options.arrows();
 
 		this.hasse_weight_spinner.value = 
 			this.parent.draw_options.hasse_edge_weight().toString();
