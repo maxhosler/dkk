@@ -128,6 +128,26 @@ export class ActionBox
 		return {row, spinner1, spinner2}
 	}
 
+	add_checkbox(
+		name: string,
+		event: (val: boolean) => void
+	): HTMLInputElement
+	{
+		let checkbox = document.createElement("input");
+		checkbox.type = "checkbox";
+		checkbox.onchange = (ev) => event(checkbox.checked);
+		
+		let label = document.createElement("label");
+		label.innerText = name;
+
+		let div = document.createElement("div");
+		div.appendChild(checkbox);
+		div.appendChild(label);
+		this.add_row(div);
+
+		return checkbox;
+	}
+
 	add_shortcut_popup(data: [string, string][])
 	{
 		let main_body = document.getElementsByTagName("body")[0] as HTMLBodyElement;

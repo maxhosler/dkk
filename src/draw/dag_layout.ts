@@ -1,5 +1,5 @@
 import { Edge, FramedDAG } from "../math/dag";
-import { Option } from "../util/result";
+import { Option, Result } from "../util/result";
 import { Bezier, clamp, Vector2 } from "../util/num";
 
 export type AngleOverrideType = "none" | "absolute" | "relative";
@@ -104,29 +104,7 @@ export class FramedDAGEmbedding
 				end_ang_override: AngleOverride.none(),
 			})
 		);
-		let edge_mid_heights: {[key:number]:number} = {};
-		for(let v = 0; v < this.dag.num_verts(); v++)
-		{
-			let out_edges: number[] = this.dag.get_out_edges(v).unwrap();
-			for(let i = 0; i < out_edges.length; i++)
-			{
-				let edge = out_edges[i];
-				this.edge_data[edge].start_list_pos = [i, out_edges.length];
-				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
-				if(out_edges.length > 1)
-					edge_mid_heights[edge] += i / (out_edges.length-1) - 0.5;
-			}
-
-			let in_edges: number[] = this.dag.get_in_edges(v).unwrap();
-			for(let i = 0; i < in_edges.length; i++)
-			{
-				let edge = in_edges[i];
-				this.edge_data[edge].end_list_pos = [i, in_edges.length];
-				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
-				if(in_edges.length > 1)
-					edge_mid_heights[edge] += i / (in_edges.length-1) - 0.5;
-			}
-		}
+		this.recomp_list_pos();
 	}
 
 	default_verts()
@@ -166,6 +144,26 @@ export class FramedDAGEmbedding
 			let index = depths_arr[j];
 			let vd = this.vert_data[index];
 			vd.position = new Vector2(j - (depths_arr.length-1)/2,0);
+		}
+	}
+
+	recomp_list_pos()
+	{
+		for(let v = 0; v < this.dag.num_verts(); v++)
+		{
+			let out_edges: number[] = this.dag.get_out_edges(v).unwrap();
+			for(let i = 0; i < out_edges.length; i++)
+			{
+				let edge = out_edges[i];
+				this.edge_data[edge].start_list_pos = [i, out_edges.length];0.5;
+			}
+
+			let in_edges: number[] = this.dag.get_in_edges(v).unwrap();
+			for(let i = 0; i < in_edges.length; i++)
+			{
+				let edge = in_edges[i];
+				this.edge_data[edge].end_list_pos = [i, in_edges.length];
+			}
 		}
 	}
 
@@ -258,13 +256,31 @@ export class FramedDAGEmbedding
 		};
 	}
 
-	copy_in_data(vd: VertData[], ed: EdgeData[])
+	remove_edge(idx: number): boolean
 	{
-		for(let i = 0; i < Math.min(vd.length, this.vert_data.length); i++)
-			this.vert_data[i] = vd[i];
-		
-		for(let i = 0; i < Math.min(ed.length, this.edge_data.length); i++)
-			this.edge_data[i] = ed[i];
+		if(this.dag.remove_edge(idx))
+		{
+			this.edge_data.splice(idx, 1);
+			return true;
+		}
+		return false;
+	}
+
+	add_edge(start: number, end: number): Result<number>
+	{
+		let res = this.dag.add_edge(start, end);
+		if(res.is_ok())
+		{
+			this.edge_data.push({ 
+				start_list_pos: [1,1],
+				end_list_pos: [1,1],
+				start_ang_override: AngleOverride.none(),
+				end_ang_override: AngleOverride.none(),
+			})
+			this.recomp_list_pos();
+		}
+
+		return res;
 	}
 }
 

@@ -8,7 +8,8 @@ import { DrawOptions } from "../draw/draw_options";
 import { DrawOptionBox as DrawOptionsBox } from "../subelements/draw_option_box";
 import { IMode, ModeName } from "./mode";
 import { ActionBox } from "../subelements/action_box";
-import { AngleOverrideController } from "../subelements/angleoverride";
+import { AngleOverrideController } from "../subelements/angle_override";
+import { EditorOptions } from "../editor_options";
 
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
@@ -147,12 +148,17 @@ export class EmbeddingEditor implements IMode
 	readonly remove_edge_button: HTMLButtonElement;
 	readonly swap_start_button: HTMLButtonElement;
 	readonly swap_end_button: HTMLButtonElement;
-	
+	readonly add_reembed_cb: HTMLInputElement;
+	readonly remove_reembed_cb: HTMLInputElement;
+	readonly swap_reembed_cb: HTMLInputElement;
+
 	readonly inout: HTMLElement;
 	readonly in_spread_spinner: HTMLInputElement;
 	readonly out_spread_spinner: HTMLInputElement;
 	readonly start_angle_override: AngleOverrideController;
 	readonly end_angle_override: AngleOverrideController;
+
+	readonly editor_options: EditorOptions = new EditorOptions();
 
 	readonly resize_event: (ev: UIEvent) => void;
 	readonly keydown_event: (ev: KeyboardEvent) => void;
@@ -233,7 +239,6 @@ export class EmbeddingEditor implements IMode
 		let {box: dag_box, element: dag_element} = ActionBox.create();
 		sidebar_contents.appendChild(dag_element);
 		dag_box.add_title("DAG Edit");
-		dag_box.add_tip("Warning: Using any of these options will reset changes made to edges.");
 		this.add_edge_button = dag_box.add_button(
 			"Add edge",
 			() => this.add_edge_selected()
@@ -250,6 +255,25 @@ export class EmbeddingEditor implements IMode
 			"Swap framing at end",
 			() => this.swap_at_end_selected()
 		)
+		this.add_reembed_cb = dag_box.add_checkbox(
+			"Re-embed on add",
+			(v) => this.editor_options.set_reembed_add(v)
+		)
+		this.add_reembed_cb.checked = this.editor_options.reembed_add();
+
+		this.remove_reembed_cb = dag_box.add_checkbox(
+			"Re-embed on remove",
+			(v) => this.editor_options.set_reembed_remove(v)
+		)
+		this.remove_reembed_cb.checked = this.editor_options.reembed_remove();
+
+		this.swap_reembed_cb = dag_box.add_checkbox(
+			"Re-embed on swap",
+			(v) => this.editor_options.set_reembed_swap(v)
+		)
+		this.swap_reembed_cb.checked = this.editor_options.reembed_swap();
+
+
 		dag_box.add_shortcut_popup(
 			[
 				["Add edge", "E"],
@@ -655,12 +679,12 @@ export class EmbeddingEditor implements IMode
 	{
 		if(start == end) return;
 
-		let dag = this.embedding.dag;
-		let try_add_res = dag.add_edge(start,end);
+		let try_add_res = this.embedding.add_edge(start,end);
 
 		if(try_add_res.is_ok())
 		{
-			this.embedding.default_edges();
+			if(this.editor_options.reembed_add())
+				this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -672,12 +696,12 @@ export class EmbeddingEditor implements IMode
 
 	remove_edge(idx: number)
 	{
-		let dag = this.embedding.dag;
-		let try_add_res = dag.remove_edge(idx);
+		let try_add_res = this.embedding.remove_edge(idx);
 
 		if(try_add_res)
 		{
-			this.embedding.default_edges();
+			if(this.editor_options.reembed_remove())
+				this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -702,7 +726,8 @@ export class EmbeddingEditor implements IMode
 
 		if(success)
 		{
-			this.embedding.default_edges();
+			if(this.editor_options.reembed_swap())
+				this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}
@@ -727,7 +752,8 @@ export class EmbeddingEditor implements IMode
 
 		if(success)
 		{
-			this.embedding.default_edges();
+			if(this.swap_reembed_cb.checked)
+				this.embedding.default_edges();
 			this.draw();
 			this.clear_err();
 		}

@@ -40,7 +40,7 @@ export class AngleOverrideController
 			opt.value = val;
 			opt.innerText = val;
 			if(val == "none")
-				opt.innerText = "default"
+				opt.innerText = "auto"
 			this.dropdown.appendChild(opt);
 		}
 		this.dropdown.value = "none";
@@ -71,7 +71,7 @@ export class AngleOverrideController
 
 	set_value(ov: AngleOverride)
 	{
-		this.spinner.value = Math.round( ov.angle * (180 / Math.PI) ).toString();
+		this.spinner.value = Math.round( ov.angle * (-180 / Math.PI) ).toString();
 		this.dropdown.value = ov.type;
 		this.update();
 	}
@@ -81,7 +81,7 @@ export class AngleOverrideController
 		let angle = 0;
 		try
 		{
-			angle = parseInt(this.spinner.value) * (Math.PI / 180);
+			angle = parseInt(this.spinner.value) * (-Math.PI / 180);
 		}
 		catch{}
 
