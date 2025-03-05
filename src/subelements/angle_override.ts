@@ -1,6 +1,7 @@
 import { AngleOverride, AngleOverrideType } from "../draw/dag_layout";
+import { Vector2 } from "../util/num";
 
-const TYPES: AngleOverrideType[] = ["none", "relative", "absolute"];
+const TYPES: AngleOverrideType[] = ["none", "relative", "absolute", "vec-abs"];
 export class AngleOverrideController
 {
 	base: HTMLElement;
@@ -59,7 +60,7 @@ export class AngleOverrideController
 
 	update()
 	{
-		if(this.dropdown.value == "none")
+		if(this.dropdown.value != "relative" && this.dropdown.value != "absolute")
 		{
 			this.spinner.style.display = "none"
 		}
@@ -71,7 +72,14 @@ export class AngleOverrideController
 
 	set_value(ov: AngleOverride)
 	{
-		this.spinner.value = Math.round( ov.angle * (-180 / Math.PI) ).toString();
+		if (ov.type == "absolute" || ov.type == "relative")
+			this.spinner.value = Math.round( ov.inner as number * (-180 / Math.PI) ).toString();
+		else
+			this.spinner.value = "0";
+
+		if (ov.type == "vec-abs")
+		{} //TODO:
+
 		this.dropdown.value = ov.type;
 		this.update();
 	}
@@ -85,10 +93,21 @@ export class AngleOverrideController
 		}
 		catch{}
 
-		return new AngleOverride(
-			this.dropdown.value as AngleOverrideType,
-			angle
-		);
+		if(this.dropdown.value == "none")
+			return AngleOverride.none();
+		if(this.dropdown.value == "relative")
+			return AngleOverride.relative(angle);
+		if(this.dropdown.value == "absolute")
+			return AngleOverride.absolute(angle);
+		if(this.dropdown.value == "vec-abs")
+			return AngleOverride.vec_abs(this.get_vec())
+		throw new Error("Unhandled state.")
+	}
+
+	get_vec(): Vector2
+	{
+		//TODO:
+		return new Vector2(0,1);
 	}
 
 	set_visible(bool: boolean)

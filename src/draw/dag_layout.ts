@@ -2,29 +2,32 @@ import { Edge, FramedDAG } from "../math/dag";
 import { Option, Result } from "../util/result";
 import { Bezier, clamp, Vector2 } from "../util/num";
 
-export type AngleOverrideType = "none" | "absolute" | "relative";
+export type AngleOverrideType = "none" | "absolute" | "relative" | "vec-abs";
 export class AngleOverride
 {
 	readonly type: AngleOverrideType;
-	readonly angle: number;
+	readonly inner: number | Vector2;
 
-	constructor(type: AngleOverrideType, angle: number)
+	private constructor(type: AngleOverrideType, angle: number | Vector2)
 	{
 		this.type = type;
-		this.angle = angle;
+		this.inner = angle;
 	}
 
 	get_vector(
 		default_angle: number,
-		direction_vec: Vector2
+		direction_vec: Vector2,
+		scale: number
 	): Vector2
 	{
 		if(this.type == "none")
-			return direction_vec.rot(default_angle)
+			return direction_vec.rot(default_angle).scale(scale)
 		if(this.type == "relative")
-			return direction_vec.rot(this.angle)
+			return direction_vec.rot(this.inner as number).scale(scale)
 		if(this.type == "absolute")
-			return Vector2.right().rot(this.angle)
+			return Vector2.right().rot(this.inner as number).scale(scale)
+		if(this.type == "vec-abs")
+			return this.inner as Vector2;
 		throw new Error("Unhandled branch");
 	}
 
@@ -39,6 +42,11 @@ export class AngleOverride
 	static relative(ang: number): AngleOverride
 	{
 		return new AngleOverride("relative", ang);
+	}
+
+	static vec_abs(vec: Vector2): AngleOverride
+	{
+		return new AngleOverride("vec-abs", vec);
 	}
 }
 
@@ -229,13 +237,15 @@ export class FramedDAGEmbedding
 			let start_tan = edge_data.start_ang_override
 				.get_vector(
 					spread_percents[0] * start_data.spread_out,
-					vert_in_out[edge.start][1]
-				).scale(tan_len);
+					vert_in_out[edge.start][1],
+					tan_len
+				);
 			let end_tan = edge_data.end_ang_override
 				.get_vector(
 					-spread_percents[1] * end_data.spread_in,
-					vert_in_out[edge.end][0]
-				).scale(tan_len);
+					vert_in_out[edge.end][0],
+					tan_len
+				);
 
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
