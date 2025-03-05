@@ -181,7 +181,7 @@ export class EmbeddingEditor implements IMode
 	{
 		return "embedding-editor";
 	}
-	current_dag(): FramedDAGEmbedding {
+	current_embedding(): FramedDAGEmbedding {
         return this.embedding;
     }
 

@@ -32,7 +32,7 @@ export class CliqueViewer implements IMode
     name(): ModeName {
         return "clique-viewer"
     }
-    current_dag(): FramedDAGEmbedding {
+    current_embedding(): FramedDAGEmbedding {
         return this.dag;
     }
 

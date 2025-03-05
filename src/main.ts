@@ -88,20 +88,27 @@ export class DKKProgram
     {
         if(this.popup_open) { return; }
 
-        let dag = this.mode.current_dag();
+        let embedding = this.mode.current_embedding();
+
+        if(this.mode.name() == "embedding-editor" && !embedding.dag.valid())
+        {
+            alert("Can't view; not a connected DAG with one source and one sink!")
+            return;
+        }
+
         this.mode.clear_global_events();
 
         if(this.mode.name() == "embedding-editor")
         {
             this.mode = CliqueViewer.destructive_new(
-                dag,
+                embedding,
                 this.draw_options
             );
         }
         else
         {
             this.mode = EmbeddingEditor.destructive_new(
-                dag,
+                embedding,
                 this.draw_options
             )
         }
