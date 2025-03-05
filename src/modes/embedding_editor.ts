@@ -76,11 +76,9 @@ class Selection
 
 		//TODO: Factor out duplication
 
-		console.log(shift_held, this.single(), this.type == clicked)
 		if(shift_held && this.single() && this.type == clicked)
 		{
 			let pair: [number, number] = [this.inner as number, index];
-			console.log(pair);
 			if(this.type == "vertex")
 			{
 				if(pair[0] != pair[1])
@@ -149,6 +147,10 @@ export class EmbeddingEditor implements IMode
 	readonly remove_edge_button: HTMLButtonElement;
 	readonly swap_start_button: HTMLButtonElement;
 	readonly swap_end_button: HTMLButtonElement;
+	
+	readonly inout: HTMLElement;
+	readonly in_spread_spinner: HTMLInputElement;
+	readonly out_spread_spinner: HTMLInputElement;
 
 	readonly resize_event: (ev: UIEvent) => void;
 	readonly keydown_event: (ev: KeyboardEvent) => void;
@@ -266,16 +268,21 @@ export class EmbeddingEditor implements IMode
 				this.draw();
 			}
 		)
-		emb_box.add_dual_spinner(
+		let {row: inout_row, spinner1: in_spinner, spinner2: out_spinner} = emb_box.add_dual_spinner(
 			"In-spread",
 			"emb-in-spread",
 			[15, 180],
+			5,
 			(val) => this.set_in_angle_selected(val * (Math.PI / 180)),
 			"Out-spread",
 			"emb-out-spread",
 			[15, 180],
+			5,
 			(val) => this.set_out_angle_selected(val * (Math.PI / 180)),
-		)
+		);
+		this.inout = inout_row;
+		this.in_spread_spinner = in_spinner;
+		this.out_spread_spinner = out_spinner;
 		emb_box.add_shortcut_popup([
 			["Move vertex", "Shift+Left Click, drag"],
 			["Increase in-spread", "W"],
@@ -332,7 +339,7 @@ export class EmbeddingEditor implements IMode
 		addEventListener("resize", this.resize_event);
 		addEventListener("keydown", this.keydown_event);
 
-		this.enable_disable_buttons();
+		this.update_sidebar();
 	}
 
 	clear_global_events(): void {
@@ -344,7 +351,7 @@ export class EmbeddingEditor implements IMode
 	{
 		this.selected = sel;
 		this.draw();
-		this.enable_disable_buttons();
+		this.update_sidebar();
 	}
 
 	canvas_click(position: Vector2, shift_held: boolean)
@@ -514,7 +521,7 @@ export class EmbeddingEditor implements IMode
 		this.draw();
 	}
 
-	enable_disable_buttons()
+	update_sidebar()
 	{
 		this.add_edge_button.disabled = this.selected.type != "pair_verts";
 		this.remove_edge_button.disabled = this.selected.type != "edge";
@@ -531,6 +538,20 @@ export class EmbeddingEditor implements IMode
 		{
 			this.swap_end_button.disabled = true;
 			this.swap_start_button.disabled = true;	
+		}
+
+		if(this.selected.type == "vertex")
+		{
+			this.inout.style.display = "block";
+			let i = this.selected.inner as number;
+			let vd = this.embedding.vert_data[i];
+			this.in_spread_spinner.value = Math.round(vd.spread_in * (180 / Math.PI) ).toString()
+			this.out_spread_spinner.value = Math.round(vd.spread_out * (180 / Math.PI) ).toString()
+
+		}
+		else
+		{
+			this.inout.style.display = "none"
 		}
 	}
 
@@ -565,6 +586,8 @@ export class EmbeddingEditor implements IMode
 			this.change_in_angle_selected(Math.PI/16);
 		if(ev.key.toLowerCase() == "s" && !ev.shiftKey)
 			this.change_in_angle_selected(-Math.PI/16);
+	
+		this.update_sidebar();
 	}
 
 	show_err(err: ResultError)

@@ -65,10 +65,12 @@ export class ActionBox
 		name1: string,
 		id1: string,
 		minmax1: [number, number],
+		step1: number,
 		action1: (val: number) => void,
 		name2: string,
 		id2: string,
 		minmax2: [number, number],
+		step2: number,
 		action2: (val: number) => void
 	): {row: HTMLTableRowElement, spinner1: HTMLInputElement, spinner2: HTMLInputElement}
 	{
@@ -91,6 +93,7 @@ export class ActionBox
 		});
 		spinner1.min = minmax1[0].toString();
 		spinner1.max = minmax1[1].toString();
+		spinner1.step = step1.toString();
 
 		let spinner2 = document.createElement("input");
 		spinner2.type = "number";
@@ -99,6 +102,7 @@ export class ActionBox
 		});
 		spinner2.min = minmax2[0].toString();
 		spinner2.max = minmax2[1].toString();
+		spinner2.step = step2.toString();
 
 		let subrow1 = document.createElement("tr");
 		let subcol11 = document.createElement("td");
