@@ -1,5 +1,6 @@
 import { AngleOverride, AngleOverrideType } from "../draw/dag_layout";
 import { Vector2 } from "../util/num";
+import { VecSpinner } from "./vec_spinner";
 
 const TYPES: AngleOverrideType[] = ["none", "relative", "absolute", "vec-abs"];
 export class AngleOverrideController
@@ -7,6 +8,8 @@ export class AngleOverrideController
 	base: HTMLElement;
 	dropdown: HTMLSelectElement;
 	spinner: HTMLInputElement;
+
+	vec_spinner: VecSpinner;
 
 	change_listeners: ((val: AngleOverride) => void)[] = [];
 
@@ -28,12 +31,16 @@ export class AngleOverrideController
 
 		this.dropdown = document.createElement("select");
 		this.spinner = document.createElement("input");
+		this.vec_spinner = new VecSpinner();
+
 		this.spinner.type = "number";
 		this.spinner.step = "5";
 		
+
 		col1.innerText = name;
 		col2.appendChild(this.dropdown);
 		col3.appendChild(this.spinner);
+		col3.appendChild(this.vec_spinner.base);
 
 		for(let val of TYPES)
 		{
@@ -55,6 +62,9 @@ export class AngleOverrideController
 		this.spinner.addEventListener("change",
 			(ev) => this.fire_change_listeners()
 		)
+		this.vec_spinner.add_change_listeners(
+			(v) => this.fire_change_listeners()
+		)
 		this.update();
 	}
 
@@ -68,6 +78,8 @@ export class AngleOverrideController
 		{
 			this.spinner.style.display = "block"
 		}
+
+		this.vec_spinner.set_visible(this.dropdown.value == "vec-abs");
 	}
 
 	set_value(ov: AngleOverride)
@@ -78,7 +90,13 @@ export class AngleOverrideController
 			this.spinner.value = "0";
 
 		if (ov.type == "vec-abs")
-		{} //TODO:
+		{
+			this.vec_spinner.set_value(ov.inner as Vector2)
+		} 
+		else
+		{
+			this.vec_spinner.set_value(Vector2.right())
+		}
 
 		this.dropdown.value = ov.type;
 		this.update();
@@ -106,8 +124,7 @@ export class AngleOverrideController
 
 	get_vec(): Vector2
 	{
-		//TODO:
-		return new Vector2(0,1);
+		return this.vec_spinner.get_value();
 	}
 
 	set_visible(bool: boolean)
