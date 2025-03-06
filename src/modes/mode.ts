@@ -5,5 +5,6 @@ export interface IMode
 {
 	name(): ModeName;
 	current_embedding(): FramedDAGEmbedding;
+	current_data_json(): string;
 	clear_global_events(): void;
 }

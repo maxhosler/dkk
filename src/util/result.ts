@@ -76,7 +76,7 @@ export class Result<T> {
         return this.success;
     }
 
-    if_err(): boolean
+    is_err(): boolean
     {
         return !this.success;
     }

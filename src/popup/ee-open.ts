@@ -1,13 +1,12 @@
 import { DKKProgram } from "../main";
+import { CVOpenPopup } from "./cv-open";
 import { Popup } from "./popup";
 
-export class EEOpenPopup extends Popup
+export class EEOpenPopup extends CVOpenPopup
 {
-	parent: DKKProgram;
 	constructor(base: HTMLElement, parent: DKKProgram)
 	{
-		super(base, "Open", () => parent.popup_open = false);
-		this.parent = parent;
+		super(base, parent)
 	}
 
 	

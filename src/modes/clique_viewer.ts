@@ -35,6 +35,9 @@ export class CliqueViewer implements IMode
     current_embedding(): FramedDAGEmbedding {
         return this.dag;
     }
+    current_data_json(): string {
+        return this.dag.to_json();
+    }
 
     static destructive_new(
         dag: FramedDAGEmbedding,

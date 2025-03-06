@@ -48,6 +48,15 @@ export class AngleOverride
 	{
 		return new AngleOverride("vec-abs", vec);
 	}
+
+	//This exists for things loaded from JSON.
+	static reapply_methods(x: AngleOverride): AngleOverride
+	{
+		return new AngleOverride(
+			x.type,
+			x.inner
+		);
+	}
 }
 
 export type EdgeData = {
@@ -337,11 +346,26 @@ export class FramedDAGEmbedding
 		//TODO Validate
 
 		let dag = FramedDAG.from_json_ob(data.dag);
-		if(dag.if_err())
+		if(dag.is_err())
 			return dag.err_to_err();
 		let emb = new FramedDAGEmbedding(dag.unwrap());
 		emb.vert_data = data.vert_data;
 		emb.edge_data = data.edge_data;
+
+		//So they get their prototypes
+		for(let vd of emb.vert_data)
+		{
+			vd.position = new Vector2(
+				vd.position.x,
+				vd.position.y
+			)
+		}
+
+		for(let ed of emb.edge_data)
+		{
+			ed.end_ang_override = AngleOverride.reapply_methods(ed.end_ang_override);
+			ed.start_ang_override = AngleOverride.reapply_methods(ed.start_ang_override);
+		}
 
 		return Result.ok(emb);
 	}
