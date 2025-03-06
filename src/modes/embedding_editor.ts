@@ -10,6 +10,7 @@ import { IMode, ModeName } from "./mode";
 import { ActionBox } from "../subelements/action_box";
 import { AngleOverrideController } from "../subelements/angle_override";
 import { EditorOptions } from "../editor_options";
+import { VecSpinner } from "../subelements/vec_spinner";
 
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
@@ -161,6 +162,10 @@ export class EmbeddingEditor implements IMode
 	readonly inout: HTMLElement;
 	readonly in_spread_spinner: HTMLInputElement;
 	readonly out_spread_spinner: HTMLInputElement;
+
+	readonly vert_pos_spinner: VecSpinner;
+	readonly vps_row: HTMLElement;
+
 	readonly start_angle_override: AngleOverrideController;
 	readonly end_angle_override: AngleOverrideController;
 
@@ -299,13 +304,9 @@ export class EmbeddingEditor implements IMode
 		sidebar_contents.appendChild(emb_element);
 		emb_box.add_title("Embedding Edit");
 		emb_box.add_tip("Ctrl+Drag to move vertices.")
-		emb_box.add_button(
-			"Reset to default",
-			() => {
-				this.embedding.default_layout();
-				this.draw();
-			}
-		)
+
+		emb_box.add_space(12);
+
 		let {row: inout_row, spinner1: in_spinner, spinner2: out_spinner} = emb_box.add_dual_spinner(
 			"In-spread",
 			"emb-in-spread",
@@ -322,6 +323,20 @@ export class EmbeddingEditor implements IMode
 		this.in_spread_spinner = in_spinner;
 		this.out_spread_spinner = out_spinner;
 
+		this.vert_pos_spinner = new VecSpinner();
+		this.vps_row = emb_box.add_labelled_row(this.vert_pos_spinner.base, "Position");
+		this.vert_pos_spinner.add_change_listeners(
+			(v) => {
+				if(this.selected.type == "vertex")
+				{
+					let vert = this.selected.inner as number;
+					this.embedding.vert_data[vert].position = v;
+					this.draw();
+				}
+			}
+		)
+		
+
 		this.start_angle_override = new AngleOverrideController("Start");
 		this.start_angle_override.add_change_listeners(
 			(ov) => this.change_start_override_selected(ov)
@@ -334,8 +349,18 @@ export class EmbeddingEditor implements IMode
 		);
 		emb_box.add_row(this.end_angle_override.base);
 
+		emb_box.add_space(12);
+
+		emb_box.add_button(
+			"Reset to default",
+			() => {
+				this.embedding.default_layout();
+				this.draw();
+			}
+		)
 		emb_box.add_shortcut_popup([
 			["Move vertex", "Ctrl+Drag"],
+			["Select two", "Shift+Left Click"],
 			["Increase in-spread", "W"],
 			["Decrease in-spread", "S"],
 			["Increase out-spread", "Shift+W"],
@@ -532,6 +557,7 @@ export class EmbeddingEditor implements IMode
 		if(!this.v_drag.dragging) return;
 		this.embedding.vert_data[this.v_drag.vert].position = 
 			this.canvas.local_trans_inv(this.mouse_pos);
+		this.update_sidebar();
 	}
 
 	move_dragged_handle()
@@ -671,12 +697,16 @@ export class EmbeddingEditor implements IMode
 			this.inout.style.display = "block";
 			let i = this.selected.inner as number;
 			let vd = this.embedding.vert_data[i];
-			this.in_spread_spinner.value = Math.round(vd.spread_in * (180 / Math.PI) ).toString()
-			this.out_spread_spinner.value = Math.round(vd.spread_out * (180 / Math.PI) ).toString()
+			this.in_spread_spinner.value = Math.round(vd.spread_in * (180 / Math.PI) ).toString();
+			this.out_spread_spinner.value = Math.round(vd.spread_out * (180 / Math.PI) ).toString();
+
+			this.vps_row.style.display = "";
+			this.vert_pos_spinner.set_value(vd.position);
 		}
 		else
 		{
-			this.inout.style.display = "none"
+			this.inout.style.display = "none";
+			this.vps_row.style.display = "none";
 		}
 
 		if(this.selected.type == "edge")

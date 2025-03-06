@@ -165,10 +165,41 @@ export class ActionBox
 		this.table.appendChild(row);
 	}
 
-	add_row(elem: HTMLElement)
+	add_row(elem: HTMLElement): HTMLTableRowElement
 	{
 		let row = document.createElement("tr");
 		row.appendChild(elem);
 		this.table.appendChild(row);
+
+		return row;
+	}
+
+	add_labelled_row(elem: HTMLElement, name: string): HTMLTableRowElement
+	{
+		let label = document.createElement("label");
+		label.innerText = name;
+
+		let row = document.createElement("tr");
+		let l_row = document.createElement("tr");
+		row.appendChild(l_row);
+
+		let col1 = document.createElement("td");
+		let col2 = document.createElement("td");
+
+		l_row.appendChild(col1);
+		l_row.appendChild(col2);
+
+		col1.appendChild(label);
+		col2.appendChild(elem);
+		this.table.appendChild(row);
+
+		return row;
+	}
+
+	add_space(height: number)
+	{
+		let spacer = document.createElement("div");
+		spacer.style.height = height.toString() + "px";
+		this.add_row(spacer);
 	}
 }

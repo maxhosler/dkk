@@ -11,6 +11,7 @@ export class VecSpinner
     constructor()
     {
         this.base = document.createElement("div");
+        this.base.className = "vec-spinner";
         this.spinner1 = document.createElement("input");
         this.spinner2 = document.createElement("input");
         
