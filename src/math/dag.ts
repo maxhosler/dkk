@@ -7,6 +7,7 @@ export const dag_error_types = {
 
 };
 export type Edge = { start: number, end: number };
+export type JSONFramedDag = {num_verts: number, out_edges: number[][], in_edges: number[][]};
 export class FramedDAG {
     private f_num_edges: number;
     private f_num_verts: number;
@@ -266,36 +267,23 @@ export class FramedDAG {
         return onesink && onesource;
     }
 
-    to_json(): string
+    to_json_ob(): JSONFramedDag
     {
         let obj = {
             num_verts: this.num_verts(),
             out_edges: structuredClone(this.out_edges),
             in_edges: structuredClone(this.in_edges)
         };
-        return JSON.stringify(obj);
+        return obj;
     }
 
-    static from_json(str: string): Result<FramedDAG>
+    to_json(): string
     {
-        let obj: Object;
-        try
-        {
-            obj = JSON.parse(str);
-        }
-        catch
-        {
-            return Result.err(
-                "InvalidJSON",
-                "JSON file was malformed."
-            );
-        }
-        for(let field of ["num_verts", "out_edges", "in_edges"])
-            if(!(field in obj))
-                return Result.err("MissingField", "JSON missing field '"+field+"'.")
-        
-        let data = obj as {num_verts: number, out_edges: number[][], in_edges: number[][]};
+        return JSON.stringify(this.to_json_ob())
+    }
 
+    static from_json_ob(data: JSONFramedDag): Result<FramedDAG>
+    {
         let edges: {[e: number]: [number, number]} = {};
         let max_edge = -1;
         for(let v = 0; v < data.num_verts; v++)
@@ -355,6 +343,29 @@ export class FramedDAG {
         }
 
         return Result.ok(out);
+    }
+
+    static from_json(str: string): Result<FramedDAG>
+    {
+        let obj: Object;
+        try
+        {
+            obj = JSON.parse(str);
+        }
+        catch
+        {
+            return Result.err(
+                "InvalidJSON",
+                "JSON file was malformed."
+            );
+        }
+        for(let field of ["num_verts", "out_edges", "in_edges"])
+            if(!(field in obj))
+                return Result.err("MissingField", "JSON missing field '"+field+"'.")
+        
+        let data = obj as JSONFramedDag;
+
+        return FramedDAG.from_json_ob(data);
     }
 }
 
