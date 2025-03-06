@@ -376,7 +376,7 @@ html, body {
 
 .angle-override-table input
 {
-    width: 40pt;
+    width: 50pt;
 }
 
 .angle-override-table td
@@ -386,5 +386,5 @@ html, body {
 
 .vec-spinner input
 {
-    width: 35pt;
+    width: 50pt;
 }
