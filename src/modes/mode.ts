@@ -4,6 +4,6 @@ export type ModeName = "embedding-editor" | "clique-viewer";
 export interface IMode
 {
 	name(): ModeName;
-	current_dag(): FramedDAGEmbedding;
+	current_embedding(): FramedDAGEmbedding;
 	clear_global_events(): void;
 }

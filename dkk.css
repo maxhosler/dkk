@@ -373,3 +373,18 @@ html, body {
     font-size: small;
     bottom: 12pt;
 }
+
+.angle-override-table input
+{
+    width: 40pt;
+}
+
+.angle-override-table td
+{
+    width: 30pt;
+}
+
+.vec-spinner input
+{
+    width: 35pt;
+}

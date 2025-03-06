@@ -232,7 +232,7 @@ export class DAGCanvasContext
 		this.ctx.fill()
 	}
 
-	decorate_edges(
+	decorate_edges_num(
 		dag: FramedDAG,
 		baked: BakedDAGEmbedding,
 	)
@@ -257,6 +257,36 @@ export class DAGCanvasContext
 				let pos = bez.get_point(0.91);
 				this.draw_text(edge_idx.toString(), pos, "#ffffff", "#000000", 20);
 			}
+		}
+	}
+
+	decorate_edges_arrow(
+		baked: BakedDAGEmbedding,
+	)
+	{
+		const width = this.parent.draw_options.edge_weight() * 2;
+		
+		for(let edge = 0; edge < baked.edges.length; edge++)
+		{
+			let bez = baked.edges[edge];
+			let direc  = bez.get_direc(0.5).normalized().scale(-1);
+			let midway = this.parent.local_trans(bez.get_point(0.5))
+				.add(direc.scale(-width));
+			let p1 = midway
+				.add(direc.scale(width))
+				.add(direc.rot90().scale(width));
+			let p2 = midway
+				.add(direc.scale(width))
+				.add(direc.rot90().scale(-width));		
+
+			this.ctx.fillStyle = this.parent.draw_options.edge_color();
+
+			this.ctx.beginPath();
+			this.ctx.moveTo(midway.x, midway.y);
+			this.ctx.lineTo(p1.x, p1.y);
+			this.ctx.lineTo(p2.x, p2.y);
+
+			this.ctx.fill();
 		}
 	}
 }

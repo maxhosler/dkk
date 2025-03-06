@@ -1,35 +1,85 @@
 import { Edge, FramedDAG } from "../math/dag";
-import { Option } from "../util/result";
+import { Option, Result } from "../util/result";
 import { Bezier, clamp, Vector2 } from "../util/num";
+
+export type AngleOverrideType = "none" | "absolute" | "relative" | "vec-abs";
+export class AngleOverride
+{
+	readonly type: AngleOverrideType;
+	readonly inner: number | Vector2;
+
+	private constructor(type: AngleOverrideType, angle: number | Vector2)
+	{
+		this.type = type;
+		this.inner = angle;
+	}
+
+	get_vector(
+		default_angle: number,
+		direction_vec: Vector2,
+		scale: number
+	): Vector2
+	{
+		if(this.type == "none")
+			return direction_vec.rot(default_angle).scale(scale)
+		if(this.type == "relative")
+			return direction_vec.rot(this.inner as number).scale(scale)
+		if(this.type == "absolute")
+			return Vector2.right().rot(this.inner as number).scale(scale)
+		if(this.type == "vec-abs")
+			return this.inner as Vector2;
+		throw new Error("Unhandled branch");
+	}
+
+	static none(): AngleOverride
+	{
+		return new AngleOverride("none", 0);
+	}
+	static absolute(ang: number): AngleOverride
+	{
+		return new AngleOverride("absolute", ang);
+	}
+	static relative(ang: number): AngleOverride
+	{
+		return new AngleOverride("relative", ang);
+	}
+
+	static vec_abs(vec: Vector2): AngleOverride
+	{
+		return new AngleOverride("vec-abs", vec);
+	}
+}
 
 export type EdgeData = {
 	start_list_pos: [pos: number, out_of: number],
 	end_list_pos:   [pos: number, out_of: number],
 
-	start_ang_override: Option<number>,
-	end_ang_override:   Option<number>,
+	start_ang_override: AngleOverride,
+	end_ang_override:   AngleOverride,
 }
 
 export type VertData = {
 	position: Vector2,
-	spread: number
+	spread_out: number,
+	spread_in: number
 }
 
 export class FramedDAGEmbedding
 {
-	readonly base_dag: FramedDAG;
+	readonly dag: FramedDAG;
 	
 	vert_data: Array<VertData>;
 	edge_data: Array<EdgeData>;
 
 	constructor(dag: FramedDAG)
 	{
-		this.base_dag = dag.clone();
+		this.dag = dag.clone();
 		this.vert_data = Array.from(
 			{length:dag.num_verts()},
 			() => ({
 				position: Vector2.zero(),
-				spread: Math.PI / 2
+				spread_out: Math.PI / 2,
+				spread_in: Math.PI / 2
 			})
 		);
 		this.edge_data = Array.from(
@@ -37,8 +87,8 @@ export class FramedDAGEmbedding
 			() => ({ 
 				start_list_pos: [1,1],
 				end_list_pos: [1,1],
-				start_ang_override: Option.none(),
-				end_ang_override: Option.none(),
+				start_ang_override: AngleOverride.none(),
+				end_ang_override: AngleOverride.none(),
 			})
 		);
 
@@ -47,44 +97,48 @@ export class FramedDAGEmbedding
 
 	default_layout()
 	{
-		let edge_mid_heights: {[key:number]:number} = {};
-		for(let v = 0; v < this.base_dag.num_verts(); v++)
-		{
-			let out_edges: number[] = this.base_dag.get_out_edges(v).unwrap();
-			for(let i = 0; i < out_edges.length; i++)
-			{
-				let edge = out_edges[i];
-				this.edge_data[edge].start_list_pos = [i, out_edges.length];
-				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
-				if(out_edges.length > 1)
-					edge_mid_heights[edge] += i / (out_edges.length-1) - 0.5;
-			}
+		this.default_edges();
+		this.default_verts();
+	}
 
-			let in_edges: number[] = this.base_dag.get_in_edges(v).unwrap();
-			for(let i = 0; i < in_edges.length; i++)
-			{
-				let edge = in_edges[i];
-				this.edge_data[edge].end_list_pos = [i, in_edges.length];
-				edge_mid_heights[edge] = edge_mid_heights[edge] || 0;
-				if(in_edges.length > 1)
-					edge_mid_heights[edge] += i / (in_edges.length-1) - 0.5;
-			}
-		}
+	default_edges()
+	{
+		this.edge_data = Array.from(
+			{length:this.dag.num_edges()},
+			() => ({ 
+				start_list_pos: [1,1],
+				end_list_pos: [1,1],
+				start_ang_override: AngleOverride.none(),
+				end_ang_override: AngleOverride.none(),
+			})
+		);
+		this.recomp_list_pos();
+	}
 
+	default_verts()
+	{
+		this.vert_data = Array.from(
+			{length:this.dag.num_verts()},
+			() => ({
+				position: Vector2.zero(),
+				spread_out: Math.PI / 2,
+				spread_in: Math.PI / 2
+			})
+		);
 
 		let depths_arr: number[] = []
 
-		for(let i = 0; i < this.base_dag.num_verts(); i++)
+		for(let i = 0; i < this.dag.num_verts(); i++)
 		{
 			depths_arr.push(i)
 		}
 		depths_arr.sort(
 			(a,b) => {
-				if( this.base_dag.preceeds(a,b))
+				if( this.dag.preceeds(a,b))
 				{
 					return -1;
 				}
-				else if (this.base_dag.preceeds(b,a))
+				else if (this.dag.preceeds(b,a))
 				{
 					return 1;
 				}
@@ -101,17 +155,73 @@ export class FramedDAGEmbedding
 		}
 	}
 
+	recomp_list_pos()
+	{
+		for(let v = 0; v < this.dag.num_verts(); v++)
+		{
+			let out_edges: number[] = this.dag.get_out_edges(v).unwrap();
+			for(let i = 0; i < out_edges.length; i++)
+			{
+				let edge = out_edges[i];
+				this.edge_data[edge].start_list_pos = [i, out_edges.length];0.5;
+			}
+
+			let in_edges: number[] = this.dag.get_in_edges(v).unwrap();
+			for(let i = 0; i < in_edges.length; i++)
+			{
+				let edge = in_edges[i];
+				this.edge_data[edge].end_list_pos = [i, in_edges.length];
+			}
+		}
+	}
+
 	bake(): BakedDAGEmbedding
 	{
 		let verts: Vector2[] = [];
 		let edges: Bezier[] = [];
 
+		let vert_in_out: [Vector2,Vector2][] = [];
+
 		for(let x of this.vert_data)
 			verts.push(x.position.clone());
 		
-		for(let i = 0; i < this.base_dag.num_edges(); i++)
+		for(let i = 0; i < this.dag.num_verts(); i++)
 		{
-			let edge: Edge = this.base_dag.get_edge(i).unwrap();
+			let before: number[] = [];
+			for(let edge of this.dag.get_in_edges(i).unwrap())
+			{
+				let start = this.dag.get_edge(edge).unwrap().start;
+				if(!before.includes(start))
+					before.push(start)
+			}
+
+			let after: number[] = [];
+			for(let edge of this.dag.get_out_edges(i).unwrap())
+			{
+				let end = this.dag.get_edge(edge).unwrap().end;
+				if(!after.includes(end))
+					after.push(end)
+			}
+
+			let before_avg = Vector2.zero();
+			let after_avg = Vector2.zero();
+
+			for(let b of before)
+				before_avg = before_avg.add(verts[b].scale(1/before.length))
+			for(let a of after)
+				after_avg = after_avg.add(verts[a].scale(1/after.length))
+
+			vert_in_out.push(
+				[
+					verts[i].sub(before_avg).normalized(),
+					after_avg.sub(verts[i]).normalized(),
+				]
+			)
+		}
+
+		for(let i = 0; i < this.dag.num_edges(); i++)
+		{
+			let edge: Edge = this.dag.get_edge(i).unwrap();
 			let edge_data = this.edge_data[i];
 
 			let start_data = this.vert_data[edge.start];
@@ -120,21 +230,22 @@ export class FramedDAGEmbedding
 			let start_pos = start_data.position;
 			let end_pos = end_data.position;
 			let delta = end_pos.sub(start_pos);
-			
 			let tan_len = delta.norm() / 2;
 
 			let spread_percents = spread_percent(edge_data);
-			let start_ang = edge_data.start_ang_override.unwrap_or(
-				spread_percents[0] * start_data.spread
-			)
-			let end_ang = edge_data.end_ang_override.unwrap_or(
-				-spread_percents[1] * end_data.spread
-			)
 
-			let start_tan = delta.rot(start_ang)
-				.normalized().scale(tan_len);
-			let end_tan = delta.rot(end_ang)
-				.normalized().scale(tan_len);
+			let start_tan = edge_data.start_ang_override
+				.get_vector(
+					spread_percents[0] * start_data.spread_out,
+					vert_in_out[edge.start][1],
+					tan_len
+				);
+			let end_tan = edge_data.end_ang_override
+				.get_vector(
+					-spread_percents[1] * end_data.spread_in,
+					vert_in_out[edge.end][0],
+					tan_len
+				);
 
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
@@ -155,13 +266,31 @@ export class FramedDAGEmbedding
 		};
 	}
 
-	copy_in_data(vd: VertData[], ed: EdgeData[])
+	remove_edge(idx: number): boolean
 	{
-		for(let i = 0; i < Math.min(vd.length, this.vert_data.length); i++)
-			this.vert_data[i] = vd[i];
-		
-		for(let i = 0; i < Math.min(ed.length, this.edge_data.length); i++)
-			this.edge_data[i] = ed[i];
+		if(this.dag.remove_edge(idx))
+		{
+			this.edge_data.splice(idx, 1);
+			return true;
+		}
+		return false;
+	}
+
+	add_edge(start: number, end: number): Result<number>
+	{
+		let res = this.dag.add_edge(start, end);
+		if(res.is_ok())
+		{
+			this.edge_data.push({ 
+				start_list_pos: [1,1],
+				end_list_pos: [1,1],
+				start_ang_override: AngleOverride.none(),
+				end_ang_override: AngleOverride.none(),
+			})
+			this.recomp_list_pos();
+		}
+
+		return res;
 	}
 }
 

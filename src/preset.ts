@@ -1,4 +1,4 @@
-import { FramedDAGEmbedding } from "./draw/dag_layout";
+import { AngleOverride, FramedDAGEmbedding } from "./draw/dag_layout";
 import { FramedDAG } from "./math/dag";
 import { clamp } from "./util/num";
 import { Option } from "./util/result";
@@ -113,21 +113,21 @@ export function caracol_emb(num_verts: number): FramedDAGEmbedding
 	for(let i = 0; i < num_verts-2; i++)
 	{
 		let ang = -ang_max * ( 1 - i/(num_verts-2) );
-		emb.edge_data[i].start_ang_override = Option.some(ang);
+		emb.edge_data[i].start_ang_override = AngleOverride.relative(ang);
 	}
 
 	//spine: [num_verts-2..2*num_verts-3]
 	for(let i = num_verts-2; i < 2 * num_verts-3; i++)
 	{
-		emb.edge_data[i].start_ang_override = Option.some(0);
-		emb.edge_data[i].end_ang_override = Option.some(0);
+		emb.edge_data[i].start_ang_override = AngleOverride.relative(0);
+		emb.edge_data[i].end_ang_override = AngleOverride.relative(0);
 	}
 
 	for(let i = 0; i < num_verts-2; i++)
 	{
 		let j = i + 2 * num_verts-3;
 		let ang = -ang_max * ( (i+1)/(num_verts-2) );
-		emb.edge_data[j].end_ang_override = Option.some(ang);
+		emb.edge_data[j].end_ang_override = AngleOverride.relative(ang);
 	}
 
     return emb;

@@ -253,6 +253,18 @@ export class FramedDAG {
 
         return out;
     }
+
+    valid(): boolean
+    {
+        let onesource = this.sources().length == 1;
+        let onesink = this.sinks().length == 1;
+
+        //Should guarantee connectedness, as 
+        //If there are two conn-components, they
+        //each have at least one source/sink
+
+        return onesink && onesource;
+    }
 }
 
 function valid_replacement(arr1: Array<number>, arr2: Array<number>): boolean
