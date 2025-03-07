@@ -50,12 +50,29 @@ export class AngleOverride
 	}
 
 	//This exists for things loaded from JSON.
-	static reapply_methods(x: AngleOverride): AngleOverride
+	static from_json_ob(obj: Object): Result<AngleOverride>
 	{
-		return new AngleOverride(
+		for(let field of ["inner", "type"])
+			if(!(field in obj))
+				return Result.err("MissingField", "AngleOverride missing field '" + field + "'.")
+		let x = obj as AngleOverride;
+		if(!(["none", "absolute", "relative", "vec-abs"].includes(x.type)))
+			return Result.err("InvalidData", "AngleOverride type invalid.")
+
+		let inner = x.inner;
+		if(typeof inner != "number")
+		{
+			if(!("x" in inner) || !("y" in inner))
+				return Result.err("InvalidData", "AngleOverride inner value invalid.")
+			if(typeof inner.x != "number" || typeof inner.y != "number")
+				return Result.err("InvalidData", "AngleOverride inner value invalid.")
+			inner = new Vector2(inner.x, inner.y);
+		}
+			
+		return Result.ok(new AngleOverride(
 			x.type,
 			x.inner
-		);
+		));
 	}
 }
 
@@ -343,8 +360,6 @@ export class FramedDAGEmbedding
 		
 		let data = obj as JSONFramedDagEmbedding;
 
-		//TODO Validate
-
 		let dag = FramedDAG.from_json_ob(data.dag);
 		if(dag.is_err())
 			return dag.err_to_err();
@@ -355,6 +370,10 @@ export class FramedDAGEmbedding
 		//So they get their prototypes
 		for(let vd of emb.vert_data)
 		{
+			if(!("x" in vd.position) || !("y" in vd.position) ||
+			    typeof vd.position.x != "number" || typeof vd.position.y != "number")
+				return Result.err("InvalidData", "Vertex position not a valid vector.")
+
 			vd.position = new Vector2(
 				vd.position.x,
 				vd.position.y
@@ -363,8 +382,16 @@ export class FramedDAGEmbedding
 
 		for(let ed of emb.edge_data)
 		{
-			ed.end_ang_override = AngleOverride.reapply_methods(ed.end_ang_override);
-			ed.start_ang_override = AngleOverride.reapply_methods(ed.start_ang_override);
+			let end_override = AngleOverride.from_json_ob(ed.end_ang_override);
+			let start_override = AngleOverride.from_json_ob(ed.start_ang_override);
+
+			if(end_override.is_err())
+				return end_override.err_to_err();
+			if(start_override.is_err())
+				return start_override.err_to_err();
+
+			ed.end_ang_override = end_override.unwrap();
+			ed.start_ang_override = start_override.unwrap();
 		}
 
 		return Result.ok(emb);
