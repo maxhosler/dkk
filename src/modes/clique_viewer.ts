@@ -84,12 +84,10 @@ export class CliqueViewer implements IMode
         );
 
         draw_options.add_change_listener(() => {
-            if(this) {
-                let nc = this.cliques.cliques[this.current_clique];
-                this.poly_canvas.set_clique(nc);
-                this.draw();
-            }
-            if(this.swap_box) this.swap_box.update_color();
+            let nc = this.cliques.cliques[this.current_clique];
+            this.poly_canvas.set_clique(nc);
+            this.draw();
+            this.update_swap_box();
         });
 
         //sidebar
@@ -166,7 +164,8 @@ export class CliqueViewer implements IMode
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
 
-        this.update_route_enabled()
+        this.update_route_enabled();
+        this.update_swap_box();
     }
 
     clear_global_events(): void {
@@ -258,6 +257,16 @@ export class CliqueViewer implements IMode
             ) != this.current_clique;
             this.swap_box.show_enabled(r, en);
         }
+    }
+
+    update_swap_box()
+    {
+        this.swap_box.update_color();
+        if(this.draw_options.show_exceptional())
+            this.swap_box.show_all_boxes()
+        else
+            for(let r of this.cliques.exceptional_routes)
+                this.swap_box.hide_box(r);
     }
 
     /*

@@ -2,8 +2,10 @@ import { DrawOptions } from "../draw/draw_options";
 
 export class SwapBox
 {
+    main_box: HTMLDivElement;
     draw_options: DrawOptions;
     on_click: (idx: number) => void;
+
     boxes: HTMLDivElement[];
     route_idxs: number[];
 
@@ -29,6 +31,7 @@ export class SwapBox
         clique_size: number
     )
     {
+        this.main_box = main_box;
         this.draw_options = draw_options;
         this.on_click = on_click;
 
@@ -97,6 +100,23 @@ export class SwapBox
         if(!enabled)
         {
             box.classList.add("swap-greyed");
+        }
+    }
+
+    show_all_boxes()
+    {
+        for(let box of this.boxes)
+            box.style.display = ""
+    }
+
+    hide_box(route_idx: number)
+    {
+        for(let i = 0; i < this.route_idxs.length; i++)
+        {
+            if(this.route_idxs[i] == route_idx)
+            {
+                this.boxes[i].style.display = "none"
+            }
         }
     }
 }
