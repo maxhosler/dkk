@@ -262,7 +262,7 @@ export class DAGCliques
 			let in_all = true;
 			for(let clq of this.cliques)
 			{
-				if(clq.routes.includes(i))
+				if(!clq.routes.includes(i))
 				{
 					in_all = false;
 					break;

@@ -296,6 +296,8 @@ export class CliqueViewer implements IMode
 
             //routes
             let routes = this.cliques.routes_at(edge_idx, this.current_clique);
+            if(!this.draw_options.show_exceptional())
+                routes = routes.filter( i => !this.cliques.exceptional_routes.includes(i));
             if(routes.length == 0)
                 continue;
             let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
@@ -452,6 +454,8 @@ export class CliqueViewer implements IMode
                 .normalized();
 
             let routes = this.cliques.routes_at(edge_idx, clique_idx);
+            if(!this.draw_options.show_exceptional())
+                routes = routes.filter( i => !this.cliques.exceptional_routes.includes(i));
             if(routes.length == 0)
                 continue;
 

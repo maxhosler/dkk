@@ -27,6 +27,7 @@ export class DrawOptions
 	private f_edge_halo: number = 6; //Not in settings
 	private f_label_framing: boolean = true;
 	private f_arrows: boolean = true;
+	private f_show_exceptional: boolean = true;
 
 	//HASSE
 	private f_hasse_edge_weight: number = 10;
@@ -95,6 +96,11 @@ export class DrawOptions
 	{
 		this.f_arrows = b;
 		this.on_change();
+	}
+	set_show_exceptional(b: boolean)
+	{
+		this.f_show_exceptional = b;
+		this.on_change()
 	}
 	set_route_weight(weight: number)
 	{
@@ -268,6 +274,11 @@ export class DrawOptions
 	{
 		return this.f_arrows; 
 	}
+	show_exceptional(): boolean
+	{
+		return this.f_show_exceptional;
+	}
+	
 	tangent_handle_size(): number
 	{
 		return this.f_tangent_handle_size;

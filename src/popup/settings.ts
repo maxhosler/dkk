@@ -10,6 +10,7 @@ export class SettingsPopup extends Popup
 	route_weight_spinner: HTMLInputElement;
 	label_checkbox: HTMLInputElement;
 	arrow_checkbox: HTMLInputElement;
+	show_exceptional_cb: HTMLInputElement;
 
 	hasse_weight_spinner: HTMLInputElement;
 	hasse_show_clique_cb: HTMLInputElement;
@@ -28,6 +29,8 @@ export class SettingsPopup extends Popup
 	simplex_color_selector: HTMLInputElement;
 
 	reset_button: HTMLButtonElement;
+
+	get_funcs: (() => void)[] = [];
 
 	constructor(base: HTMLElement, parent: DKKProgram)
 	{
@@ -81,6 +84,12 @@ export class SettingsPopup extends Popup
 			"Direction arrows",
 			"settings-arrows-cb",
 			(val) => this.parent.draw_options.set_arrows(val)
+		)
+		this.show_exceptional_cb = SettingsPopup.add_tickbox_row(
+			col1_table,
+			"Show exceptional routes",
+			"settings-exceptional-cb",
+			(val) => this.parent.draw_options.set_show_exceptional(val)
 		)
 
 		SettingsPopup.add_title(col1_table, "Hasse diagram");
@@ -209,6 +218,9 @@ export class SettingsPopup extends Popup
 
 	sync_with_settings()
 	{
+		for(let f of this.get_funcs)
+			f();
+
 		this.simplrend_dropdown.value = 
 			this.parent.draw_options.simplex_render_mode();
 		this.vert_radius_spinner.value = 
@@ -221,6 +233,8 @@ export class SettingsPopup extends Popup
 			this.parent.draw_options.label_framing();
 		this.arrow_checkbox.checked = 
 			this.parent.draw_options.arrows();
+		this.show_exceptional_cb.checked =
+			this.parent.draw_options.show_exceptional();
 
 		this.hasse_weight_spinner.value = 
 			this.parent.draw_options.hasse_edge_weight().toString();
