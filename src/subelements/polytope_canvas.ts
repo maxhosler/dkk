@@ -230,6 +230,7 @@ export class PolytopeCanvas
         );
 
         this.set_clique(current_clique);
+        this.resize_canvas();
     }
 
     set_clique(current_clique: Clique)

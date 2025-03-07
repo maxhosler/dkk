@@ -324,6 +324,14 @@ html, body {
     position: relative;
 }
 
+.clq-minify
+{
+    flex: 0% !important;
+    height: 30pt;
+    max-height: 30pt;
+    min-height: 30pt;
+}
+
 #clq-root canvas
 {
     box-sizing: border-box;

@@ -115,6 +115,13 @@ export class CliqueViewer implements IMode
         let segments = build_right_area_zones();
         right_area.appendChild(segments.root);
 
+        //Resize
+        if(this.polytope.dim > 3)
+        {
+            segments.poly.className = "clq-minify";
+        }
+
+
         //Graph Canvas
         let {canvas: clique_canvas, element: c_canvas_element} = DAGCanvas.create(draw_options);
 		segments.clique.appendChild(c_canvas_element);
