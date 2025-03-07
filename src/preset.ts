@@ -67,7 +67,7 @@ function preset_dag(name: string): FramedDAG
         out.add_edge(1,2).unwrap();
         return out;
     }
-    console.warn("Invalid test_dag number, returning cube.")
+    console.warn(`Invalid preset_dag name: ${name}, returning cube.`)
     return preset_dag("cube");
 }
 

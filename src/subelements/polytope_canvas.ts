@@ -97,7 +97,7 @@ export class PolytopeCanvas
         this.text_overlay.id = "poly-canvas-overlay";
         this.root.appendChild(this.text_overlay);
 
-        this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext; //TODO: Handle fail.
+        this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext;
         this.external_buffers = new FaceBuffers(
             this.new_float_buffer([]),
             this.new_float_buffer([]),
@@ -230,6 +230,7 @@ export class PolytopeCanvas
         );
 
         this.set_clique(current_clique);
+        this.resize_canvas();
     }
 
     set_clique(current_clique: Clique)
@@ -646,16 +647,12 @@ function load_shader(ctx: WebGLRenderingContext, type: GLenum, src: string): Web
     ctx.shaderSource(shader, src);
     ctx.compileShader(shader);
 
-    
-    /*
     if (!ctx.getShaderParameter(shader, ctx.COMPILE_STATUS)) {
         alert(
             `An error occurred compiling the shaders: ${ctx.getShaderInfoLog(shader)}`,
         );
-        ctx.deleteShader(shader);
-        return;
     }
-    */
+    
 
     return shader;
 }
@@ -672,7 +669,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
     ctx.attachShader(shader_program, frag_shader);
     ctx.linkProgram(shader_program);
     
-    /*
+    
     if (!ctx.getProgramParameter(shader_program, ctx.LINK_STATUS)) {
         alert(
         `Unable to initialize the shader program: ${ctx.getProgramInfoLog(
@@ -680,7 +677,7 @@ function init_shader_prog(ctx: WebGLRenderingContext): ProgramData
         )}`,
         );
     }
-    */
+
     
     return {
         program: shader_program,

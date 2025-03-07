@@ -31,6 +31,7 @@ export class DrawOptions
 	//HASSE
 	private f_hasse_edge_weight: number = 10;
 	private f_hasse_show_cliques: boolean = true;
+	private f_hasse_node_size: number = 10;
 	private f_hasse_mini_dag_size: number = 80;
 	private f_hasse_mini_vert_rad: number = 8;
 	private f_hasse_mini_route_weight: number = 6;
@@ -54,6 +55,8 @@ export class DrawOptions
 	private f_selection_color: string = "#2160c487"; //Not in settings box
 	private f_edge_color: string = "#222222"; //Not in settings box
 	private f_hasse_current_color: string = "#cdcdcd"; //Not in settings
+	private f_hasse_node_color: string = "#000000";
+	private f_hasse_current_node_color: string = "#ffffff";
 
 	//AUXILIARY
 	private change_listeners: (()=>void)[] = [];
@@ -170,6 +173,10 @@ export class DrawOptions
 		this.on_change();
 	}
 
+	hasse_node_size(): number
+	{
+		return this.f_hasse_node_size;
+	}
 	hasse_mini_vert_rad(): number
 	{
 		return this.f_hasse_mini_vert_rad;
@@ -314,6 +321,14 @@ export class DrawOptions
 	handle_color(): string
 	{
 		return this.f_handle_color;
+	}
+	hasse_node_color(): string
+	{
+		return this.f_hasse_node_color;
+	}
+	hasse_current_node_color(): string
+	{
+		return this.f_hasse_current_color;
 	}
 
 	simplex_render_mode(): SimplexRenderMode

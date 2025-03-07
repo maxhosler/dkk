@@ -324,6 +324,14 @@ html, body {
     position: relative;
 }
 
+.clq-minify
+{
+    flex: 0% !important;
+    height: 30pt;
+    max-height: 30pt;
+    min-height: 30pt;
+}
+
 #clq-root canvas
 {
     box-sizing: border-box;
@@ -354,6 +362,13 @@ html, body {
     height: 25pt;
 }
 
+#open-error-zone
+{
+    color: red;
+    font-style: italic;
+    font-size: small;
+}
+
 .small-link
 {
     font-size: small;
@@ -376,7 +391,7 @@ html, body {
 
 .angle-override-table input
 {
-    width: 40pt;
+    width: 50pt;
 }
 
 .angle-override-table td
@@ -386,5 +401,5 @@ html, body {
 
 .vec-spinner input
 {
-    width: 35pt;
+    width: 50pt;
 }

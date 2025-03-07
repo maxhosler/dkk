@@ -7,12 +7,13 @@ export const dag_error_types = {
 
 };
 export type Edge = { start: number, end: number };
+export type JSONFramedDag = {num_verts: number, out_edges: number[][], in_edges: number[][]};
 export class FramedDAG {
     private f_num_edges: number;
     private f_num_verts: number;
-    private out_edges: Array<Array<number>>; // out_edges[i] is the list of edges going out
+    private out_edges: number[][]; // out_edges[i] is the list of edges going out
                                              // of vertex v_i, in order
-    private in_edges:  Array<Array<number>>; // Same as above, except with in-edges.
+    private in_edges:  number[][]; // Same as above, except with in-edges.
     private edges: Array<Edge> = [];
 
     constructor(num_verts: number) {
@@ -264,6 +265,107 @@ export class FramedDAG {
         //each have at least one source/sink
 
         return onesink && onesource;
+    }
+
+    to_json_ob(): JSONFramedDag
+    {
+        let obj = {
+            num_verts: this.num_verts(),
+            out_edges: structuredClone(this.out_edges),
+            in_edges: structuredClone(this.in_edges)
+        };
+        return obj;
+    }
+
+    to_json(): string
+    {
+        return JSON.stringify(this.to_json_ob())
+    }
+
+    static from_json_ob(data: JSONFramedDag): Result<FramedDAG>
+    {
+        let edges: {[e: number]: [number, number]} = {};
+        let max_edge = -1;
+        for(let v = 0; v < data.num_verts; v++)
+        {
+            for(let e of data.out_edges[v])
+            {
+                if(!(e in edges))
+                    edges[e] = [-1,-1]
+                if(edges[e][0] != -1) return Result.err("InvalidData", `Edge ${e} has multiple start points.`)
+                edges[e][0] = v;
+                max_edge = Math.max(e, max_edge);
+            }
+            for(let e of data.in_edges[v])
+            {
+                if(!(e in edges))
+                    edges[e] = [-1,-1]
+                if(edges[e][1] != -1) return Result.err("InvalidData", `Edge ${e} has multiple end points.`)
+                edges[e][1] = v;
+                max_edge = Math.max(e, max_edge);
+            }
+        }
+        let num_edges = max_edge + 1;
+
+        let out = new FramedDAG(data.num_verts);
+
+        for(let e = 0; e < num_edges; e++)
+        {
+            if(!(e in edges))
+                return Result.err("InvalidData", "Edge list not saturated.")
+
+            let edge = edges[e];
+
+            if(edge[0] == -1)
+                return Result.err("InvalidData", `Edge ${e} has no start point.`);
+            if(edge[1] == -1)
+                return Result.err("InvalidData", `Edge ${e} has no end point.`)
+
+            let succ = out.add_edge(edge[0], edge[1])
+
+            if(!succ.is_ok())
+                return succ.err_to_err()
+        }
+
+        for(let v = 0; v < data.num_verts; v++)
+        {
+            let in_framing = data.in_edges[v];
+            let out_framing = data.out_edges[v];
+
+            let in_succ = out.reorder_in_edges(v, in_framing);
+            let out_succ = out.reorder_out_edges(v, out_framing);
+
+            //Is this possible, given how the rest of the function works?
+            if(!in_succ)
+                return Result.err("InvalidData", `In-ordering on vertex ${v} invalid.`);
+            if(!out_succ)
+                return Result.err("InvalidData", `Out-ordering on vertex ${v} invalid.`)
+        }
+
+        return Result.ok(out);
+    }
+
+    static from_json(str: string): Result<FramedDAG>
+    {
+        let obj: Object;
+        try
+        {
+            obj = JSON.parse(str);
+        }
+        catch
+        {
+            return Result.err(
+                "InvalidJSON",
+                "JSON file was malformed."
+            );
+        }
+        for(let field of ["num_verts", "out_edges", "in_edges"])
+            if(!(field in obj))
+                return Result.err("MissingField", "JSON missing field '"+field+"'.")
+        
+        let data = obj as JSONFramedDag;
+
+        return FramedDAG.from_json_ob(data);
     }
 }
 

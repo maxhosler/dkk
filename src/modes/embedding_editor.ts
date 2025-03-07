@@ -76,8 +76,6 @@ class Selection
 		//Some of these conditions are redundant,
 		//but they make it more explicit what is going on
 
-		//TODO: Factor out duplication
-
 		if(shift_held && this.single() && this.type == clicked)
 		{
 			let pair: [number, number] = [this.inner as number, index];
@@ -201,6 +199,9 @@ export class EmbeddingEditor implements IMode
 	current_embedding(): FramedDAGEmbedding {
         return this.embedding;
     }
+	current_data_json(): string {
+		return this.embedding.to_json();
+	}
 
 
 	static destructive_new(

@@ -1,9 +1,11 @@
+import { FramedDAGEmbedding } from "../draw/dag_layout";
 import { DKKProgram } from "../main";
-import { PRESETS } from "../preset";
+import { preset_dag_embedding, PRESETS } from "../preset";
 import { Popup } from "./popup";
 
 export class CVOpenPopup extends Popup
 {
+	error_div: HTMLDivElement;
 	table: HTMLTableElement;
 	preset_dropdown: HTMLSelectElement;
 
@@ -12,6 +14,10 @@ export class CVOpenPopup extends Popup
 	{
 		super(base, "Open", () => parent.popup_open = false);
 		this.parent = parent;
+
+		this.error_div = document.createElement("div");
+		this.error_div.id = "open-error-zone";
+		this.popup_body.appendChild(this.error_div);
 
 		let table = document.createElement("table");
 		this.popup_body.appendChild(table);
@@ -30,13 +36,42 @@ export class CVOpenPopup extends Popup
 		let preset_button = document.createElement("button");
 		preset_button.innerText = "Open";
 		preset_button.onclick = () => this.load_preset();
-		this.add_row("From preset", preset_dropdown, preset_button)
+		this.add_row("From preset", preset_dropdown, preset_button);
+		
+		let file_open = document.createElement("input");
+		file_open.type = "file";
+		file_open.accept = "json";
+		file_open.addEventListener("change", async () => {
+			if (file_open.files)
+			if (file_open.files.length == 1) {
+				let file = file_open.files[0];
+				let reader = new FileReader();
+				reader.onload = () => {
+					let fe = FramedDAGEmbedding.from_json(reader.result as string);
+					if(fe.is_err())
+					{
+						this.show_err(fe.error().err_message);
+						return;
+					}
+
+					this.parent.set_dag(fe.unwrap());
+					this.close();
+
+				};
+				reader.onerror = () =>
+				{
+					this.show_err(reader.error?.message as string)
+				};
+				reader.readAsText(file);
+			}
+		});
+		this.add_row("From file", file_open, null);
 	}
 
 	load_preset()
 	{
 		let name = this.preset_dropdown.value;
-		this.parent.set_clique_viewer(name);
+		this.parent.set_dag(preset_dag_embedding(name));
 		this.close();
 	}
 
@@ -68,5 +103,10 @@ export class CVOpenPopup extends Popup
 		row.appendChild(control2);
 
 		this.table.appendChild(row);
+	}
+
+	show_err(err: string)
+	{
+		this.error_div.innerText = err;
 	}
 }

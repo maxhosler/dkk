@@ -1,4 +1,4 @@
-import { Edge, FramedDAG } from "../math/dag";
+import { Edge, FramedDAG, JSONFramedDag } from "../math/dag";
 import { Option, Result } from "../util/result";
 import { Bezier, clamp, Vector2 } from "../util/num";
 
@@ -48,6 +48,32 @@ export class AngleOverride
 	{
 		return new AngleOverride("vec-abs", vec);
 	}
+
+	//This exists for things loaded from JSON.
+	static from_json_ob(obj: Object): Result<AngleOverride>
+	{
+		for(let field of ["inner", "type"])
+			if(!(field in obj))
+				return Result.err("MissingField", "AngleOverride missing field '" + field + "'.")
+		let x = obj as AngleOverride;
+		if(!(["none", "absolute", "relative", "vec-abs"].includes(x.type)))
+			return Result.err("InvalidData", "AngleOverride type invalid.")
+
+		let inner = x.inner;
+		if(typeof inner != "number")
+		{
+			if(!("x" in inner) || !("y" in inner))
+				return Result.err("InvalidData", "AngleOverride inner value invalid.")
+			if(typeof inner.x != "number" || typeof inner.y != "number")
+				return Result.err("InvalidData", "AngleOverride inner value invalid.")
+			inner = new Vector2(inner.x, inner.y);
+		}
+			
+		return Result.ok(new AngleOverride(
+			x.type,
+			x.inner
+		));
+	}
 }
 
 export type EdgeData = {
@@ -62,6 +88,13 @@ export type VertData = {
 	position: Vector2,
 	spread_out: number,
 	spread_in: number
+}
+
+export type JSONFramedDagEmbedding =
+{
+	dag: JSONFramedDag,
+	vert_data: VertData[],
+	edge_data: EdgeData[]
 }
 
 export class FramedDAGEmbedding
@@ -291,6 +324,77 @@ export class FramedDAGEmbedding
 		}
 
 		return res;
+	}
+
+	to_json_ob(): JSONFramedDagEmbedding
+	{
+		return {
+			dag: this.dag.to_json_ob(),
+			vert_data: structuredClone(this.vert_data),
+			edge_data: structuredClone(this.edge_data)
+		};
+	}
+
+	to_json(): string
+	{
+		return JSON.stringify(this.to_json_ob())
+	}
+
+	static from_json(json: string): Result<FramedDAGEmbedding>
+	{
+        let obj: Object;
+        try
+        {
+            obj = JSON.parse(json);
+        }
+        catch
+        {
+            return Result.err(
+                "InvalidJSON",
+                "JSON file was malformed."
+            );
+        }
+        for(let field of ["dag", "vert_data", "edge_data"])
+            if(!(field in obj))
+                return Result.err("MissingField", "JSON missing field '"+field+"'.")
+		
+		let data = obj as JSONFramedDagEmbedding;
+
+		let dag = FramedDAG.from_json_ob(data.dag);
+		if(dag.is_err())
+			return dag.err_to_err();
+		let emb = new FramedDAGEmbedding(dag.unwrap());
+		emb.vert_data = data.vert_data;
+		emb.edge_data = data.edge_data;
+
+		//So they get their prototypes
+		for(let vd of emb.vert_data)
+		{
+			if(!("x" in vd.position) || !("y" in vd.position) ||
+			    typeof vd.position.x != "number" || typeof vd.position.y != "number")
+				return Result.err("InvalidData", "Vertex position not a valid vector.")
+
+			vd.position = new Vector2(
+				vd.position.x,
+				vd.position.y
+			)
+		}
+
+		for(let ed of emb.edge_data)
+		{
+			let end_override = AngleOverride.from_json_ob(ed.end_ang_override);
+			let start_override = AngleOverride.from_json_ob(ed.start_ang_override);
+
+			if(end_override.is_err())
+				return end_override.err_to_err();
+			if(start_override.is_err())
+				return start_override.err_to_err();
+
+			ed.end_ang_override = end_override.unwrap();
+			ed.start_ang_override = start_override.unwrap();
+		}
+
+		return Result.ok(emb);
 	}
 }
 

@@ -24,6 +24,7 @@ export class DKKProgram
     switch_button: HTMLDivElement;
     open_button: HTMLDivElement;
     new_button: HTMLDivElement
+    save_button: HTMLDivElement
 
 	constructor()
 	{
@@ -47,6 +48,11 @@ export class DKKProgram
         this.new_button.onclick = (ev) => {
             this.new_button_click();
         };
+
+        this.save_button = document.getElementById("save-button") as HTMLDivElement;
+        this.save_button.onclick = (ev) => {
+            this.save_button_click();
+        }
 
         this.show_hide_items();
 	}
@@ -126,6 +132,21 @@ export class DKKProgram
         );
     }
 
+    save_button_click()
+    {
+        let json = this.mode.current_data_json();
+        let blob = new Blob([json], {type: 'text/json'});
+        let a = document.createElement("a");
+        a.setAttribute('href', URL.createObjectURL(blob));
+        a.setAttribute('download', 'dag.json');
+        let ev = new MouseEvent("click", {
+            "view": window,
+            "bubbles": true,
+            "cancelable": false
+        });
+        a.dispatchEvent(ev);
+    }
+
     show_hide_items()
     {
         if(this.mode.name() == "embedding-editor")
@@ -138,10 +159,12 @@ export class DKKProgram
         }
     }
 
-	set_clique_viewer(name: string)
+	set_dag(emb: FramedDAGEmbedding)
 	{
-		var layout = preset_dag_embedding(name);
-		this.mode = CliqueViewer.destructive_new(layout, this.draw_options);
+		if(this.mode.name() == "clique-viewer")
+		    this.mode = CliqueViewer.destructive_new(emb, this.draw_options);
+        else if(this.mode.name() == "embedding-editor")
+            this.mode = EmbeddingEditor.destructive_new(emb, this.draw_options);
 	}
 
     set_new_clique(num_verts: number)

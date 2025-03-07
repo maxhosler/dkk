@@ -581,7 +581,6 @@ function min_bounding_ellipsoid(points: NVector[], tolerance: number = 0.01): {c
 
 function cholesky_decomposition(A: Matrix): Matrix
 {
-    //TODO: Verify symmetric
     let L = Matrix.zero(A.width).inner;
     let n = A.width;
 
