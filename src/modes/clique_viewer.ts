@@ -137,6 +137,11 @@ export class CliqueViewer implements IMode
         let {canvas: hasse_canvas, element: h_canvas_element} = DAGCanvas.create(draw_options);
         segments.hasse.appendChild(h_canvas_element);
         hasse_canvas.resize_canvas();
+        h_canvas_element.addEventListener("click",
+			(ev) => {
+				this.hasse_canvas_click(new Vector2(ev.layerX, ev.layerY))
+			}
+		)
         this.hasse_canvas = hasse_canvas;
 
         //Polytope canvas
@@ -172,6 +177,28 @@ export class CliqueViewer implements IMode
     clique_canvas_click(position: Vector2)
     {
         this.draw_clique()
+    }
+
+    hasse_canvas_click(position: Vector2)
+    {
+        let canvas_pos = this.hasse_canvas.local_trans_inv(position);
+        let positions = this.get_hasse_positions();
+        let closest = -1;
+        let min_dist = Infinity;
+        for(let i = 0; i < positions.length; i++)
+        {
+            let dist = positions[i].sub(canvas_pos).norm();
+            if(dist <= min_dist)
+            {
+                closest = i;
+                min_dist = dist;
+            }
+        }
+
+        if(closest >= 0)
+            this.current_clique = closest;
+
+        this.draw()
     }
 
     route_swap(idx: number)
@@ -307,24 +334,9 @@ export class CliqueViewer implements IMode
     {
         let ctx = this.hasse_canvas.get_ctx();
         ctx.clear();
-        const PADDING: number = 100; //TODO: make parameter
-
-        let v_width = Math.max(1,
-            this.hasse_canvas.width() - 2*PADDING
-        );
-        let v_height = Math.max(1,
-            this.hasse_canvas.height() - 2*PADDING
-        );
 
         let hasse = this.cliques.hasse;
-        let hasse_ext = hasse.bounding_box.extent().scale(2);
-
-        let w_scale = v_width / hasse_ext.x ;
-        let h_scale = v_height / hasse_ext.y;
-        let scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
-
-        let positions = hasse.layout_rows
-            .map(v => v.scale(scale));
+        let positions = this.get_hasse_positions();
 
         for(let i = 0; i < hasse.covering_relation.length; i++)
         for(let j = 0; j < hasse.covering_relation.length; j++)
@@ -472,6 +484,28 @@ export class CliqueViewer implements IMode
                 this.draw_options.hasse_mini_vert_rad()
             )
         }
+    }
+
+    get_hasse_positions(): Vector2[]
+    {
+        const PADDING: number = 100; //TODO: make parameter
+
+        let v_width = Math.max(1,
+            this.hasse_canvas.width() - 2*PADDING
+        );
+        let v_height = Math.max(1,
+            this.hasse_canvas.height() - 2*PADDING
+        );
+
+        let hasse = this.cliques.hasse;
+        let hasse_ext = hasse.bounding_box.extent().scale(2);
+
+        let w_scale = v_width / hasse_ext.x ;
+        let h_scale = v_height / hasse_ext.y;
+        let scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
+
+        return hasse.layout_rows
+            .map(v => v.scale(scale));
     }
 }
 
