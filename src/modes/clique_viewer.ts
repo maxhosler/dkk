@@ -343,24 +343,20 @@ export class CliqueViewer implements IMode
             }
         }
 
-        //TODO: Add to draw options
-        const UNSEL_NODE_COLOR = "#000000";
-        const SEL_NODE_COLOR = "#ffffff";
-        const NODE_SIZE = 12;
-
         if(!this.draw_options.hasse_show_cliques())
         {
             for(let i = 0; i < positions.length; i++)
             {   
-                let color = UNSEL_NODE_COLOR;
+                let color = this.draw_options.hasse_node_color();
                 if(this.current_clique == i)
-                    color = SEL_NODE_COLOR;
+                    color = this.draw_options.hasse_current_node_color();
+
                 let pos = positions[i];
                 ctx.draw_circ(
                     pos,
                     color,
-                    NODE_SIZE
-                )
+                    this.draw_options.hasse_node_size()
+                );
             }
         }
         else
@@ -465,7 +461,7 @@ export class CliqueViewer implements IMode
         {
             ctx.draw_circ(
                 pos.scale(scale).add(center),
-                "#000000",
+                this.draw_options.vertex_color(),
                 this.draw_options.hasse_mini_vert_rad()
             )
         }
