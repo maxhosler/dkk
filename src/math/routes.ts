@@ -99,6 +99,7 @@ export class DAGCliques
 	readonly cliques: Clique[];
 	readonly clique_size: number;
 
+	readonly exceptional_routes: number[];
 	readonly route_swaps: number[][]; //clique index, and route index in clique
 	readonly clique_leq_matrix: boolean[][];
 	readonly shared_subroutes_arr: SharedSubrouteCollection[][];
@@ -253,6 +254,25 @@ export class DAGCliques
 		this.clique_leq_matrix = clique_leq_matrix;
 		
 		this.hasse = new HasseDiagram(clique_leq_matrix, this.cliques);
+
+		let exceptional_routes: number[] = [];
+
+		for(let i = 0; i < this.routes.length; i++)
+		{
+			let in_all = true;
+			for(let clq of this.cliques)
+			{
+				if(clq.routes.includes(i))
+				{
+					in_all = false;
+					break;
+				}
+			}
+			if(in_all)
+				exceptional_routes.push(i);
+		}
+
+		this.exceptional_routes = exceptional_routes;
 	}
 
 	/*
