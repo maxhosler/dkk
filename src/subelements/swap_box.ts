@@ -1,4 +1,5 @@
 import { DrawOptions } from "../draw/draw_options";
+import { Clique } from "../math/routes";
 
 export class SwapBox
 {
@@ -101,6 +102,21 @@ export class SwapBox
         {
             box.classList.add("swap-greyed");
         }
+    }
+
+    refresh(clq: Clique)
+    {
+        if(this.route_idxs.length != clq.routes.length)
+        {
+            console.warn("Tried to set clique with incompatible size.");
+            return;
+        }
+
+        for(let i = 0; i < clq.routes.length; i++)
+        {
+            this.route_idxs[i] = clq.routes[i];
+        }
+        this.update_color()
     }
 
     show_all_boxes()

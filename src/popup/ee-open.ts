@@ -1,6 +1,5 @@
 import { DKKProgram } from "../main";
 import { CVOpenPopup } from "./cv-open";
-import { Popup } from "./popup";
 
 export class EEOpenPopup extends CVOpenPopup
 {
@@ -8,6 +7,4 @@ export class EEOpenPopup extends CVOpenPopup
 	{
 		super(base, parent)
 	}
-
-	
 }

@@ -194,8 +194,12 @@ export class CliqueViewer implements IMode
             }
         }
 
-        if(closest >= 0)
+        if(closest >= 0) {
             this.current_clique = closest;
+            this.swap_box.refresh(
+                this.cliques.cliques[this.current_clique]
+            );
+        }
 
         this.draw()
     }
