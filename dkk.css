@@ -362,6 +362,13 @@ html, body {
     height: 25pt;
 }
 
+#open-error-zone
+{
+    color: red;
+    font-style: italic;
+    font-size: small;
+}
+
 .small-link
 {
     font-size: small;

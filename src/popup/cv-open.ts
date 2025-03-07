@@ -5,6 +5,7 @@ import { Popup } from "./popup";
 
 export class CVOpenPopup extends Popup
 {
+	error_div: HTMLDivElement;
 	table: HTMLTableElement;
 	preset_dropdown: HTMLSelectElement;
 
@@ -13,6 +14,10 @@ export class CVOpenPopup extends Popup
 	{
 		super(base, "Open", () => parent.popup_open = false);
 		this.parent = parent;
+
+		this.error_div = document.createElement("div");
+		this.error_div.id = "open-error-zone";
+		this.popup_body.appendChild(this.error_div);
 
 		let table = document.createElement("table");
 		this.popup_body.appendChild(table);
@@ -102,7 +107,6 @@ export class CVOpenPopup extends Popup
 
 	show_err(err: string)
 	{
-		console.log(err);
-		//TODO:
+		this.error_div.innerText = err;
 	}
 }
