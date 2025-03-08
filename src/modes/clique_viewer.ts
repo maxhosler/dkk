@@ -135,16 +135,7 @@ export class CliqueViewer implements IMode
 		)
         c_canvas_element.addEventListener("mousemove",
             (ev) => {
-                let route_at = this.get_route_at(new Vector2(ev.layerX, ev.layerY));
-                let changed = (
-                    route_at.valid != this.moused_over_route.valid || 
-                    route_at.value != this.moused_over_route.value
-                );
-                if(changed)
-                {
-                    this.moused_over_route = route_at;
-                    this.draw();
-                }
+                this.update_moused_over(new Vector2(ev.layerX, ev.layerY))
             }
         );
         c_canvas_element.addEventListener("mouseleave",
@@ -210,6 +201,7 @@ export class CliqueViewer implements IMode
             this.route_swap(r);
         }
         this.draw()
+        this.update_moused_over(position);
     }
 
     hasse_canvas_click(position: Vector2)
@@ -319,6 +311,20 @@ export class CliqueViewer implements IMode
         else
             for(let r of this.cliques.exceptional_routes)
                 this.swap_box.hide_box(r);
+    }
+
+    update_moused_over(position: Vector2)
+    {
+        let route_at = this.get_route_at(position);
+        let changed = (
+            route_at.valid != this.moused_over_route.valid || 
+            route_at.value != this.moused_over_route.value
+        );
+        if(changed)
+        {
+            this.moused_over_route = route_at;
+            this.draw();
+        }
     }
 
     /*
