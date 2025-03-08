@@ -196,12 +196,26 @@ export class CliqueViewer implements IMode
 
         if(closest >= 0) {
             this.current_clique = closest;
-            this.swap_box.refresh(
-                this.cliques.cliques[this.current_clique]
-            );
+            this.refresh_swapbox()
         }
 
         this.draw()
+    }
+
+    refresh_swapbox()
+    {
+        let clq = this.cliques.cliques[this.current_clique];
+        this.swap_box.refresh(clq);
+        for(let r of clq.routes)
+        {
+            let enabled = this.cliques.route_swap_by_route_idx
+            (
+                this.current_clique, r
+            ) != this.current_clique;
+            this.swap_box.show_enabled(r, enabled)
+        };
+
+        this.poly_canvas.set_clique(clq)
     }
 
     route_swap(idx: number)
