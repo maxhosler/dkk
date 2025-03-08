@@ -56,7 +56,7 @@ export function get_colors_inner(num_colors: number): string[]
 	return out;
 }
 
-function hsl_to_rgb(h: number, s: number, l: number): [number,number,number]
+export function hsl_to_rgb(h: number, s: number, l: number): [number,number,number]
 {
 	let c = (1-Math.abs(2*l-1)) * s;
 	let hp = 6*h;
@@ -97,6 +97,41 @@ function hsl_to_rgb(h: number, s: number, l: number): [number,number,number]
 	]
 }
 
+export function rgb_to_hsl(r: number, g: number, b: number): [number, number, number]
+{
+	let scaled_r = r/255;
+	let scaled_g = g/255;
+	let scaled_b = b/255;
+
+	let min = Math.min(scaled_r, scaled_g, scaled_b);
+	let max = Math.max(scaled_r, scaled_g, scaled_b);
+
+	let l = 0.5 * (max+min);
+	let s: number;
+	if(min==max) { s=0 }
+	else if (l < 0.5)
+	{
+		s = (max-min)/(max+min);
+	}
+	else
+	{
+		s = (max-min)/(2.0 - max - min);
+	}
+
+	let h: number;
+	if(max == scaled_r)
+		h = (scaled_g-scaled_b)/(max-min);
+	else if (max == scaled_g)
+		h = 2.0 + (scaled_b - scaled_r)/(max-min)
+	else
+		h = 4.0 + (scaled_r - scaled_g)/(max-min)
+	if(h < 0)
+		h += 6;
+	h = h/6;
+
+	return [h,s,l];
+}
+
 function half_coprime(n: number)
 {
 	for(let i = Math.floor(n/2); i >= 1; i++)
@@ -119,4 +154,30 @@ function skip_yellow(x: number): number
 {
 	let interp = (70/360) + ( 1 + 40/360 - 70/360 ) * x;
 	return interp % 1;
+}
+
+export function css_str_to_rgb(css_str: string): [number,number,number]
+{
+    let start = css_str.slice(0,1);
+    if(start == "#")
+    {
+        let num = Number("0x"+css_str.slice(1));
+        return [
+            (num >> 16) & 255,
+            (num >> 8) & 255,
+            num & 255
+        ];
+    }
+    else if (start = "r")
+    {
+        let comps = css_str.match(/\d+/g) as RegExpMatchArray;
+        return [
+            Number(comps[0]),
+            Number(comps[1]),
+            Number(comps[2]),
+        ];
+    }
+
+    console.warn("Unknown color string format! ", css_str);
+    return [255,255,255];
 }

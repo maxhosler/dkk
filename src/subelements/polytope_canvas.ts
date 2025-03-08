@@ -1,3 +1,4 @@
+import { css_str_to_rgb } from "../draw/colors";
 import { DrawOptions } from "../draw/draw_options";
 import { FlowPolytope } from "../math/polytope";
 import { Clique } from "../math/routes";
@@ -760,32 +761,6 @@ class Mat4
             [0,0,0,1]
         ])
     }
-}
-
-function css_str_to_rgb(css_str: string): [number,number,number]
-{
-    let start = css_str.slice(0,1);
-    if(start == "#")
-    {
-        let num = Number("0x"+css_str.slice(1));
-        return [
-            (num >> 16) & 255,
-            (num >> 8) & 255,
-            num & 255
-        ];
-    }
-    else if (start = "r")
-    {
-        let comps = css_str.match(/\d+/g) as RegExpMatchArray;
-        return [
-            Number(comps[0]),
-            Number(comps[1]),
-            Number(comps[2]),
-        ];
-    }
-
-    console.warn("Unknown color string format! ", css_str);
-    return [255,255,255];
 }
 
 type Triple = [number,number,number];

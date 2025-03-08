@@ -1,7 +1,7 @@
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
-import { BoundingBox, Vector2 } from "../util/num";
+import { Bezier, BoundingBox, Vector2 } from "../util/num";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGCliques } from "../math/routes";
 import { SwapBox } from "../subelements/swap_box";
@@ -9,6 +9,8 @@ import { FlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { IMode, ModeName } from "./mode";
+import { Option } from "../util/result";
+import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
 
 export class CliqueViewer implements IMode
 {
@@ -28,6 +30,9 @@ export class CliqueViewer implements IMode
     readonly resize_event: (ev: UIEvent) => void;
 
     current_clique: number = 0;
+    
+    current_dag_bez: {bez: Bezier, route: number, width: number}[] = [];
+    moused_over_route: Option<number> = Option.none();
 
     name(): ModeName {
         return "clique-viewer"
@@ -84,12 +89,10 @@ export class CliqueViewer implements IMode
         );
 
         draw_options.add_change_listener(() => {
-            if(this) {
-                let nc = this.cliques.cliques[this.current_clique];
-                this.poly_canvas.set_clique(nc);
-                this.draw();
-            }
-            if(this.swap_box) this.swap_box.update_color();
+            let nc = this.cliques.cliques[this.current_clique];
+            this.poly_canvas.set_clique(nc);
+            this.draw();
+            this.update_swap_box();
         });
 
         //sidebar
@@ -104,6 +107,16 @@ export class CliqueViewer implements IMode
         let {box: swap_box, element: swap_box_element} = SwapBox.create(
             (idx: number) => {
                 this.route_swap(idx);
+            },
+            (idx: number) => {
+                this.moused_over_route = Option.some(idx);
+                this.draw();
+            },
+            (idx: number) => {
+                if(!this.moused_over_route.is_some()) return;
+                if(this.moused_over_route.unwrap() != idx) return;
+                this.moused_over_route = Option.none();
+                this.draw();
             },
             draw_options,
             this.cliques.clique_size
@@ -130,6 +143,20 @@ export class CliqueViewer implements IMode
 				this.clique_canvas_click(new Vector2(ev.layerX, ev.layerY))
 			}
 		)
+        c_canvas_element.addEventListener("mousemove",
+            (ev) => {
+                this.update_moused_over(new Vector2(ev.layerX, ev.layerY))
+            }
+        );
+        c_canvas_element.addEventListener("mouseleave",
+            (ev) => {
+                this.moused_over_route.is_some()
+                {
+                    this.moused_over_route = Option.none();
+                    this.draw();
+                }
+            }
+        )
         clique_canvas.resize_canvas();
 		this.clique_canvas = clique_canvas;
 
@@ -137,6 +164,11 @@ export class CliqueViewer implements IMode
         let {canvas: hasse_canvas, element: h_canvas_element} = DAGCanvas.create(draw_options);
         segments.hasse.appendChild(h_canvas_element);
         hasse_canvas.resize_canvas();
+        h_canvas_element.addEventListener("click",
+			(ev) => {
+				this.hasse_canvas_click(new Vector2(ev.layerX, ev.layerY))
+			}
+		)
         this.hasse_canvas = hasse_canvas;
 
         //Polytope canvas
@@ -161,7 +193,8 @@ export class CliqueViewer implements IMode
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
 
-        this.update_route_enabled()
+        this.update_route_enabled();
+        this.update_swap_box();
     }
 
     clear_global_events(): void {
@@ -171,7 +204,54 @@ export class CliqueViewer implements IMode
 
     clique_canvas_click(position: Vector2)
     {
-        this.draw_clique()
+        if(this.moused_over_route.is_some())
+        {
+            let r = this.moused_over_route.unwrap();
+            this.moused_over_route = Option.none();
+            this.route_swap(r);
+        }
+        this.draw()
+        this.update_moused_over(position);
+    }
+
+    hasse_canvas_click(position: Vector2)
+    {
+        let canvas_pos = this.hasse_canvas.local_trans_inv(position);
+        let positions = this.get_hasse_positions();
+        let closest = -1;
+        let min_dist = Infinity;
+        for(let i = 0; i < positions.length; i++)
+        {
+            let dist = positions[i].sub(canvas_pos).norm();
+            if(dist <= min_dist)
+            {
+                closest = i;
+                min_dist = dist;
+            }
+        }
+
+        if(closest >= 0) {
+            this.current_clique = closest;
+            this.refresh_swapbox()
+        }
+
+        this.draw()
+    }
+
+    refresh_swapbox()
+    {
+        let clq = this.cliques.cliques[this.current_clique];
+        this.swap_box.refresh(clq);
+        for(let r of clq.routes)
+        {
+            let enabled = this.cliques.route_swap_by_route_idx
+            (
+                this.current_clique, r
+            ) != this.current_clique;
+            this.swap_box.show_enabled(r, enabled)
+        };
+
+        this.poly_canvas.set_clique(clq)
     }
 
     route_swap(idx: number)
@@ -233,6 +313,30 @@ export class CliqueViewer implements IMode
         }
     }
 
+    update_swap_box()
+    {
+        this.swap_box.update_color();
+        if(this.draw_options.show_exceptional())
+            this.swap_box.show_all_boxes()
+        else
+            for(let r of this.cliques.exceptional_routes)
+                this.swap_box.hide_box(r);
+    }
+
+    update_moused_over(position: Vector2)
+    {
+        let route_at = this.get_route_at(position);
+        let changed = (
+            route_at.valid != this.moused_over_route.valid || 
+            route_at.value != this.moused_over_route.value
+        );
+        if(changed)
+        {
+            this.moused_over_route = route_at;
+            this.draw();
+        }
+    }
+
     /*
     Code for drawing
     */
@@ -250,6 +354,7 @@ export class CliqueViewer implements IMode
     {		
         let ctx = this.clique_canvas.get_ctx();
         let data = this.dag.bake();
+        this.current_dag_bez = [];
 
         ctx.clear();
 
@@ -269,6 +374,8 @@ export class CliqueViewer implements IMode
 
             //routes
             let routes = this.cliques.routes_at(edge_idx, this.current_clique);
+            if(!this.draw_options.show_exceptional())
+                routes = routes.filter( i => !this.cliques.exceptional_routes.includes(i));
             if(routes.length == 0)
                 continue;
             let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
@@ -283,12 +390,35 @@ export class CliqueViewer implements IMode
                     let percent = i / (routes.length - 1) - 0.5;
                     offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
+                let bez = edge.transform((v) => v.add(offset));
+                this.current_dag_bez.push({
+                    bez, route: r, width
+                });
                 ctx.draw_bez(
-                    edge.transform((v) => v.add(offset)),
+                    bez,
                     color,
                     width,
                     false
                 )
+            }
+        }
+
+        if(this.moused_over_route.is_some())
+        {
+            let route = this.moused_over_route.unwrap();
+            let color = lighten_css_str(
+                this.draw_options.get_route_color(route),
+                0.15
+            );
+            for(let cd of this.current_dag_bez)
+            {
+                if(cd.route != route) continue;
+                ctx.draw_bez(
+                    cd.bez,
+                    color,
+                    cd.width*1.1,
+                    false
+                );
             }
         }
 
@@ -307,24 +437,9 @@ export class CliqueViewer implements IMode
     {
         let ctx = this.hasse_canvas.get_ctx();
         ctx.clear();
-        const PADDING: number = 100; //TODO: make parameter
-
-        let v_width = Math.max(1,
-            this.hasse_canvas.width() - 2*PADDING
-        );
-        let v_height = Math.max(1,
-            this.hasse_canvas.height() - 2*PADDING
-        );
 
         let hasse = this.cliques.hasse;
-        let hasse_ext = hasse.bounding_box.extent().scale(2);
-
-        let w_scale = v_width / hasse_ext.x ;
-        let h_scale = v_height / hasse_ext.y;
-        let scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
-
-        let positions = hasse.layout_rows
-            .map(v => v.scale(scale));
+        let positions = this.get_hasse_positions();
 
         for(let i = 0; i < hasse.covering_relation.length; i++)
         for(let j = 0; j < hasse.covering_relation.length; j++)
@@ -440,6 +555,8 @@ export class CliqueViewer implements IMode
                 .normalized();
 
             let routes = this.cliques.routes_at(edge_idx, clique_idx);
+            if(!this.draw_options.show_exceptional())
+                routes = routes.filter( i => !this.cliques.exceptional_routes.includes(i));
             if(routes.length == 0)
                 continue;
 
@@ -473,6 +590,51 @@ export class CliqueViewer implements IMode
             )
         }
     }
+
+    get_hasse_positions(): Vector2[]
+    {
+        const PADDING: number = 100; //TODO: make parameter
+
+        let v_width = Math.max(1,
+            this.hasse_canvas.width() - 2*PADDING
+        );
+        let v_height = Math.max(1,
+            this.hasse_canvas.height() - 2*PADDING
+        );
+
+        let hasse = this.cliques.hasse;
+        let hasse_ext = hasse.bounding_box.extent().scale(2);
+
+        let w_scale = v_width / hasse_ext.x ;
+        let h_scale = v_height / hasse_ext.y;
+        let scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
+
+        return hasse.layout_rows
+            .map(v => v.scale(scale));
+    }
+
+    /*
+    Util
+    */
+
+    get_route_at(pos: Vector2): Option<number>
+    {
+        let position = this.clique_canvas.local_trans_inv(pos);
+        let closest_dist = Infinity;
+        let closest: Option<number> = Option.none();
+        let scale = this.draw_options.scale();
+        for(let current of this.current_dag_bez)
+        {
+            let dist = current.bez.distance_to(position);
+            if(dist < closest_dist && dist * scale < current.width / 2)
+            {
+                closest_dist = dist;
+                closest = Option.some(current.route);
+            }
+        }
+
+        return closest;
+    }
 }
 
 function build_right_area_zones(): {
@@ -497,4 +659,13 @@ function build_right_area_zones(): {
     lft.appendChild(bot);
 
     return {root, poly: bot, hasse: right, clique: top};
+}
+
+function lighten_css_str(str: string, amount: number): string
+{   
+    let rgb = css_str_to_rgb(str);
+    let hsl = rgb_to_hsl(...rgb);
+    hsl[2] = Math.min(hsl[2] + amount, 1);
+    let rgb2 = hsl_to_rgb(...hsl);
+    return `rgb(${rgb2[0]}, ${rgb2[1]}, ${rgb2[2]})`;
 }

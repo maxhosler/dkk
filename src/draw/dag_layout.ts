@@ -244,6 +244,7 @@ export class FramedDAGEmbedding
 			for(let a of after)
 				after_avg = after_avg.add(verts[a].scale(1/after.length))
 
+			//TODO: Handle when zero.
 			vert_in_out.push(
 				[
 					verts[i].sub(before_avg).normalized(),
