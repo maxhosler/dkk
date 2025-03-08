@@ -6,19 +6,30 @@ export class SwapBox
     main_box: HTMLDivElement;
     draw_options: DrawOptions;
     on_click: (idx: number) => void;
+    on_mouseover: (idx: number) => void;
+    on_mouseleave: (idx: number) => void;
 
     boxes: HTMLDivElement[];
     route_idxs: number[];
 
     static create(
         on_click: (idx: number) => void,
+        on_mouseover: (idx: number) => void,
+        on_mouseleave: (idx: number) => void,
         draw_options: DrawOptions,
         clique_size: number
     ): { box: SwapBox, element: HTMLDivElement }
 	{
 		let element = document.createElement("div")
 		element.className = "sb-subsection";
-		let box = new SwapBox(element, on_click, draw_options, clique_size);
+		let box = new SwapBox(
+            element,
+            on_click,
+            on_mouseover,
+            on_mouseleave,
+            draw_options,
+            clique_size
+        );
 		return {
 			box: box,
 			element: element
@@ -28,6 +39,8 @@ export class SwapBox
     private constructor(
         main_box: HTMLDivElement,
         on_click: (idx: number) => void,
+        on_mouseover: (idx: number) => void,
+        on_mouseleave: (idx: number) => void,
         draw_options: DrawOptions,
         clique_size: number
     )
@@ -35,6 +48,8 @@ export class SwapBox
         this.main_box = main_box;
         this.draw_options = draw_options;
         this.on_click = on_click;
+        this.on_mouseleave = on_mouseleave;
+        this.on_mouseover = on_mouseover;
 
         let boxes: HTMLDivElement[] = [];
         let color_idxs: number[] = []
@@ -45,6 +60,14 @@ export class SwapBox
             box.onclick = () => {
                 this.on_click(this.route_idxs[idx]);
             };
+
+            box.addEventListener("mouseover",
+                () => this.on_mouseover(this.route_idxs[idx])
+            )
+            box.addEventListener("mouseleave",
+                () => this.on_mouseleave(this.route_idxs[idx])
+            )
+
             box.className = "swap_button";
             box.innerHTML = "<div class=\"swap-dot\"/>";
             

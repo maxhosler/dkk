@@ -108,6 +108,16 @@ export class CliqueViewer implements IMode
             (idx: number) => {
                 this.route_swap(idx);
             },
+            (idx: number) => {
+                this.moused_over_route = Option.some(idx);
+                this.draw();
+            },
+            (idx: number) => {
+                if(!this.moused_over_route.is_some()) return;
+                if(this.moused_over_route.unwrap() != idx) return;
+                this.moused_over_route = Option.none();
+                this.draw();
+            },
             draw_options,
             this.cliques.clique_size
         );
@@ -655,7 +665,6 @@ function lighten_css_str(str: string, amount: number): string
 {   
     let rgb = css_str_to_rgb(str);
     let hsl = rgb_to_hsl(...rgb);
-    console.log(hsl);
     hsl[2] = Math.min(hsl[2] + amount, 1);
     let rgb2 = hsl_to_rgb(...hsl);
     return `rgb(${rgb2[0]}, ${rgb2[1]}, ${rgb2[2]})`;
