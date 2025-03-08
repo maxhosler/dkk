@@ -1,7 +1,7 @@
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
 import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
-import { BoundingBox, Vector2 } from "../util/num";
+import { Bezier, BoundingBox, Vector2 } from "../util/num";
 import { DrawOptionBox } from "../subelements/draw_option_box";
 import { DAGCliques } from "../math/routes";
 import { SwapBox } from "../subelements/swap_box";
@@ -9,6 +9,8 @@ import { FlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { IMode, ModeName } from "./mode";
+import { Option } from "../util/result";
+import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
 
 export class CliqueViewer implements IMode
 {
@@ -28,6 +30,9 @@ export class CliqueViewer implements IMode
     readonly resize_event: (ev: UIEvent) => void;
 
     current_clique: number = 0;
+    
+    current_dag_bez: {bez: Bezier, route: number, width: number}[] = [];
+    moused_over_route: Option<number> = Option.none();
 
     name(): ModeName {
         return "clique-viewer"
@@ -128,6 +133,29 @@ export class CliqueViewer implements IMode
 				this.clique_canvas_click(new Vector2(ev.layerX, ev.layerY))
 			}
 		)
+        c_canvas_element.addEventListener("mousemove",
+            (ev) => {
+                let route_at = this.get_route_at(new Vector2(ev.layerX, ev.layerY));
+                let changed = (
+                    route_at.valid != this.moused_over_route.valid || 
+                    route_at.value != this.moused_over_route.value
+                );
+                if(changed)
+                {
+                    this.moused_over_route = route_at;
+                    this.draw();
+                }
+            }
+        );
+        c_canvas_element.addEventListener("mouseleave",
+            (ev) => {
+                this.moused_over_route.is_some()
+                {
+                    this.moused_over_route = Option.none();
+                    this.draw();
+                }
+            }
+        )
         clique_canvas.resize_canvas();
 		this.clique_canvas = clique_canvas;
 
@@ -175,7 +203,13 @@ export class CliqueViewer implements IMode
 
     clique_canvas_click(position: Vector2)
     {
-        this.draw_clique()
+        if(this.moused_over_route.is_some())
+        {
+            let r = this.moused_over_route.unwrap();
+            this.moused_over_route = Option.none();
+            this.route_swap(r);
+        }
+        this.draw()
     }
 
     hasse_canvas_click(position: Vector2)
@@ -304,6 +338,7 @@ export class CliqueViewer implements IMode
     {		
         let ctx = this.clique_canvas.get_ctx();
         let data = this.dag.bake();
+        this.current_dag_bez = [];
 
         ctx.clear();
 
@@ -339,12 +374,35 @@ export class CliqueViewer implements IMode
                     let percent = i / (routes.length - 1) - 0.5;
                     offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
+                let bez = edge.transform((v) => v.add(offset));
+                this.current_dag_bez.push({
+                    bez, route: r, width
+                });
                 ctx.draw_bez(
-                    edge.transform((v) => v.add(offset)),
+                    bez,
                     color,
                     width,
                     false
                 )
+            }
+        }
+
+        if(this.moused_over_route.is_some())
+        {
+            let route = this.moused_over_route.unwrap();
+            let color = lighten_css_str(
+                this.draw_options.get_route_color(route),
+                0.15
+            );
+            for(let cd of this.current_dag_bez)
+            {
+                if(cd.route != route) continue;
+                ctx.draw_bez(
+                    cd.bez,
+                    color,
+                    cd.width*1.1,
+                    false
+                );
             }
         }
 
@@ -538,6 +596,29 @@ export class CliqueViewer implements IMode
         return hasse.layout_rows
             .map(v => v.scale(scale));
     }
+
+    /*
+    Util
+    */
+
+    get_route_at(pos: Vector2): Option<number>
+    {
+        let position = this.clique_canvas.local_trans_inv(pos);
+        let closest_dist = Infinity;
+        let closest: Option<number> = Option.none();
+        let scale = this.draw_options.scale();
+        for(let current of this.current_dag_bez)
+        {
+            let dist = current.bez.distance_to(position);
+            if(dist < closest_dist && dist * scale < current.width / 2)
+            {
+                closest_dist = dist;
+                closest = Option.some(current.route);
+            }
+        }
+
+        return closest;
+    }
 }
 
 function build_right_area_zones(): {
@@ -562,4 +643,13 @@ function build_right_area_zones(): {
     lft.appendChild(bot);
 
     return {root, poly: bot, hasse: right, clique: top};
+}
+
+function lighten_css_str(str: string, amount: number): string
+{   
+    let rgb = css_str_to_rgb(str);
+    let hsl = rgb_to_hsl(...rgb);
+    hsl[2] = Math.min(hsl[2] + amount, 1);
+    let rgb2 = hsl_to_rgb(...hsl);
+    return `rgb(${rgb2[0]}, ${rgb2[1]}, ${rgb2[2]})`;
 }
