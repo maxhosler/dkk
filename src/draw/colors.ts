@@ -125,6 +125,8 @@ export function rgb_to_hsl(r: number, g: number, b: number): [number, number, nu
 		h = 2.0 + (scaled_b - scaled_r)/(max-min)
 	else
 		h = 4.0 + (scaled_r - scaled_g)/(max-min)
+	if(h < 0)
+		h += 6;
 	h = h/6;
 
 	return [h,s,l];

@@ -655,6 +655,7 @@ function lighten_css_str(str: string, amount: number): string
 {   
     let rgb = css_str_to_rgb(str);
     let hsl = rgb_to_hsl(...rgb);
+    console.log(hsl);
     hsl[2] = Math.min(hsl[2] + amount, 1);
     let rgb2 = hsl_to_rgb(...hsl);
     return `rgb(${rgb2[0]}, ${rgb2[1]}, ${rgb2[2]})`;
