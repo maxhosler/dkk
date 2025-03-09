@@ -245,7 +245,7 @@ export class DAGCanvasContext
 			{
 				let edge = out_frame[edge_idx];
 				let bez = baked.edges[edge];
-				let pos = bez.get_point(0.09);
+				let pos = bez.point_distance_along(0.15, "start");
 				this.draw_text(edge_idx.toString(), pos, "#ffffff", "#000000", 20);
 			}
 
@@ -254,7 +254,7 @@ export class DAGCanvasContext
 			{
 				let edge = in_frame[edge_idx];
 				let bez = baked.edges[edge];
-				let pos = bez.get_point(0.91);
+				let pos = bez.point_distance_along(0.15, "end");
 				this.draw_text(edge_idx.toString(), pos, "#ffffff", "#000000", 20);
 			}
 		}

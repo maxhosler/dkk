@@ -196,6 +196,43 @@ export class Bezier
 
 		return dist((low + high) / 2);
 	}
+
+	point_distance_along(dist: number, from: "start" | "end"): Vector2
+	{
+		//const STEP_scal: number = 0.2;
+
+		let length_overestimate = this.start_point.sub(this.cp1).norm() + 
+			this.cp1.sub(this.cp2).norm() + 
+			this.cp2.sub(this.end_point).norm();
+
+		let t = 0;
+		let d = 1;
+		if(from == "end")
+		{
+			t = 1;
+			d = -1;
+		}
+
+		let last_pos = this.get_point(t);
+		let travelled = 0;
+		let iterations = 0;
+
+		while(travelled < dist && 0 <= t && t <= 1 && iterations < 20)
+		{
+			let dist_to_go = dist - travelled;
+			
+			t += d * dist_to_go / length_overestimate;
+			iterations += 1;
+
+			let next_pos = this.get_point(t);
+			let delta = last_pos.sub(next_pos).norm();
+
+			last_pos = next_pos;
+			travelled += delta;
+		}
+
+		return last_pos;
+	}
 }
 
 export class BoundingBox
