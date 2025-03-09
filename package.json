@@ -11,6 +11,9 @@
     "start": "tsc && npx webpack"
   },
   "devDependencies": {
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "webpack": "^5.97.1",

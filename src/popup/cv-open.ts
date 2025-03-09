@@ -1,5 +1,5 @@
 import { FramedDAGEmbedding } from "../draw/dag_layout";
-import { DKKProgram } from "../main";
+import { DKKProgram } from "../program";
 import { preset_dag_embedding, PRESETS } from "../preset";
 import { Popup } from "./popup";
 
