@@ -1,4 +1,4 @@
-import { DKKProgram } from "../main";
+import { DKKProgram } from "../program";
 import { CVOpenPopup } from "./cv-open";
 
 export class EEOpenPopup extends CVOpenPopup

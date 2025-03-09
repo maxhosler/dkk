@@ -1,4 +1,4 @@
-import { DKKProgram } from "../main";
+import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
 export class NewPopup extends Popup

@@ -1,3 +1,3 @@
-import { DKKProgram } from "./main";
+import { DKKProgram } from "./program";
 
 var dkk = new DKKProgram();
