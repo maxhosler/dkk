@@ -409,6 +409,7 @@ export class PolytopeCanvas
     {
         this.ctx.clearDepth(1.0);
         this.ctx.clearColor(0,0,0,1);
+        this.ctx.clear(this.ctx.DEPTH_BUFFER_BIT | this.ctx.COLOR_BUFFER_BIT);
 
         if (!this.do_render()) return;
 
