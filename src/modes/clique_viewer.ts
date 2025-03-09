@@ -294,6 +294,9 @@ export class CliqueViewer implements IMode
             else
                 console.warn("Old route and new clique do not differ as expected.")
         
+            if(this.moused_over_route.is_some() && old_route == this.moused_over_route.unwrap())
+                this.moused_over_route = Option.some(new_route);
+
             this.update_route_enabled();
         }
 
