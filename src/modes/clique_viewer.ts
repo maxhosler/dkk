@@ -77,7 +77,7 @@ export class CliqueViewer implements IMode
         );
     }
 
-    private static precomp_destructive_new(
+    static precomp_destructive_new(
         data: JSONCliqueData,
         draw_options: DrawOptions,
     ): Result<CliqueViewer>

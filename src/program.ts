@@ -1,11 +1,10 @@
 import { FramedDAGEmbedding } from "./draw/dag_layout";
 import { DrawOptions } from "./draw/draw_options";
 import { FramedDAG } from "./math/dag";
-import { CliqueViewer } from "./modes/clique_viewer";
+import { CliqueViewer, JSONCliqueData } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 import { IMode } from "./modes/mode";
-import { CVOpenPopup } from "./popup/cv-open";
-import { EEOpenPopup } from "./popup/ee-open";
+import { CVOpenPopup, EEOpenPopup } from "./popup/cv-open";
 import { NewPopup } from "./popup/new";
 import { SettingsPopup } from "./popup/settings";
 import { preset_dag_embedding } from "./preset";
@@ -219,6 +218,16 @@ export class DKKProgram
         else if(this.mode.name() == "embedding-editor")
             this.mode = EmbeddingEditor.destructive_new(emb, this.draw_options);
 	}
+
+    set_dag_precomp(emb: JSONCliqueData)
+    {
+        if(this.mode.name() == "clique-viewer")
+        {
+            let attempt = CliqueViewer.precomp_destructive_new(emb, this.draw_options);
+            if(attempt.is_ok())
+                this.mode = attempt.unwrap();
+        }
+    }
 
     set_new_clique(num_verts: number)
     {

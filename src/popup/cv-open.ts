@@ -2,8 +2,9 @@ import { FramedDAGEmbedding } from "../draw/dag_layout";
 import { DKKProgram } from "../program";
 import { preset_dag_embedding, PRESETS } from "../preset";
 import { Popup } from "./popup";
+import { JSONCliqueData } from "../modes/clique_viewer";
 
-export class CVOpenPopup extends Popup
+export class OpenPopup extends Popup
 {
 	error_div: HTMLDivElement;
 	table: HTMLTableElement;
@@ -66,6 +67,8 @@ export class CVOpenPopup extends Popup
 			}
 		});
 		this.add_row("From file", file_open, null);
+
+		
 	}
 
 	load_preset()
@@ -108,5 +111,52 @@ export class CVOpenPopup extends Popup
 	show_err(err: string)
 	{
 		this.error_div.innerText = err;
+	}
+}
+
+export class EEOpenPopup extends OpenPopup
+{
+	constructor(base: HTMLElement, parent: DKKProgram)
+	{
+		super(base, parent)
+	}
+}
+
+export class CVOpenPopup extends OpenPopup
+{
+	constructor(base: HTMLElement, parent: DKKProgram)
+	{
+		super(base, parent);
+		let file_open = document.createElement("input");
+		file_open.type = "file";
+		file_open.accept = "json";
+		file_open.addEventListener("change", async () => {
+			if (file_open.files)
+			if (file_open.files.length == 1) {
+				let file = file_open.files[0];
+				let reader = new FileReader();
+				reader.onload = () => {
+					let res: Object;
+					try{
+						res = JSON.parse(reader.result as string);
+					}
+					catch
+					{
+						this.show_err("Invalid JSON.");
+						return;
+					}
+
+					this.parent.set_dag_precomp(res as JSONCliqueData);
+					this.close();
+
+				};
+				reader.onerror = () =>
+				{
+					this.show_err(reader.error?.message as string)
+				};
+				reader.readAsText(file);
+			}
+		});
+		this.add_row("From file (precomputed)", file_open, null);
 	}
 }
