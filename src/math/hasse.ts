@@ -1,4 +1,4 @@
-import { BoundingBox, Vector2 } from "../util/num";
+import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Clique } from "./routes";
 
 export class HasseDiagram
@@ -296,4 +296,26 @@ export class HasseDiagram
         return badness;
     }
 
+    to_json_ob(): JSONHasseDiagram
+    {
+        return {
+            poset_size: this.poset_size,
+            covering_relation: structuredClone(this.covering_relation),
+            layout_rows: this.layout_rows.map(x => x.to_json_ob()),
+            bounding_box: this.bounding_box.to_json_ob(),
+            minimal_elt: this.minimal_elt,
+            maximal_elt: this.maximal_elt,
+            cover_routes: structuredClone(this.cover_routes)
+        }
+    }
+
+}
+export type JSONHasseDiagram = {
+    poset_size: number;
+    covering_relation: boolean[][];
+    layout_rows: [number,number][];
+    bounding_box: JSONBoundingBox;
+    minimal_elt: number;
+    maximal_elt: number;
+    cover_routes: [lower: number, higher: number][][];
 }

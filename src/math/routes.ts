@@ -1,6 +1,6 @@
-import { FramedDAG } from "./dag";
+import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option } from "../util/result";
-import { HasseDiagram } from "./hasse";
+import { HasseDiagram, JSONHasseDiagram } from "./hasse";
 class Route
 {
 	readonly edges: number[];
@@ -83,14 +83,7 @@ export type SharedSubroute =
 	in_order: 1 | 0 | -1,
 	out_order: 1 | 0 | -1
 };
-class SharedSubrouteCollection
-{
-	readonly subroutes: SharedSubroute[];
-	constructor(subroutes: SharedSubroute[])
-	{
-		this.subroutes = subroutes;
-	}
-}
+type SharedSubrouteCollection = SharedSubroute[];
 
 
 export class DAGCliques
@@ -149,7 +142,7 @@ export class DAGCliques
 			for(let j = 0; j < routes.length; j++)
 			{
 				shared_subroutes_arr[i].push(
-					new SharedSubrouteCollection(this.inner_shared_subroutes(i, j))
+					this.inner_shared_subroutes(i, j)
 				);
 			}
 		}
@@ -448,7 +441,7 @@ export class DAGCliques
 
 	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
-		return this.shared_subroutes_arr[route_idx_1][route_idx_2].subroutes
+		return this.shared_subroutes_arr[route_idx_1][route_idx_2]
 	}
 
 	routes_at(edge_num: number, clique_num: number): number[]
@@ -488,9 +481,39 @@ export class DAGCliques
 
 	to_json_ob(): JSONDAGCliques
 	{
-		return {}
+		let routes: number[][] = [];
+		let cliques: number[][] = [];
+		for(let r of this.routes)
+		{
+			routes.push(structuredClone(r.edges))
+		}
+		for(let c of this.cliques)
+		{
+			cliques.push(structuredClone(c.routes))
+		}
+		return {
+			dag: this.dag.to_json_ob(),
+			routes,
+			cliques,
+			clique_size: this.clique_size,
+
+			exceptional_routes: structuredClone(this.exceptional_routes),
+			route_swaps: structuredClone(this.route_swaps),
+			clique_leq_matrix: structuredClone(this.clique_leq_matrix),
+			shared_subroutes_arr: structuredClone(this.shared_subroutes_arr),
+			hasse: this.hasse.to_json_ob()
+		}
 	}
 }
 export type JSONDAGCliques = {
+	dag: JSONFramedDag,
+	routes: number[][],
+	cliques: number[][],
+	clique_size: number,
 
+	exceptional_routes: number[],
+	route_swaps: number[][],
+	clique_leq_matrix: boolean[][],
+	shared_subroutes_arr: SharedSubrouteCollection[][],
+	hasse: JSONHasseDiagram;
 };

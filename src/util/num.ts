@@ -108,6 +108,11 @@ export class Vector2
 			Math.max(this.y, other.y)
 		)
 	}
+
+	to_json_ob(): [number, number]
+	{
+		return [this.x, this.y];
+	}
 }
 
 export class Bezier 
@@ -282,6 +287,20 @@ export class BoundingBox
 
 		return new Vector2(x,y);
 	}
+
+	to_json_ob(): JSONBoundingBox
+	{
+		return {
+			empty: this.empty,
+			top_corner: this.top_corner.to_json_ob(),
+			bot_corner: this.bot_corner.to_json_ob()
+		}
+	}
+}
+export type JSONBoundingBox = {
+	empty: boolean,
+	top_corner: [number,number];
+	bot_corner: [number,number];
 }
 
 export const clamp: (num: number, min: number, max: number) => number
