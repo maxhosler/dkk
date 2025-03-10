@@ -514,6 +514,7 @@ export class DAGCliques
 		if(hd.is_err())
 			return hd.err_to_err();
 		//TODO: Validate
+
 		let just_fields = {
 			dag: fd.unwrap(),
 			routes: ob.routes.map(x => new Route(x)),
@@ -526,8 +527,14 @@ export class DAGCliques
 			shared_subroutes_arr: structuredClone(ob.shared_subroutes_arr),
 			hasse: hd.unwrap()
 		}
-		Object.setPrototypeOf(just_fields, DAGCliques);
-		return Result.ok(just_fields as DAGCliques);
+		let base = new DAGCliques(empty_fd());
+		for(let field in just_fields)
+		{
+			// @ts-ignore
+			base[field] = just_fields[field];
+		}
+
+		return Result.ok(base);
 	}
 }
 export type JSONDAGCliques = {
@@ -542,3 +549,10 @@ export type JSONDAGCliques = {
 	shared_subroutes_arr: SharedSubrouteCollection[][],
 	hasse: JSONHasseDiagram;
 };
+
+function empty_fd(): FramedDAG
+{
+	let dag = new FramedDAG(2);
+	dag.add_edge(0,1);
+	return dag;
+}

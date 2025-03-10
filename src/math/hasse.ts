@@ -328,8 +328,11 @@ export class HasseDiagram
             maximal_elt: ob.maximal_elt,
             cover_routes: structuredClone(ob.cover_routes)
         };
-        Object.setPrototypeOf(just_fields, HasseDiagram);
-        return Result.ok(just_fields as HasseDiagram);
+        let base = hasse_empty();
+        for(let field in just_fields)
+            //@ts-ignore
+            base[field] = just_fields[field]
+        return Result.ok(base);
     }
 
 }
@@ -341,4 +344,11 @@ export type JSONHasseDiagram = {
     minimal_elt: number;
     maximal_elt: number;
     cover_routes: [lower: number, higher: number][][];
+}
+
+function hasse_empty(): HasseDiagram
+{
+    let cliques = [new Clique([1])];
+    let poset_relation = [[true]];
+    return new HasseDiagram(poset_relation, cliques);
 }

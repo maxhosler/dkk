@@ -1,4 +1,6 @@
+import { preset_dag_embedding } from "../preset";
 import { Result } from "../util/result";
+import { FramedDAG } from "./dag";
 import { DAGCliques } from "./routes";
 
 export class FlowPolytope
@@ -156,9 +158,11 @@ export class FlowPolytope
             vertices,
             external_simplices: structuredClone(ob.external_simplices)
         };
-        //Terrible? Maybe.
-        Object.setPrototypeOf(just_fields, FlowPolytope.prototype);
-        return Result.ok(just_fields as FlowPolytope);
+        let base = new FlowPolytope(empty_clique());
+        for(let field in just_fields)
+            //@ts-ignore
+            base[field] = just_fields[field]
+        return Result.ok(base);
     }
 }
 export type JSONFlowPolytope = {
@@ -631,4 +635,9 @@ function cholesky_decomposition(A: Matrix): Matrix
     }
 
     return new Matrix(n,n,L);
+}
+
+function empty_clique(): DAGCliques
+{
+    return new DAGCliques(preset_dag_embedding("cube").dag)
 }
