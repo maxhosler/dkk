@@ -179,22 +179,19 @@ export class DKKProgram
 
     save_data_dd_click()
     {
-        
+        if(this.mode.name() == "clique-viewer")
+        {
+            let mode = this.mode as CliqueViewer;
+            save_json_string(
+                JSON.stringify(mode.to_data_json_ob()), "dag_and_data"
+            )
+        }
     }
 
     save_current_data()
     {
         let json = this.mode.current_data_json();
-        let blob = new Blob([json], {type: 'text/json'});
-        let a = document.createElement("a");
-        a.setAttribute('href', URL.createObjectURL(blob));
-        a.setAttribute('download', 'dag.json');
-        let ev = new MouseEvent("click", {
-            "view": window,
-            "bubbles": true,
-            "cancelable": false
-        });
-        a.dispatchEvent(ev);
+        save_json_string(json, "dag");
     }
 
     show_hide_items()
@@ -229,4 +226,19 @@ export class DKKProgram
         let layout = new FramedDAGEmbedding(newblank);
         this.mode = EmbeddingEditor.destructive_new(layout, this.draw_options);
     }
+}
+
+function save_json_string(json: string, name: string)
+{
+    let blob = new Blob([json], {type: 'text/json'});
+    let a = document.createElement("a");
+    a.setAttribute('href', URL.createObjectURL(blob));
+    a.setAttribute('download', name+'.json');
+    let ev = new MouseEvent("click", {
+        "view": window,
+        "bubbles": true,
+        "cancelable": false
+    });
+    a.dispatchEvent(ev);
+    a.remove();
 }

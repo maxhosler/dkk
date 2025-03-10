@@ -92,6 +92,7 @@ class SharedSubrouteCollection
 	}
 }
 
+
 export class DAGCliques
 {
 	readonly dag: FramedDAG;
@@ -484,4 +485,12 @@ export class DAGCliques
 	{
 		return this.route_swaps[clique_idx][idx_in_clique];
 	}
+
+	to_json_ob(): JSONDAGCliques
+	{
+		return {}
+	}
 }
+export type JSONDAGCliques = {
+
+};

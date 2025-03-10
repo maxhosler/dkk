@@ -128,6 +128,25 @@ export class FlowPolytope
         }
         this.external_simplices = external_simplices;
     }
+
+    to_json_ob(): JSONFlowPolytope
+	{
+        let vertices: number[][] = [];
+        for(let vec of this.vertices)
+        {
+            vertices.push(structuredClone(vec.coordinates))
+        }
+		return {
+            dim: this.dim,
+            vertices,
+            external_simplices: structuredClone(this.external_simplices)
+        }
+	}
+}
+export type JSONFlowPolytope = {
+    dim: number,
+    vertices: number[][],
+    external_simplices: number[][]
 }
 
 class NVector
@@ -227,11 +246,7 @@ class NVector
             inner.push([x])
         return new Matrix(1, this.dim(), inner);
     }
-    
-    static linearly_independent(vectors: NVector[]): boolean
-    {
-        throw new Error("Unimplemented.")
-    }
+
 }
 
 class Matrix

@@ -1,11 +1,11 @@
 import { DAGCanvas, DAGCanvasContext } from "../subelements/dag_canvas";
-import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
+import { BakedDAGEmbedding, FramedDAGEmbedding, JSONFramedDagEmbedding } from "../draw/dag_layout";
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Bezier, BoundingBox, Vector2 } from "../util/num";
 import { DrawOptionBox } from "../subelements/draw_option_box";
-import { DAGCliques } from "../math/routes";
+import { DAGCliques, JSONDAGCliques } from "../math/routes";
 import { SwapBox } from "../subelements/swap_box";
-import { FlowPolytope } from "../math/polytope";
+import { FlowPolytope, JSONFlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { IMode, ModeName } from "./mode";
@@ -638,6 +638,21 @@ export class CliqueViewer implements IMode
 
         return closest;
     }
+
+    to_data_json_ob(): JSONCliqueData
+    {
+        return {
+            dag: this.dag.to_json_ob(),
+            polytope: this.polytope.to_json_ob(),
+            cliques: this.cliques.to_json_ob()
+        }
+    }
+}
+export type JSONCliqueData =
+{
+    dag: JSONFramedDagEmbedding,
+    polytope: JSONFlowPolytope,
+    cliques: JSONDAGCliques
 }
 
 function build_right_area_zones(): {
