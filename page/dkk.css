@@ -29,8 +29,10 @@ html, body {
 
 #top-bar
 {
-    height: 20pt;
+    height: auto;
     width: 100%;
+
+    z-index: 1;
 
     background-color: var(--menu-background1);
     border-bottom: var(--default-border);
@@ -43,19 +45,26 @@ html, body {
     height: 100%;
     max-width: fit-content;
     border-right: var(--default-border);
-    padding-top: 2pt;
-    padding-bottom: 2pt;
     padding-left: 10pt;
     padding-right: 10pt;
+
+    z-index: 1;
 
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
 
+    position: relative;
+
 }
-.top-bar-button:hover
+.top-bar-button:not(:has(.dropdown-elem:hover)):hover
 {
     background-color: #00000022;
+}
+.top-bar-button span
+{
+    margin-top: 2pt;
+    margin-bottom: 2pt;
 }
 
 #complete
@@ -402,4 +411,38 @@ html, body {
 .vec-spinner input
 {
     width: 50pt;
+}
+
+.dropdown-box
+{
+    background-color: var(--menu-background1);
+    position: absolute;
+    top: 100%;
+    left: 0%;
+    z-index: -1;
+    width: max-content;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.205);
+}
+.dropdown-elem:nth-child(1)
+{
+    border-top: var(--default-border);
+
+}
+
+.dropdown-elem
+{
+    border-bottom: var(--default-border);
+    border-left: var(--default-border);
+    border-right: var(--default-border);
+    width: 100%;
+    padding: 2pt;
+    padding-right: 10pt;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.dropdown-elem:hover
+{
+    background-color: #00000022;
 }

@@ -23,8 +23,14 @@ export class DKKProgram
     settings_button: HTMLDivElement;
     switch_button: HTMLDivElement;
     open_button: HTMLDivElement;
-    new_button: HTMLDivElement
-    save_button: HTMLDivElement
+    new_button: HTMLDivElement;
+    save_button: HTMLDivElement;
+
+    save_dropdown: HTMLDivElement;
+    save_dropdown_shown: boolean = false;
+
+    save_dag_ddelem: HTMLDivElement;
+    save_data_ddelem: HTMLDivElement;
 
 	constructor()
 	{
@@ -53,6 +59,29 @@ export class DKKProgram
         this.save_button.onclick = (ev) => {
             this.save_button_click();
         }
+
+        this.save_dropdown = document.getElementById("save-dropdown") as HTMLDivElement;
+        this.save_dropdown.style.display = "none";
+
+        this.save_dag_ddelem = document.getElementById("dd-save-dag") as HTMLDivElement;
+        this.save_data_ddelem = document.getElementById("dd-save-precomp") as HTMLDivElement;
+
+        this.save_dag_ddelem.addEventListener("click",
+            (ev) => {
+                this.save_dag_dd_click();
+                this.save_dropdown_shown = false;
+                this.show_hide_items();
+                ev.stopPropagation();
+            }
+        )
+        this.save_data_ddelem.addEventListener("click",
+            (ev) => {
+                this.save_data_dd_click();
+                this.save_dropdown_shown = false;
+                this.show_hide_items();
+                ev.stopPropagation();
+            }
+        )
 
         this.show_hide_items();
 	}
@@ -134,6 +163,27 @@ export class DKKProgram
 
     save_button_click()
     {
+        if(this.mode.name() == "embedding-editor")
+            this.save_current_data()
+        else if(this.mode.name() == "clique-viewer")
+        {
+            this.save_dropdown_shown = !this.save_dropdown_shown;
+            this.show_hide_items();
+        }
+    }
+
+    save_dag_dd_click()
+    {
+        this.save_current_data();
+    }
+
+    save_data_dd_click()
+    {
+        
+    }
+
+    save_current_data()
+    {
         let json = this.mode.current_data_json();
         let blob = new Blob([json], {type: 'text/json'});
         let a = document.createElement("a");
@@ -152,11 +202,17 @@ export class DKKProgram
         if(this.mode.name() == "embedding-editor")
         {
             this.new_button.style.display = "block";
+            this.save_dropdown_shown = false;
         }
         if(this.mode.name() == "clique-viewer")
         {
             this.new_button.style.display = "none";
         }
+
+        if(this.save_dropdown_shown)
+            this.save_dropdown.style.display = "";
+        else
+            this.save_dropdown.style.display = "none";
     }
 
 	set_dag(emb: FramedDAGEmbedding)
