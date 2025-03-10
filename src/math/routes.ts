@@ -1,5 +1,5 @@
 import { FramedDAG, JSONFramedDag } from "./dag";
-import { Option } from "../util/result";
+import { Option, Result } from "../util/result";
 import { HasseDiagram, JSONHasseDiagram } from "./hasse";
 class Route
 {
@@ -503,6 +503,31 @@ export class DAGCliques
 			shared_subroutes_arr: structuredClone(this.shared_subroutes_arr),
 			hasse: this.hasse.to_json_ob()
 		}
+	}
+
+	static from_json_ob(ob: JSONDAGCliques): Result<DAGCliques>
+	{
+		let fd = FramedDAG.from_json_ob(ob.dag);
+		let hd = HasseDiagram.from_json_ob(ob.hasse);
+		if(fd.is_err())
+			return fd.err_to_err();
+		if(hd.is_err())
+			return hd.err_to_err();
+		//TODO: Validate
+		let just_fields = {
+			dag: fd.unwrap(),
+			routes: ob.routes.map(x => new Route(x)),
+			cliques: ob.cliques.map(x => new Clique(x)),
+			clique_size: ob.clique_size,
+
+			exceptional_routes: structuredClone(ob.exceptional_routes),
+			route_swaps: structuredClone(ob.route_swaps),
+			clique_leq_matrix: structuredClone(ob.clique_leq_matrix),
+			shared_subroutes_arr: structuredClone(ob.shared_subroutes_arr),
+			hasse: hd.unwrap()
+		}
+		Object.setPrototypeOf(just_fields, DAGCliques);
+		return Result.ok(just_fields as DAGCliques);
 	}
 }
 export type JSONDAGCliques = {

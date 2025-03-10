@@ -9,7 +9,7 @@ import { FlowPolytope, JSONFlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { IMode, ModeName } from "./mode";
-import { Option } from "../util/result";
+import { Option, Result } from "../util/result";
 import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
 
 export class CliqueViewer implements IMode
@@ -52,9 +52,13 @@ export class CliqueViewer implements IMode
         SIDEBAR_HEAD.innerHTML = "";
         SIDEBAR_CONTENTS.innerHTML = "";
         RIGHT_AREA.innerHTML = "";
+
+        let cliques = new DAGCliques(dag.dag);
+        let polytope = new FlowPolytope(cliques);
+
         return new CliqueViewer
         (
-            dag, draw_options,
+            dag, polytope, cliques, draw_options,
             SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
         );
     }
@@ -64,15 +68,47 @@ export class CliqueViewer implements IMode
         draw_options: DrawOptions,
     ){
         let get_dummy = () => document.createElement("div");
+        let cliques = new DAGCliques(dag.dag);
+        let polytope = new FlowPolytope(cliques);
         return new CliqueViewer
         (
-            dag, draw_options,
+            dag, polytope, cliques, draw_options,
             get_dummy(), get_dummy(), get_dummy()
         );
     }
 
+    private static precomp_destructive_new(
+        data: JSONCliqueData,
+        draw_options: DrawOptions,
+    ): Result<CliqueViewer>
+    {
+
+        let dag = FramedDAGEmbedding.from_json_ob(data.dag);
+        if(dag.is_err())
+            return dag.err_to_err();
+        let polytope = FlowPolytope.from_json_ob(data.polytope);
+        if(polytope.is_err())
+            return polytope.err_to_err();
+        let cliques = DAGCliques.from_json_ob(data.cliques);
+        if(cliques.is_err())
+            return cliques.err_to_err();
+
+        SIDEBAR_HEAD.innerHTML = "";
+        SIDEBAR_CONTENTS.innerHTML = "";
+        RIGHT_AREA.innerHTML = "";
+
+        return Result.ok(new CliqueViewer
+        (
+            dag.unwrap(), polytope.unwrap(), cliques.unwrap(), draw_options,
+            SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
+        ));
+    }
+
     private constructor(
         dag: FramedDAGEmbedding,
+        polytope: FlowPolytope,
+        cliques: DAGCliques,
+
         draw_options: DrawOptions,
 
         sidebar_head: HTMLDivElement,
@@ -82,8 +118,8 @@ export class CliqueViewer implements IMode
     {
         this.dag = dag;
         this.draw_options = draw_options;
-        this.cliques = new DAGCliques(dag.dag);
-        this.polytope = new FlowPolytope(this.cliques);
+        this.cliques = cliques;
+        this.polytope = polytope;
         this.draw_options.set_builtin_color_scheme(
             this.cliques.routes.length
         );
@@ -647,6 +683,7 @@ export class CliqueViewer implements IMode
             cliques: this.cliques.to_json_ob()
         }
     }
+
 }
 export type JSONCliqueData =
 {

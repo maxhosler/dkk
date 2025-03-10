@@ -341,21 +341,9 @@ export class FramedDAGEmbedding
 		return JSON.stringify(this.to_json_ob())
 	}
 
-	static from_json(json: string): Result<FramedDAGEmbedding>
+	static from_json_ob(obj: JSONFramedDagEmbedding): Result<FramedDAGEmbedding>
 	{
-        let obj: Object;
-        try
-        {
-            obj = JSON.parse(json);
-        }
-        catch
-        {
-            return Result.err(
-                "InvalidJSON",
-                "JSON file was malformed."
-            );
-        }
-        for(let field of ["dag", "vert_data", "edge_data"])
+		for(let field of ["dag", "vert_data", "edge_data"])
             if(!(field in obj))
                 return Result.err("MissingField", "JSON missing field '"+field+"'.")
 		
@@ -396,6 +384,25 @@ export class FramedDAGEmbedding
 		}
 
 		return Result.ok(emb);
+	}
+
+
+	static from_json(json: string): Result<FramedDAGEmbedding>
+	{
+        let obj: Object;
+        try
+        {
+            obj = JSON.parse(json);
+        }
+        catch
+        {
+            return Result.err(
+                "InvalidJSON",
+                "JSON file was malformed."
+            );
+        }
+
+        return FramedDAGEmbedding.from_json_ob(obj as JSONFramedDagEmbedding);
 	}
 }
 

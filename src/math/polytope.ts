@@ -1,3 +1,4 @@
+import { Result } from "../util/result";
 import { DAGCliques } from "./routes";
 
 export class FlowPolytope
@@ -142,6 +143,23 @@ export class FlowPolytope
             external_simplices: structuredClone(this.external_simplices)
         }
 	}
+
+    static from_json_ob(ob: JSONFlowPolytope): Result<FlowPolytope>
+    {
+        //TODO: Validate
+
+        let vertices: NVector[] = ob.vertices.map(
+            (x) => new NVector(x)
+        );
+        let just_fields = {
+            dim: ob.dim,
+            vertices,
+            external_simplices: structuredClone(ob.external_simplices)
+        };
+        //Terrible? Maybe.
+        Object.setPrototypeOf(just_fields, FlowPolytope.prototype);
+        return Result.ok(just_fields as FlowPolytope);
+    }
 }
 export type JSONFlowPolytope = {
     dim: number,

@@ -1,4 +1,5 @@
 import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
+import { Result } from "../util/result";
 import { Clique } from "./routes";
 
 export class HasseDiagram
@@ -307,6 +308,28 @@ export class HasseDiagram
             maximal_elt: this.maximal_elt,
             cover_routes: structuredClone(this.cover_routes)
         }
+    }
+
+    static from_json_ob(ob: JSONHasseDiagram): Result<HasseDiagram>
+    {
+        //TODO: Validate
+        let layout_rows: Vector2[] = ob.layout_rows.map(
+            (x) => new Vector2(x[0], x[1])
+        )
+        let bounding_box = BoundingBox.from_json_ob(ob.bounding_box);
+        if(bounding_box.is_err())
+            return bounding_box.err_to_err()
+        let just_fields = {
+            poset_size: ob.poset_size,
+            covering_relation: structuredClone(ob.covering_relation),
+            layout_rows,
+            bounding_box: bounding_box.unwrap(),
+            minimal_elt: ob.minimal_elt,
+            maximal_elt: ob.maximal_elt,
+            cover_routes: structuredClone(ob.cover_routes)
+        };
+        Object.setPrototypeOf(just_fields, HasseDiagram);
+        return Result.ok(just_fields as HasseDiagram);
     }
 
 }

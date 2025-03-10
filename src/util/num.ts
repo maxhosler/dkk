@@ -1,3 +1,5 @@
+import { Result } from "./result";
+
 export type Matrix2x2 = [[number,number], [number, number]];
 export class Vector2
 {
@@ -295,6 +297,20 @@ export class BoundingBox
 			top_corner: this.top_corner.to_json_ob(),
 			bot_corner: this.bot_corner.to_json_ob()
 		}
+	}
+
+	static from_json_ob(ob: JSONBoundingBox): Result<BoundingBox>
+	{
+		//TODO: Validate 
+		let bb = new BoundingBox([]);
+
+		if(!ob.empty)
+		{
+			bb.add_point(new Vector2(ob.top_corner[0], ob.top_corner[1]));
+			bb.add_point(new Vector2(ob.bot_corner[0], ob.bot_corner[1]));
+		}
+
+		return Result.ok(bb)
 	}
 }
 export type JSONBoundingBox = {
