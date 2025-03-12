@@ -12,7 +12,8 @@ export const PRESETS: PresetOption[] = [
 	{name: "caracol-5"},
 	{name: "test-c-4"},
 	{name: "psuedopants"},
-    {name: "exceptional1"}
+    {name: "exceptional-1"},
+    {name: "exceptional-2"}
 ];
 
 function preset_dag(name: string): FramedDAG
@@ -68,9 +69,13 @@ function preset_dag(name: string): FramedDAG
         out.add_edge(1,2).unwrap();
         return out;
     }
-    else if (name == "exceptional1")
+    else if (name == "exceptional-1")
     {
-        return exceptional1();
+        return exceptional(0);
+    }
+    else if (name == "exceptional-2")
+    {
+        return exceptional(1);
     }
     console.warn(`Invalid preset_dag name: ${name}, returning cube.`)
     return preset_dag("cube");
@@ -142,9 +147,13 @@ export function caracol_emb(num_verts: number): FramedDAGEmbedding
     return emb;
 }
 
-function exceptional1(): FramedDAG
-{
-    let ob: JSONFramedDag = {
+const EXCEPTIONAL: JSONFramedDag[] = [
+    {
+        num_verts:6,
+        out_edges:[[2,7,12,10],[5,11],[8],[9,3,4,0],[1,6],[]],
+        in_edges:[[],[12],[11],[2,8],[5,4,0,10,9,7],[6,1,3]]
+    },
+    {
         num_verts: 6,
         out_edges: [
             [4, 11, 5 ],
@@ -163,6 +172,10 @@ function exceptional1(): FramedDAG
             [1, 8, 3]
         ]
     }
+]
+function exceptional(i: number): FramedDAG
+{
+    let ob: JSONFramedDag = EXCEPTIONAL[i];
     let dag = FramedDAG.from_json_ob(ob).unwrap();
     return dag;
 }
