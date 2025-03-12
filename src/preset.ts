@@ -13,7 +13,8 @@ export const PRESETS: PresetOption[] = [
 	{name: "test-c-4"},
 	{name: "psuedopants"},
     {name: "exceptional-1"},
-    {name: "exceptional-2"}
+    {name: "exceptional-2"},
+    {name: "exceptional-3"},
 ];
 
 function preset_dag(name: string): FramedDAG
@@ -76,6 +77,10 @@ function preset_dag(name: string): FramedDAG
     else if (name == "exceptional-2")
     {
         return exceptional(1);
+    }
+    else if (name == "exceptional-3")
+    {
+        return exceptional(2);
     }
     console.warn(`Invalid preset_dag name: ${name}, returning cube.`)
     return preset_dag("cube");
@@ -171,7 +176,13 @@ const EXCEPTIONAL: JSONFramedDag[] = [
             [4, 0, 6],
             [1, 8, 3]
         ]
+    },
+    {
+        num_verts:4,
+        out_edges:[[0,4,5],[3,2,7],[1,6],[]],
+        in_edges:[[],[0,5],[2,3,4],[7,1,6]]
     }
+
 ]
 function exceptional(i: number): FramedDAG
 {
