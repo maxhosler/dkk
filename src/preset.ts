@@ -1,5 +1,5 @@
 import { AngleOverride, FramedDAGEmbedding } from "./draw/dag_layout";
-import { FramedDAG } from "./math/dag";
+import { FramedDAG, JSONFramedDag } from "./math/dag";
 import { clamp } from "./util/num";
 import { Option } from "./util/result";
 
@@ -11,7 +11,8 @@ export const PRESETS: PresetOption[] = [
 	{name: "caracol-4"},
 	{name: "caracol-5"},
 	{name: "test-c-4"},
-	{name: "psuedopants"}
+	{name: "psuedopants"},
+    {name: "exceptional1"}
 ];
 
 function preset_dag(name: string): FramedDAG
@@ -67,14 +68,17 @@ function preset_dag(name: string): FramedDAG
         out.add_edge(1,2).unwrap();
         return out;
     }
+    else if (name == "exceptional1")
+    {
+        return exceptional1();
+    }
     console.warn(`Invalid preset_dag name: ${name}, returning cube.`)
     return preset_dag("cube");
 }
 
 export function preset_dag_embedding(name: string): FramedDAGEmbedding
 {
-	let dag = preset_dag(name);
-	let emb = new FramedDAGEmbedding(dag);
+	let emb;
 
 	if(name == "caracol-4")
 	{
@@ -84,6 +88,11 @@ export function preset_dag_embedding(name: string): FramedDAGEmbedding
 	{
 		emb = caracol_emb(5);
 	}
+    else
+    {
+        let dag = preset_dag(name);
+        emb = new FramedDAGEmbedding(dag);
+    }
 
 	return emb;
 }
@@ -131,4 +140,29 @@ export function caracol_emb(num_verts: number): FramedDAGEmbedding
 	}
 
     return emb;
+}
+
+function exceptional1(): FramedDAG
+{
+    let ob: JSONFramedDag = {
+        num_verts: 6,
+        out_edges: [
+            [4, 11, 5 ],
+            [3, 10, 12],
+            [9, 0, 7, 2],
+            [6],
+            [1, 8],
+            []
+        ],
+        in_edges: [
+            [],
+            [11],
+            [12, 10],
+            [5, 2, 9, 7],
+            [4, 0, 6],
+            [1, 8, 3]
+        ]
+    }
+    let dag = FramedDAG.from_json_ob(ob).unwrap();
+    return dag;
 }
