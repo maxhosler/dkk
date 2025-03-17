@@ -112,6 +112,11 @@ export class DrawOptions
 		this.f_hasse_edge_weight = weight;
 		this.on_change();
 	}
+	set_hasse_node_size(size: number)
+	{
+		this.f_hasse_node_size = size;
+		this.on_change();
+	}
 	set_hasse_show_cliques(b: boolean)
 	{
 		this.f_hasse_show_cliques = b;
