@@ -1,7 +1,6 @@
 import { AngleOverride, FramedDAGEmbedding } from "./draw/dag_layout";
-import { FramedDAG, JSONFramedDag } from "./math/dag";
+import { FramedDAG } from "./math/dag";
 import { clamp } from "./util/num";
-import { Option } from "./util/result";
 
 type PresetOption = {name: string}; //This is a struct just in case I want to add additional data
 export const PRESETS: PresetOption[] = [
@@ -11,10 +10,7 @@ export const PRESETS: PresetOption[] = [
 	{name: "caracol-4"},
 	{name: "caracol-5"},
 	{name: "test-c-4"},
-	{name: "psuedopants"},
-    {name: "exceptional-1"},
-    {name: "exceptional-2"},
-    {name: "exceptional-3"},
+	{name: "psuedopants"}
 ];
 
 function preset_dag(name: string): FramedDAG
@@ -70,25 +66,14 @@ function preset_dag(name: string): FramedDAG
         out.add_edge(1,2).unwrap();
         return out;
     }
-    else if (name == "exceptional-1")
-    {
-        return exceptional(0);
-    }
-    else if (name == "exceptional-2")
-    {
-        return exceptional(1);
-    }
-    else if (name == "exceptional-3")
-    {
-        return exceptional(2);
-    }
     console.warn(`Invalid preset_dag name: ${name}, returning cube.`)
     return preset_dag("cube");
 }
 
 export function preset_dag_embedding(name: string): FramedDAGEmbedding
 {
-	let emb;
+	let dag = preset_dag(name);
+	let emb = new FramedDAGEmbedding(dag);
 
 	if(name == "caracol-4")
 	{
@@ -98,11 +83,6 @@ export function preset_dag_embedding(name: string): FramedDAGEmbedding
 	{
 		emb = caracol_emb(5);
 	}
-    else
-    {
-        let dag = preset_dag(name);
-        emb = new FramedDAGEmbedding(dag);
-    }
 
 	return emb;
 }
@@ -150,43 +130,4 @@ export function caracol_emb(num_verts: number): FramedDAGEmbedding
 	}
 
     return emb;
-}
-
-const EXCEPTIONAL: JSONFramedDag[] = [
-    {
-        num_verts:6,
-        out_edges:[[2,7,12,10],[5,11],[8],[9,3,4,0],[1,6],[]],
-        in_edges:[[],[12],[11],[2,8],[5,4,0,10,9,7],[6,1,3]]
-    },
-    {
-        num_verts: 6,
-        out_edges: [
-            [4, 11, 5 ],
-            [3, 10, 12],
-            [9, 0, 7, 2],
-            [6],
-            [1, 8],
-            []
-        ],
-        in_edges: [
-            [],
-            [11],
-            [12, 10],
-            [5, 2, 9, 7],
-            [4, 0, 6],
-            [1, 8, 3]
-        ]
-    },
-    {
-        num_verts:4,
-        out_edges:[[0,4,5],[3,2,7],[1,6],[]],
-        in_edges:[[],[0,5],[2,3,4],[7,1,6]]
-    }
-
-]
-function exceptional(i: number): FramedDAG
-{
-    let ob: JSONFramedDag = EXCEPTIONAL[i];
-    let dag = FramedDAG.from_json_ob(ob).unwrap();
-    return dag;
 }
