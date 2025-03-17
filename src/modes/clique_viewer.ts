@@ -342,6 +342,11 @@ export class CliqueViewer implements IMode
             ) != this.current_clique;
             this.swap_box.show_enabled(r, enabled)
         };
+        this.swap_box.show_all_boxes();
+        for(let route of this.cliques.exceptional_routes)
+        {
+            this.swap_box.hide_box(route);
+        }
 
         this.poly_canvas.set_clique(clq)
     }
