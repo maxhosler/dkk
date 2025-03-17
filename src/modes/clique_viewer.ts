@@ -12,6 +12,12 @@ import { IMode, ModeName } from "./mode";
 import { Option, Result } from "../util/result";
 import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
 
+type HasseDrag = {
+    dragging: boolean,
+    elem: number,
+    offset: Vector2
+}
+
 export class CliqueViewer implements IMode
 {
     readonly draw_options: DrawOptions;
@@ -32,7 +38,13 @@ export class CliqueViewer implements IMode
     current_clique: number = 0;
     
     current_dag_bez: {bez: Bezier, route: number, width: number}[] = [];
+    current_hasse_boxes: {box: BoundingBox, clique: number}[] = [];
     moused_over_route: Option<number> = Option.none();
+
+    h_drag: HasseDrag = {dragging: false, elem: 0, offset: Vector2.zero()};
+    hasse_scale: number = 1.0;
+
+    hasse_overrides: {[key: number]: Vector2} = {};
 
     name(): ModeName {
         return "clique-viewer"
@@ -92,16 +104,25 @@ export class CliqueViewer implements IMode
         let cliques = DAGCliques.from_json_ob(data.cliques);
         if(cliques.is_err())
             return cliques.err_to_err();
+        let hasse_overrides: {[key: number]: Vector2} = {};
+        for(let i in data.hasse_overrides)
+        {
+            let v = data.hasse_overrides[i];
+            hasse_overrides[parseInt(i)] = new Vector2(v[0], v[1]);
+        }
 
         SIDEBAR_HEAD.innerHTML = "";
         SIDEBAR_CONTENTS.innerHTML = "";
         RIGHT_AREA.innerHTML = "";
 
-        return Result.ok(new CliqueViewer
+        let cv = new CliqueViewer
         (
             dag.unwrap(), polytope.unwrap(), cliques.unwrap(), draw_options,
             SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
-        ));
+        );
+        cv.set_hasse_overrides(hasse_overrides);
+
+        return Result.ok(cv);
     }
 
     private constructor(
@@ -200,11 +221,53 @@ export class CliqueViewer implements IMode
         let {canvas: hasse_canvas, element: h_canvas_element} = DAGCanvas.create(draw_options);
         segments.hasse.appendChild(h_canvas_element);
         hasse_canvas.resize_canvas();
-        h_canvas_element.addEventListener("click",
-			(ev) => {
-				this.hasse_canvas_click(new Vector2(ev.layerX, ev.layerY))
-			}
-		)
+        h_canvas_element.addEventListener("mousedown",
+            (ev) => {
+                if(ev.ctrlKey){
+                    this.h_drag.dragging = true
+                    let mp = new Vector2(ev.layerX, ev.layerY);
+                    let hp = this.get_hasse_node_at(mp);
+                    if (hp.is_some())
+                    {
+                        let idx = hp.unwrap();
+                        let pos = this.get_hasse_position_unscaled(idx);
+                        let descaled_mp = this.hasse_canvas.local_trans_inv(mp).scale(1/this.hasse_scale);
+                        let offset = pos.sub(descaled_mp);
+                        this.h_drag.dragging = true;
+                        this.h_drag.elem = idx;
+                        this.h_drag.offset = offset;
+                    }
+                }
+            }
+        );
+        h_canvas_element.addEventListener("mouseup",
+            (ev) => {
+                if(!this.h_drag.dragging)
+                {
+                    this.hasse_canvas_click(new Vector2(ev.layerX, ev.layerY));
+                }
+                this.h_drag.dragging = false;
+                this.recomp_hasse_scale();
+            }
+        )
+        h_canvas_element.addEventListener("mouseleave",
+            (ev) => {
+                this.h_drag.dragging = false;
+                this.recomp_hasse_scale();
+            }
+        )
+        h_canvas_element.addEventListener("mousemove",
+            (ev) => {
+                if (this.h_drag.dragging)
+                {
+                    let mp = new Vector2(ev.layerX, ev.layerY);
+                    let descaled_mp = this.hasse_canvas.local_trans_inv(mp).scale(1/this.hasse_scale);
+                    this.hasse_overrides[this.h_drag.elem] = descaled_mp.add(this.h_drag.offset);
+                    this.draw();
+                }
+            }
+        )
+        
         this.hasse_canvas = hasse_canvas;
 
         //Polytope canvas
@@ -219,6 +282,7 @@ export class CliqueViewer implements IMode
             this.clique_canvas.resize_canvas();
             this.hasse_canvas.resize_canvas();
             this.poly_canvas.resize_canvas();
+            this.recomp_hasse_scale();
 
             this.draw()
         };
@@ -229,8 +293,12 @@ export class CliqueViewer implements IMode
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
 
+
         this.update_route_enabled();
         this.update_swap_box();
+        
+        window.dispatchEvent(new Event('resize'));
+        this.recomp_hasse_scale();
     }
 
     clear_global_events(): void {
@@ -252,22 +320,10 @@ export class CliqueViewer implements IMode
 
     hasse_canvas_click(position: Vector2)
     {
-        let canvas_pos = this.hasse_canvas.local_trans_inv(position);
-        let positions = this.get_hasse_positions();
-        let closest = -1;
-        let min_dist = Infinity;
-        for(let i = 0; i < positions.length; i++)
-        {
-            let dist = positions[i].sub(canvas_pos).norm();
-            if(dist <= min_dist)
-            {
-                closest = i;
-                min_dist = dist;
-            }
-        }
+        let clicked = this.get_hasse_node_at(position);
 
-        if(closest >= 0) {
-            this.current_clique = closest;
+        if(clicked.is_some()) {
+            this.current_clique = clicked.unwrap();
             this.refresh_swapbox()
         }
 
@@ -630,9 +686,9 @@ export class CliqueViewer implements IMode
         }
     }
 
-    get_hasse_positions(): Vector2[]
+    recomp_hasse_scale()
     {
-        const PADDING: number = 100; //TODO: make parameter
+        const PADDING: number = 50; //TODO: make parameter
 
         let v_width = Math.max(1,
             this.hasse_canvas.width() - 2*PADDING
@@ -646,15 +702,55 @@ export class CliqueViewer implements IMode
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
-        let scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
-
-        return hasse.layout_rows
-            .map(v => v.scale(scale));
+        this.hasse_scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
     }
 
+    get_hasse_positions(): Vector2[]
+    {
+        let out = [];
+        for(let i = 0; i < this.cliques.hasse.layout_rows.length; i++)
+            out.push(this.get_hasse_position(i))
+        return out;
+    }
+
+    get_hasse_position(i: number): Vector2
+    {
+        return this.get_hasse_position_unscaled(i).scale(this.hasse_scale);
+    }
+
+    get_hasse_position_unscaled(i: number): Vector2
+    {
+        if(i in this.hasse_overrides)
+            return this.hasse_overrides[i];
+        return this.cliques.hasse.layout_rows[i];
+    }
+
+    get_hasse_node_at(click_pos: Vector2): Option<number>
+    {
+        let canvas_pos = this.hasse_canvas.local_trans_inv(click_pos);
+        let positions = this.get_hasse_positions();
+        let closest: Option<number> = Option.none();
+        let min_dist = Infinity;
+        for(let i = 0; i < positions.length; i++)
+        {
+            let dist = positions[i].sub(canvas_pos).norm();
+            if(dist <= min_dist)
+            {
+                closest = Option.some(i);
+                min_dist = dist;
+            }
+        }
+        return closest;
+    }
     /*
     Util
     */
+
+    private set_hasse_overrides(hasse_overrides: {[key: number]: Vector2} )
+    {
+        this.hasse_overrides = hasse_overrides;
+        this.draw();
+    }
 
     get_route_at(pos: Vector2): Option<number>
     {
@@ -677,10 +773,18 @@ export class CliqueViewer implements IMode
 
     to_data_json_ob(): JSONCliqueData
     {
+        let hasse_overrides: {[key: number]: [number, number]} = {};
+        for(let i in this.hasse_overrides)
+        {
+            let v = this.hasse_overrides[i];
+            hasse_overrides[i] = [v.x, v.y];
+        }
+
         return {
             dag: this.dag.to_json_ob(),
             polytope: this.polytope.to_json_ob(),
-            cliques: this.cliques.to_json_ob()
+            cliques: this.cliques.to_json_ob(),
+            hasse_overrides
         }
     }
 
@@ -689,7 +793,8 @@ export type JSONCliqueData =
 {
     dag: JSONFramedDagEmbedding,
     polytope: JSONFlowPolytope,
-    cliques: JSONDAGCliques
+    cliques: JSONDAGCliques,
+    hasse_overrides: {[key: number]: [number, number]}
 }
 
 function build_right_area_zones(): {
