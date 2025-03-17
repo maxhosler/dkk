@@ -38,7 +38,7 @@ export class CliqueViewer implements IMode
     current_clique: number = 0;
     
     current_dag_bez: {bez: Bezier, route: number, width: number}[] = [];
-    current_hasse_boxes: {box: BoundingBox, clique: number}[] = [];
+    current_hasse_boxes: {[clique: number]: BoundingBox } = {};
     moused_over_route: Option<number> = Option.none();
 
     h_drag: HasseDrag = {dragging: false, elem: 0, offset: Vector2.zero()};
@@ -147,6 +147,7 @@ export class CliqueViewer implements IMode
         draw_options.add_change_listener(() => {
             let nc = this.cliques.cliques[this.current_clique];
             this.poly_canvas.set_clique(nc);
+            this.recomp_hasse_scale();
             this.draw();
             this.update_swap_box();
         });
@@ -229,7 +230,7 @@ export class CliqueViewer implements IMode
                     if (hp.is_some())
                     {
                         let idx = hp.unwrap();
-                        let pos = this.get_hasse_position_unscaled(idx);
+                        let pos = this.get_hasse_position(idx);
                         let descaled_mp = this.hasse_canvas.local_trans_inv(mp);
                         let offset = pos.sub(descaled_mp);
                         this.h_drag.dragging = true;
@@ -291,7 +292,6 @@ export class CliqueViewer implements IMode
         let cc = this.cliques.cliques[ this.current_clique ];
         for(let i = 0; i < cc.routes.length; i++)
         { this.swap_box.set_color(i, cc.routes[i]) }
-
 
         this.update_route_enabled();
         this.update_swap_box();
@@ -539,6 +539,7 @@ export class CliqueViewer implements IMode
 
         let hasse = this.cliques.hasse;
         let positions = this.get_hasse_positions();
+        this.current_hasse_boxes = {};
 
         for(let i = 0; i < hasse.covering_relation.length; i++)
         for(let j = 0; j < hasse.covering_relation.length; j++)
@@ -628,6 +629,7 @@ export class CliqueViewer implements IMode
             box.add_point(edge.end_point);
         }
         box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
+        this.current_hasse_boxes[clique_idx] = box;
         ctx.draw_box(
             box.top_corner,
             box.bot_corner,
@@ -692,22 +694,38 @@ export class CliqueViewer implements IMode
 
     recomp_hasse_scale()
     {
-        const PADDING: number = 50; //TODO: make parameter
+        let padding = this.draw_options.hasse_padding();
+        let padding_x = padding + this.draw_options.hasse_node_size();
+        let padding_y = padding + this.draw_options.hasse_node_size();
+
+        if(this.draw_options.hasse_show_cliques())
+        {
+            let box = this.current_hasse_boxes[0];
+            if(box)
+            {
+                padding_x = padding + box.width();
+                padding_y = padding + box.height();
+            }
+        }
 
         let v_width = Math.max(1,
-            this.hasse_canvas.width() - 2*PADDING
+            this.hasse_canvas.width() - 2*padding_x
         );
         let v_height = Math.max(1,
-            this.hasse_canvas.height() - 2*PADDING
+            this.hasse_canvas.height() - 2*padding_y
         );
 
         let hasse = this.cliques.hasse;
-        let hasse_ext = hasse.bounding_box.extent().scale(2);
+        let bb = hasse.bounding_box.clone();
+        for(let override of Object.values(this.hasse_overrides))
+            bb.add_point(override);
+        let hasse_ext = bb.extent().scale(2);
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
         
         this.hasse_canvas.set_scale(Math.min(w_scale, h_scale));
+        this.draw_hasse();
     }
 
     get_hasse_positions(): Vector2[]
@@ -719,11 +737,6 @@ export class CliqueViewer implements IMode
     }
 
     get_hasse_position(i: number): Vector2
-    {
-        return this.get_hasse_position_unscaled(i);
-    }
-
-    get_hasse_position_unscaled(i: number): Vector2
     {
         if(i in this.hasse_overrides)
             return this.hasse_overrides[i];
@@ -738,7 +751,22 @@ export class CliqueViewer implements IMode
         let min_dist = Infinity;
         for(let i = 0; i < positions.length; i++)
         {
-            let dist = positions[i].sub(canvas_pos).norm();
+            let node_pos = positions[i];
+            let screen_node_pos = this.hasse_canvas.local_trans(node_pos);
+
+            if(this.draw_options.hasse_show_cliques())
+            {
+                let box = this.current_hasse_boxes[i];
+                if(box && !box.contains(canvas_pos))
+                    continue;
+            }
+            else
+            {
+                if(screen_node_pos.sub(click_pos).norm() > this.draw_options.hasse_node_size()/2)
+                    continue;
+            }
+
+            let dist = node_pos.sub(canvas_pos).norm();
             if(dist <= min_dist)
             {
                 closest = Option.some(i);

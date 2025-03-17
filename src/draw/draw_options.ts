@@ -36,6 +36,7 @@ export class DrawOptions
 	private f_hasse_mini_dag_size: number = 80;
 	private f_hasse_mini_vert_rad: number = 8;
 	private f_hasse_mini_route_weight: number = 6;
+	private f_hasse_padding: number = 70;
 
 	//POLYTOPE
 	private f_simplex_render_mode: SimplexRenderMode = "dots";
@@ -304,6 +305,10 @@ export class DrawOptions
 	hasse_show_cliques(): boolean
 	{
 		return this.f_hasse_show_cliques;
+	}
+	hasse_padding(): number
+	{
+		return this.f_hasse_padding;
 	}
 
 	background_color(): string

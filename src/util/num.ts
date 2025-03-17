@@ -269,6 +269,14 @@ export class BoundingBox
 		}
 	}
 
+	contains(point: Vector2): boolean
+	{
+		return this.top_corner.x <= point.x &&
+			   point.x <= this.bot_corner.x &&
+			   this.top_corner.y <= point.y &&
+			   point.y <= this.bot_corner.y
+	}
+
 	pad(w: number)
 	{
 		let delta = new Vector2(w,w);
@@ -288,6 +296,16 @@ export class BoundingBox
 		);
 
 		return new Vector2(x,y);
+	}
+
+	width(): number
+	{
+		return this.bot_corner.x - this.top_corner.x
+	}
+
+	height(): number
+	{
+		return this.bot_corner.y - this.top_corner.y
 	}
 
 	to_json_ob(): JSONBoundingBox
@@ -311,6 +329,13 @@ export class BoundingBox
 		}
 
 		return Result.ok(bb)
+	}
+
+	clone(): BoundingBox
+	{
+		let bb = new BoundingBox([this.top_corner, this.bot_corner]);
+		bb.empty = this.empty;
+		return bb;
 	}
 }
 export type JSONBoundingBox = {
