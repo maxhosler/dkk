@@ -237,6 +237,10 @@ export class CliqueViewer implements IMode
                         this.h_drag.elem = idx;
                         this.h_drag.offset = offset;
                     }
+                    else
+                    {
+                        this.h_drag.dragging = false;
+                    }
                 }
             }
         );
@@ -754,15 +758,19 @@ export class CliqueViewer implements IMode
             let node_pos = positions[i];
             let screen_node_pos = this.hasse_canvas.local_trans(node_pos);
 
+            //console.log(canvas_pos);
+            //console.log(node_pos);
+
             if(this.draw_options.hasse_show_cliques())
             {
                 let box = this.current_hasse_boxes[i];
-                if(box && !box.contains(canvas_pos))
+                if(!box || !box.contains(canvas_pos))
                     continue;
             }
             else
             {
-                if(screen_node_pos.sub(click_pos).norm() > this.draw_options.hasse_node_size()/2)
+                let screen_dist = screen_node_pos.sub(click_pos).norm();
+                if(screen_dist > this.draw_options.hasse_node_size())
                     continue;
             }
 
@@ -773,6 +781,8 @@ export class CliqueViewer implements IMode
                 min_dist = dist;
             }
         }
+
+        console.log(closest);
         return closest;
     }
     /*
