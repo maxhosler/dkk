@@ -2,11 +2,13 @@ import { Bezier, Vector2 } from "../util/num";
 import { DrawOptions } from "../draw/draw_options";
 import { FramedDAG } from "../math/dag";
 import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
+import { Option } from "../util/result";
 
 export class DAGCanvas
 {
-	canvas: HTMLCanvasElement;
+	readonly canvas: HTMLCanvasElement;
 	readonly draw_options: DrawOptions;
+	scale_override: Option<number> = Option.none();
 
 	static create(draw_options: DrawOptions): { canvas: DAGCanvas, element: HTMLCanvasElement }
 	{
@@ -56,7 +58,7 @@ export class DAGCanvas
 	local_trans(vec: Vector2)
 	{
 		return vec
-			.scale(this.draw_options.scale())
+			.scale(this.scale())
 			.add(this.get_offset());
 	}
 
@@ -64,7 +66,7 @@ export class DAGCanvas
 	{
 		return vec
 			.sub(this.get_offset())
-			.scale(1/this.draw_options.scale());
+			.scale(1/this.scale());
 	}
 
 	width(): number
@@ -75,6 +77,17 @@ export class DAGCanvas
 	height(): number
 	{
 		return this.canvas.height
+	}
+
+	scale(): number
+	{
+		return this.scale_override
+			.unwrap_or(this.draw_options.scale());
+	}
+
+	set_scale(num: number)
+	{
+		this.scale_override = Option.some(num);
 	}
 }
 
