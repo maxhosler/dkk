@@ -42,7 +42,6 @@ export class CliqueViewer implements IMode
     moused_over_route: Option<number> = Option.none();
 
     h_drag: HasseDrag = {dragging: false, elem: 0, offset: Vector2.zero()};
-    hasse_scale: number = 1.0;
 
     hasse_overrides: {[key: number]: Vector2} = {};
 
@@ -231,7 +230,7 @@ export class CliqueViewer implements IMode
                     {
                         let idx = hp.unwrap();
                         let pos = this.get_hasse_position_unscaled(idx);
-                        let descaled_mp = this.hasse_canvas.local_trans_inv(mp).scale(1/this.hasse_scale);
+                        let descaled_mp = this.hasse_canvas.local_trans_inv(mp);
                         let offset = pos.sub(descaled_mp);
                         this.h_drag.dragging = true;
                         this.h_drag.elem = idx;
@@ -261,7 +260,7 @@ export class CliqueViewer implements IMode
                 if (this.h_drag.dragging)
                 {
                     let mp = new Vector2(ev.layerX, ev.layerY);
-                    let descaled_mp = this.hasse_canvas.local_trans_inv(mp).scale(1/this.hasse_scale);
+                    let descaled_mp = this.hasse_canvas.local_trans_inv(mp);
                     this.hasse_overrides[this.h_drag.elem] = descaled_mp.add(this.h_drag.offset);
                     this.draw();
                 }
@@ -707,20 +706,21 @@ export class CliqueViewer implements IMode
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
-        this.hasse_scale = Math.min(w_scale, h_scale) / this.draw_options.scale();
+        
+        this.hasse_canvas.set_scale(Math.min(w_scale, h_scale));
     }
 
     get_hasse_positions(): Vector2[]
     {
         let out = [];
         for(let i = 0; i < this.cliques.hasse.layout_rows.length; i++)
-            out.push(this.get_hasse_position(i))
+            out.push(this.get_hasse_position(i));
         return out;
     }
 
     get_hasse_position(i: number): Vector2
     {
-        return this.get_hasse_position_unscaled(i).scale(this.hasse_scale);
+        return this.get_hasse_position_unscaled(i);
     }
 
     get_hasse_position_unscaled(i: number): Vector2
