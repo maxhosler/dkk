@@ -779,7 +779,6 @@ export class CliqueViewer implements IMode
             }
         }
 
-        console.log(closest);
         return closest;
     }
     /*
