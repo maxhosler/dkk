@@ -149,7 +149,20 @@ export class FlowPolytope
 
     static from_json_ob(ob: JSONFlowPolytope): Result<FlowPolytope>
     {
-        //TODO: Validate
+        for(let field of ["dim", "vertices", "external_simplices"])
+			if(!(field in ob))
+				return Result.err("MissingField", "FlowPolytope is missing field: "+field);
+        if(typeof ob.dim != "number")
+            return Result.err("InvalidField", "FlowPolytope field 'num' is not a number.");
+        for(let field of ["vertices", "external_simplices"]) {
+            let data = (ob as any)[field];
+            if(typeof data.length != "number")
+                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array.`);
+            if(data.length > 0 && typeof data[0].length != "number")
+                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays.`);
+            if(data[0].length > 0 && typeof data[0][0]!= "number")
+                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays of numbers.`);
+        }
 
         let vertices: NVector[] = ob.vertices.map(
             (x) => new NVector(x)
