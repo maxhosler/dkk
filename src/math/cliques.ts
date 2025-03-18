@@ -2,8 +2,7 @@ import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option, Result } from "../util/result";
 import { HasseDiagram, JSONHasseDiagram } from "./hasse";
 
-//TODO: Document
-
+//Just a wrapper around a list of numbers, each representing an edge
 class Route
 {
 	readonly edges: number[];
@@ -14,8 +13,15 @@ class Route
 	}
 }
 
+/*
+Similarly to above, a wrapper around a list of numbers, each representing a route.
+The additional functions are just to properly sort the edges so that they can look
+as nice as possible when rendered.
+*/
 export class Clique
 {
+	//Returns a comparison function between routes
+	//which tries to order them 'at' the edge {edge_num}.
 	static indexed_local_edge_order(
 		edge_num: number,
 		routes: number[],
@@ -40,6 +46,7 @@ export class Clique
 		} 
 	}
 
+	//Sorts the routes of a clique the best it can.
 	static build_with_order(routes: number[], dag_context: DAGCliques): Clique
 	{
 		let routes_per_edge: number[][] = [];
@@ -73,6 +80,14 @@ export class Clique
 	}
 }
 
+/*
+Represents a shared subroute.
+The in-vert and out-verts are the start and end vertices, while
+in-edges and out-edges represents the edges directly before and after these vertices, repsectively,
+one for each route. Edges is a list of edge indices, and in_order and out_order are the relative position
+of the routes, -1 is below, 1 is above, and 0 is indeterminate, which occurs when the routes start at the
+source or end at the sink.
+*/
 export type SharedSubroute = 
 {
 	in_vert: number,
@@ -97,7 +112,7 @@ export class DAGCliques
 	readonly clique_size: number;
 
 	readonly exceptional_routes: number[];
-	readonly route_swaps: number[][]; //clique index, and route index in clique
+	readonly mutations: number[][]; //clique index, and route index in clique
 	readonly clique_leq_matrix: boolean[][];
 	readonly shared_subroutes_arr: SharedSubrouteCollection[][];
 	readonly hasse: HasseDiagram;
@@ -235,7 +250,7 @@ export class DAGCliques
 
 			}
 		}
-		this.route_swaps = clique_route_swaps;
+		this.mutations = clique_route_swaps;
 		
 		//Computes the poset relation
 		let clique_leq_matrix: boolean[][] = [];
@@ -463,23 +478,23 @@ export class DAGCliques
 		return out;
 	}
 
-	route_swap_by_route_idx(clique_idx: number, route_idx: number): number
+	mutate_by_route_idx(clique_idx: number, route_idx: number): number
 	{
 		let clq = this.cliques[clique_idx];
 		for(let i = 0; i < clq.routes.length; i++)
 		{
 			if (clq.routes[i] == route_idx)
 			{
-				return this.route_swaps[clique_idx][i];
+				return this.mutations[clique_idx][i];
 			}
 		}
 		console.warn("Just tried to swap route not present in given clique.");
 		return clique_idx;
 	}
 
-	route_swap_by_idx_in_clq(clique_idx: number, idx_in_clique: number): number
+	mutate_by_idx_in_clq(clique_idx: number, idx_in_clique: number): number
 	{
-		return this.route_swaps[clique_idx][idx_in_clique];
+		return this.mutations[clique_idx][idx_in_clique];
 	}
 
 	to_json_ob(): JSONDAGCliques
@@ -501,7 +516,7 @@ export class DAGCliques
 			clique_size: this.clique_size,
 
 			exceptional_routes: structuredClone(this.exceptional_routes),
-			route_swaps: structuredClone(this.route_swaps),
+			mutations: structuredClone(this.mutations),
 			clique_leq_matrix: structuredClone(this.clique_leq_matrix),
 			shared_subroutes_arr: structuredClone(this.shared_subroutes_arr),
 			hasse: this.hasse.to_json_ob()
@@ -528,8 +543,8 @@ export class DAGCliques
 			return Result.err("InvalidField", `DAGCliques field 'clique_size' is not a number.`);
 		if(!is_list_of_numbers(ob.exceptional_routes))
 			return Result.err("InvalidField", `DAGCliques field 'exceptional_routes' is not an array of numbers.`);
-		if(!is_list_of_lists(ob.route_swaps, "number"))
-			return Result.err("InvalidField", `DAGCliques field 'route_swaps' is not an array of arrays of numbers.`);
+		if(!is_list_of_lists(ob.mutations, "number"))
+			return Result.err("InvalidField", `DAGCliques field 'mutations' is not an array of arrays of numbers.`);
 		if(!is_list_of_lists(ob.clique_leq_matrix, "boolean"))
 			return Result.err("InvalidField", `DAGCliques field 'route_swaps' is not an array of arrays of booleans.`);		
 
@@ -540,11 +555,15 @@ export class DAGCliques
 			clique_size: ob.clique_size,
 
 			exceptional_routes: structuredClone(ob.exceptional_routes),
-			route_swaps: structuredClone(ob.route_swaps),
+			mutations: structuredClone(ob.mutations),
 			clique_leq_matrix: structuredClone(ob.clique_leq_matrix),
 			shared_subroutes_arr: ssr.unwrap(),
 			hasse: hd.unwrap()
 		}
+
+		//This is a bit of a janky hack to get the DAGCliques object to have its methods;
+		//Create an object with a small, basically empty DAG, and then just copy in the 
+		//actual values.
 		let base = new DAGCliques(empty_fd());
 		for(let field in just_fields)
 		{
@@ -562,7 +581,7 @@ export type JSONDAGCliques = {
 	clique_size: number,
 
 	exceptional_routes: number[],
-	route_swaps: number[][],
+	mutations: number[][],
 	clique_leq_matrix: boolean[][],
 	shared_subroutes_arr: SharedSubrouteCollection[][],
 	hasse: JSONHasseDiagram;
@@ -602,6 +621,12 @@ function is_list_of_numbers(x: any): boolean
 	return true;
 }
 
+/*
+This verifies x is a SharedSubrouteCollection[][]. The reason this returns a Result,
+rather than just returning true or false, is that the Option<[number,number]>s in 
+the SharedSubroute struct need to be actually converted into Options, since JSON 
+objects don't remember their methods.
+*/
 function verify_ssr(x: any): Result<SharedSubrouteCollection[][]>
 {
 	let out: SharedSubrouteCollection[][] = [];

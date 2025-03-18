@@ -341,7 +341,7 @@ export class CliqueViewer implements IMode
         this.swap_box.refresh(clq);
         for(let r of clq.routes)
         {
-            let enabled = this.cliques.route_swap_by_route_idx
+            let enabled = this.cliques.mutate_by_route_idx
             (
                 this.current_clique, r
             ) != this.current_clique;
@@ -359,7 +359,7 @@ export class CliqueViewer implements IMode
     route_swap(idx: number)
     {
         let old_clq = this.current_clique;
-        let new_clq = this.cliques.route_swap_by_route_idx(
+        let new_clq = this.cliques.mutate_by_route_idx(
             this.current_clique,
             idx
         );
@@ -410,7 +410,7 @@ export class CliqueViewer implements IMode
         let nc = this.cliques.cliques[this.current_clique];
         for(let r of nc.routes)
         {
-            let en = this.cliques.route_swap_by_route_idx(
+            let en = this.cliques.mutate_by_route_idx(
                 this.current_clique,
                 r
             ) != this.current_clique;
