@@ -3,7 +3,7 @@ import { BakedDAGEmbedding, FramedDAGEmbedding, JSONFramedDagEmbedding } from ".
 import { RIGHT_AREA, SIDEBAR_CONTENTS, SIDEBAR_HEAD } from "../html_elems";
 import { Bezier, BoundingBox, Vector2 } from "../util/num";
 import { DrawOptionBox } from "../subelements/draw_option_box";
-import { DAGCliques, JSONDAGCliques } from "../math/routes";
+import { DAGCliques, JSONDAGCliques } from "../math/cliques";
 import { SwapBox } from "../subelements/swap_box";
 import { FlowPolytope, JSONFlowPolytope } from "../math/polytope";
 import { PolytopeCanvas } from "../subelements/polytope_canvas";

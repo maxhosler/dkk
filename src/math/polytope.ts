@@ -1,7 +1,7 @@
 import { preset_dag_embedding } from "../preset";
 import { Result } from "../util/result";
 import { FramedDAG } from "./dag";
-import { DAGCliques } from "./routes";
+import { DAGCliques } from "./cliques";
 
 export class FlowPolytope
 {

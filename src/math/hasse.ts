@@ -1,6 +1,6 @@
 import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Result } from "../util/result";
-import { Clique } from "./routes";
+import { Clique } from "./cliques";
 
 export class HasseDiagram
 {
