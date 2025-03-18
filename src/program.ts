@@ -9,9 +9,13 @@ import { NewPopup } from "./popup/new";
 import { SettingsPopup } from "./popup/settings";
 import { preset_dag_embedding } from "./preset";
 
+/*
+This class handles the top-bar, swapping between modes, and most popups.
+It is constructed once one page load.
+*/
 export class DKKProgram
 {
-    body: HTMLBodyElement;
+    //Internal data and state
 	draw_options = new DrawOptions(true, true);
 	mode: IMode = EmbeddingEditor.destructive_new(
 		preset_dag_embedding("cube"),
@@ -19,21 +23,31 @@ export class DKKProgram
 	);
     popup_open: boolean = false;
 
+    /*************
+    HTML Elements
+    *************/
+    body: HTMLBodyElement;
+
+    //Button on the top bar
     settings_button: HTMLDivElement;
     switch_button: HTMLDivElement;
     open_button: HTMLDivElement;
     new_button: HTMLDivElement;
     save_button: HTMLDivElement;
 
+    //Dropdown menu
     save_dropdown: HTMLDivElement;
     save_dropdown_shown: boolean = false;
 
+    //Items in the dropdown menu
     save_dag_ddelem: HTMLDivElement;
     save_data_ddelem: HTMLDivElement;
 
 	constructor()
 	{
         this.body = document.getElementsByTagName("body")[0] as HTMLBodyElement;
+
+        //Attaching all the 'onclick' events to buttons on the top-bar.
 		this.open_button = document.getElementById("open-button") as HTMLDivElement;
 		this.open_button.onclick = (ev) => {
             this.open_button_click();
@@ -59,23 +73,25 @@ export class DKKProgram
             this.save_button_click();
         }
 
+        //Get and hide the dropdown menu.
         this.save_dropdown = document.getElementById("save-dropdown") as HTMLDivElement;
         this.save_dropdown.style.display = "none";
 
         this.save_dag_ddelem = document.getElementById("dd-save-dag") as HTMLDivElement;
         this.save_data_ddelem = document.getElementById("dd-save-precomp") as HTMLDivElement;
 
+        //Add events to the dropdown menu
         this.save_dag_ddelem.addEventListener("click",
             (ev) => {
-                this.save_dag_dd_click();
-                this.save_dropdown_shown = false;
-                this.show_hide_items();
-                ev.stopPropagation();
+                this.save_dag_dd_click();         //Save
+                this.save_dropdown_shown = false; //Set dropdown to hidden
+                this.show_hide_items();           //Update screen
+                ev.stopPropagation();             //Prevent this from triggering parent events
             }
         )
         this.save_data_ddelem.addEventListener("click",
             (ev) => {
-                this.save_data_dd_click();
+                this.save_data_dd_click();        //Ditto to above.
                 this.save_dropdown_shown = false;
                 this.show_hide_items();
                 ev.stopPropagation();
@@ -87,8 +103,9 @@ export class DKKProgram
 
     open_button_click()
     {
-        if(this.popup_open) { return; }
+        if(this.popup_open) { return; } //Ignore if popup is open.
 
+        //Opens a popup menu, different one based on state.
         this.popup_open = true;
         if(this.mode.name() == "clique-viewer")
         {
@@ -109,8 +126,9 @@ export class DKKProgram
 
     settings_button_click()
     {
-        if(this.popup_open) { return; }
+        if(this.popup_open) { return; } //Ignore if popup is open.
 
+        //Open settings menu
         this.popup_open = true;
         new SettingsPopup(
             this.body,
@@ -120,18 +138,28 @@ export class DKKProgram
 
     switch_button_click()
     {
-        if(this.popup_open) { return; }
+        if(this.popup_open) { return; } //Ignore if popup is open.
 
+        //Grab current FramedDAGEmbedding from current mode.
         let embedding = this.mode.current_embedding();
 
+        /*
+        Don't switch if DAG isn't valid!
+        Checks if DAG doesn't have unique sink and source.
+        Other ways of being invalid (i.e. having cycles) are prevented
+        from happening in the first place.
+        */ 
         if(this.mode.name() == "embedding-editor" && !embedding.dag.valid())
         {
             alert("Can't view; not a connected DAG with one source and one sink!")
             return;
         }
 
+        //Delete any mode-specific events that are tied to the document, rather than
+        //an element created and controlled by that mode.
         this.mode.clear_global_events();
 
+        //Swap to the other mode.
         if(this.mode.name() == "embedding-editor")
         {
             this.mode = CliqueViewer.destructive_new(
@@ -151,10 +179,11 @@ export class DKKProgram
 
     new_button_click()
     {
-        if(this.popup_open) { return; }
+        if(this.popup_open) { return; } //Ignore if popup is open.
 
+        //Open 'New DAG' popup.
         this.popup_open = true;
-        let popup = new NewPopup(
+        new NewPopup(
             this.body,
             this
         );
@@ -162,20 +191,29 @@ export class DKKProgram
 
     save_button_click()
     {
+
         if(this.mode.name() == "embedding-editor")
+            //If in embedding editor, just save the DAG to a file.
             this.save_current_data()
         else if(this.mode.name() == "clique-viewer")
         {
+            //If in clique viewer, open dropdown menu so you can either
+            //save just the DAG, or the DAG and precomputed data.
             this.save_dropdown_shown = !this.save_dropdown_shown;
             this.show_hide_items();
         }
     }
 
+    //Save dag.
     save_dag_dd_click()
     {
         this.save_current_data();
     }
 
+    /*
+    Save dag and precomputed data. Only works if clique viewer.
+    Will do nothing otherwise, but won't throw an error.
+    */
     save_data_dd_click()
     {
         if(this.mode.name() == "clique-viewer")
@@ -187,12 +225,19 @@ export class DKKProgram
         }
     }
 
+    //Save DAG to json file.
     save_current_data()
     {
         let json = this.mode.current_data_json();
         save_json_string(json, "dag");
     }
 
+    /*
+    Updates the screen based on change of state;
+    shows and hides certain elements based on the
+    current mode, and handles showing and hiding
+    the dropdown.
+    */
     show_hide_items()
     {
         if(this.mode.name() == "embedding-editor")
@@ -211,6 +256,7 @@ export class DKKProgram
             this.save_dropdown.style.display = "none";
     }
 
+    //Loads the provided DAG into the current mode.
 	set_dag(emb: FramedDAGEmbedding)
 	{
 		if(this.mode.name() == "clique-viewer")
@@ -219,6 +265,13 @@ export class DKKProgram
             this.mode = EmbeddingEditor.destructive_new(emb, this.draw_options);
 	}
 
+    /*
+    Loads the provided DAG, as well as any precomputed data, into the 
+    clique viewer. Since this is not intended to be called outside the clique
+    viewer, does nothing when not.
+
+    If the loaded data is found to be invalid, does nothing and shows alert.
+    */
     set_dag_precomp(emb: JSONCliqueData)
     {
         if(this.mode.name() == "clique-viewer")
@@ -226,17 +279,16 @@ export class DKKProgram
             let attempt = CliqueViewer.precomp_destructive_new(emb, this.draw_options);
             if(attempt.is_ok())
                 this.mode = attempt.unwrap();
+            else
+                alert("Invalid DAG data! "+attempt.error().err_message);
         }
-    }
-
-    set_new_clique(num_verts: number)
-    {
-        var newblank = new FramedDAG(num_verts);
-        let layout = new FramedDAGEmbedding(newblank);
-        this.mode = EmbeddingEditor.destructive_new(layout, this.draw_options);
     }
 }
 
+/*
+Downloads JSON string to disk with name {name}.json.
+Don't know why the only way to do this is this hack.
+*/
 function save_json_string(json: string, name: string)
 {
     let blob = new Blob([json], {type: 'text/json'});

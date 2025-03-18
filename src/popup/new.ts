@@ -1,3 +1,5 @@
+import { FramedDAGEmbedding } from "../draw/dag_layout";
+import { FramedDAG } from "../math/dag";
 import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
@@ -47,6 +49,9 @@ export class NewPopup extends Popup
 	{
 		let num = parseInt(this.input.value);
 		this.close();
-		this.parent.set_new_clique(num);
+
+		var newblank = new FramedDAG(num);
+		let layout = new FramedDAGEmbedding(newblank);
+		this.parent.set_dag(layout);
 	}
 }
