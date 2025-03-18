@@ -1,5 +1,6 @@
-import { DKKProgram } from "../program";
 import { Popup } from "./popup";
+
+//TODO: Document
 
 export class ShortcutsPopup extends Popup
 {

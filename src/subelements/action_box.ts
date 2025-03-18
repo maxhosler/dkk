@@ -1,5 +1,7 @@
 import { ShortcutsPopup } from "../popup/shortcuts";
 
+//TODO: Document
+
 export class ActionBox
 {
 	box: HTMLDivElement;

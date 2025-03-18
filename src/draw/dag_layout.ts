@@ -1,6 +1,8 @@
 import { Edge, FramedDAG, JSONFramedDag } from "../math/dag";
-import { Option, Result } from "../util/result";
-import { Bezier, clamp, Vector2 } from "../util/num";
+import { Result } from "../util/result";
+import { Bezier, Vector2 } from "../util/num";
+
+//TODO: Document
 
 export type AngleOverrideType = "none" | "absolute" | "relative" | "vec-abs";
 export class AngleOverride

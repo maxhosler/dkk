@@ -1,5 +1,7 @@
 var colors_cache: { [key: number]: string[] } = {}
 
+//TODO: Document
+
 export function get_colors(num_colors: number): string[]
 {
 	if(!(num_colors in colors_cache))

@@ -4,6 +4,8 @@ import { preset_dag_embedding, PRESETS } from "../preset";
 import { Popup } from "./popup";
 import { JSONCliqueData } from "../modes/clique_viewer";
 
+//TODO: Document
+
 export class OpenPopup extends Popup
 {
 	error_div: HTMLDivElement;

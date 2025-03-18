@@ -1,6 +1,8 @@
 import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
+//TODO: Document
+
 export class SettingsPopup extends Popup
 {
 	parent: DKKProgram;

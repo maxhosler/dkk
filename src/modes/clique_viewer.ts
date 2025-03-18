@@ -12,6 +12,8 @@ import { IMode, ModeName } from "./mode";
 import { Option, Result } from "../util/result";
 import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
 
+//TODO: Document
+
 type HasseDrag = {
     dragging: boolean,
     elem: number,

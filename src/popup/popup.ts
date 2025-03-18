@@ -1,3 +1,5 @@
+//TODO: Document
+
 export abstract class Popup
 {
 	close_callback: () => void;

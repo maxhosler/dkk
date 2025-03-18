@@ -2,6 +2,8 @@ import { AngleOverride, AngleOverrideType } from "../draw/dag_layout";
 import { Vector2 } from "../util/num";
 import { VecSpinner } from "./vec_spinner";
 
+//TODO: Document
+
 const TYPES: AngleOverrideType[] = ["none", "relative", "absolute", "vec-abs"];
 export class AngleOverrideController
 {

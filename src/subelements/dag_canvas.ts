@@ -4,6 +4,8 @@ import { FramedDAG } from "../math/dag";
 import { BakedDAGEmbedding, FramedDAGEmbedding } from "../draw/dag_layout";
 import { Option } from "../util/result";
 
+//TODO: Document
+
 export class DAGCanvas
 {
 	readonly canvas: HTMLCanvasElement;

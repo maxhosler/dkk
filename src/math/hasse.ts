@@ -2,6 +2,8 @@ import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Result } from "../util/result";
 import { Clique } from "./cliques";
 
+//TODO: Document
+
 export class HasseDiagram
 {
     readonly poset_size: number;

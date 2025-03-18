@@ -1,5 +1,6 @@
 import { Result, Option } from "../util/result";
 
+//TODO: Document
 
 export const dag_error_types = {
     NoSuchVertex: "NoSuchVertex",

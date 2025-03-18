@@ -1,5 +1,7 @@
 import { FramedDAGEmbedding } from "../draw/dag_layout";
 
+//TODO: Document
+
 export type ModeName = "embedding-editor" | "clique-viewer";
 export interface IMode
 {

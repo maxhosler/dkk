@@ -1,6 +1,9 @@
 import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option, Result } from "../util/result";
 import { HasseDiagram, JSONHasseDiagram } from "./hasse";
+
+//TODO: Document
+
 class Route
 {
 	readonly edges: number[];

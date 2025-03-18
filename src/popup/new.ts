@@ -3,6 +3,8 @@ import { FramedDAG } from "../math/dag";
 import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
+//TODO: Document
+
 export class NewPopup extends Popup
 {
 	input: HTMLInputElement;

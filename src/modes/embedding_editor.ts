@@ -12,6 +12,8 @@ import { AngleOverrideController } from "../subelements/angle_override";
 import { EditorOptions } from "../editor_options";
 import { VecSpinner } from "../subelements/vec_spinner";
 
+//TODO: Document
+
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
 class Selection

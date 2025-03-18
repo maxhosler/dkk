@@ -1,3 +1,5 @@
+//Shader code.
+
 export const EXTERNAL_FRAG_SHADER: string = `
 precision mediump float;
 

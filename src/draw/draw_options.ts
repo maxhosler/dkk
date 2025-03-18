@@ -1,6 +1,8 @@
 import { get_cookie, set_cookie } from "../util/cookie";
 import { get_colors } from "./colors";
 
+//TODO: Document
+
 const ROUTE_RAINBOW: string[] = [
     "#5b4db7",
     "#42adc7",
