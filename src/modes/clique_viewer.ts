@@ -758,9 +758,6 @@ export class CliqueViewer implements IMode
             let node_pos = positions[i];
             let screen_node_pos = this.hasse_canvas.local_trans(node_pos);
 
-            //console.log(canvas_pos);
-            //console.log(node_pos);
-
             if(this.draw_options.hasse_show_cliques())
             {
                 let box = this.current_hasse_boxes[i];
