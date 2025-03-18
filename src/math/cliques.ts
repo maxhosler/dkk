@@ -362,7 +362,7 @@ export class DAGCliques
 			
 			let shared: SharedSubroute = {
 				in_vert: r1_v[start1],
-				out_vert: r1_v[i-1],
+				out_vert: r1_v[i-1] || r1_v[start1],
 				in_edges,
 				out_edges,
 				in_order,
@@ -577,12 +577,12 @@ function empty_fd(): FramedDAG
 
 function is_list_of_lists(x: any, type: string): boolean
 {
-	if(!x.length)
+	if(typeof x.length != "number")
 		return false;
 	let y = (x as any[]);
 	for(let i of y)
 	{
-		if(!i.length)
+		if(typeof i.length != "number")
 			return false;
 		let z = (i as any[])
 		for(let j of z)
@@ -594,7 +594,7 @@ function is_list_of_lists(x: any, type: string): boolean
 
 function is_list_of_numbers(x: any): boolean
 {
-	if(!x.length)
+	if(typeof x.length != "number")
 		return false;
 	for(let y of (x as any[]))
 		if(typeof y != "number")
@@ -623,22 +623,14 @@ function verify_ssr(x: any): Result<SharedSubrouteCollection[][]>
 			out[out.length-1].push([]);
 			for(let ssr of s)
 			{
-				/*
-				in_vert: number,
-				out_vert: number,
-			
-				in_edges: Option<[number, number]>,
-				out_edges: Option<[number, number]>,
-			
-				edges: number[],
-			
-				in_order: 1 | 0 | -1,
-				out_order: 1 | 0 | -1
-				*/
 				if(typeof ssr.in_vert != "number")
 					return Result.err("InvalidField", "SharedSubroute.in_vert not a number.");
 				if(typeof ssr.out_vert != "number")
+				{
+					console.log(ssr);
 					return Result.err("InvalidField", "SharedSubroute.out_vert not a number.");
+
+				}
 				for(let field of ["in_edges", "out_edges"])
 				{
 					let data = ssr[field];
@@ -648,7 +640,7 @@ function verify_ssr(x: any): Result<SharedSubrouteCollection[][]>
 						return Result.err("InvalidField", `SharedSubroute.${field} not an Option.`);
 				}
 				if(!is_list_of_numbers(ssr.edges))
-					return Result.err("InvalidField", "SharedSubroute.edges not a list of numbers.");
+					return Result.err("InvalidField", "SharedSubroute.edges not a list of numbers. " + ssr.edges.toString());
 				if(!([-1,0,1].includes(ssr.in_order)))
 					return Result.err("InvalidField", "SharedSubroute.in_order not an orientation.");
 				if(!([-1,0,1].includes(ssr.out_order)))
