@@ -219,4 +219,5 @@ export class Option<T>
             return Option.none();
         }
     }
+
 }

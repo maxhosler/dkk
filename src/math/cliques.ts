@@ -512,11 +512,26 @@ export class DAGCliques
 	{
 		let fd = FramedDAG.from_json_ob(ob.dag);
 		let hd = HasseDiagram.from_json_ob(ob.hasse);
+		let ssr = verify_ssr(ob.shared_subroutes_arr);
 		if(fd.is_err())
 			return fd.err_to_err();
 		if(hd.is_err())
 			return hd.err_to_err();
-		//TODO: Validate
+		if(ssr.is_err())
+			return ssr.err_to_err();
+
+		if(!is_list_of_lists(ob.routes, "number"))
+			return Result.err("InvalidField", `DAGCliques field 'routes' is not an array of arrays of numbers.`);
+		if(!is_list_of_lists(ob.cliques, "number"))
+			return Result.err("InvalidField", `DAGCliques field 'cliques' is not an array of arrays of numbers.`);
+		if(typeof ob.clique_size != "number")
+			return Result.err("InvalidField", `DAGCliques field 'clique_size' is not a number.`);
+		if(!is_list_of_numbers(ob.exceptional_routes))
+			return Result.err("InvalidField", `DAGCliques field 'exceptional_routes' is not an array of numbers.`);
+		if(!is_list_of_lists(ob.route_swaps, "number"))
+			return Result.err("InvalidField", `DAGCliques field 'route_swaps' is not an array of arrays of numbers.`);
+		if(!is_list_of_lists(ob.clique_leq_matrix, "boolean"))
+			return Result.err("InvalidField", `DAGCliques field 'route_swaps' is not an array of arrays of booleans.`);		
 
 		let just_fields = {
 			dag: fd.unwrap(),
@@ -527,7 +542,7 @@ export class DAGCliques
 			exceptional_routes: structuredClone(ob.exceptional_routes),
 			route_swaps: structuredClone(ob.route_swaps),
 			clique_leq_matrix: structuredClone(ob.clique_leq_matrix),
-			shared_subroutes_arr: structuredClone(ob.shared_subroutes_arr),
+			shared_subroutes_arr: ssr.unwrap(),
 			hasse: hd.unwrap()
 		}
 		let base = new DAGCliques(empty_fd());
@@ -558,4 +573,112 @@ function empty_fd(): FramedDAG
 	let dag = new FramedDAG(2);
 	dag.add_edge(0,1);
 	return dag;
+}
+
+function is_list_of_lists(x: any, type: string): boolean
+{
+	if(!x.length)
+		return false;
+	let y = (x as any[]);
+	for(let i of y)
+	{
+		if(!i.length)
+			return false;
+		let z = (i as any[])
+		for(let j of z)
+			if(typeof j != type)
+				return false;
+	}
+	return true;
+}
+
+function is_list_of_numbers(x: any): boolean
+{
+	if(!x.length)
+		return false;
+	for(let y of (x as any[]))
+		if(typeof y != "number")
+			return false;
+	return true;
+}
+
+function verify_ssr(x: any): Result<SharedSubrouteCollection[][]>
+{
+	let out: SharedSubrouteCollection[][] = [];
+
+	if(!x.length)
+		return Result.err("MissingField", "SharedSubroutes not array.");
+	let y = x as any[];
+	for(let y of x)
+	{
+		if(!y.length)
+			return Result.err("MissingField", "SharedSubroutes not array of arrays.");
+		let z = y as any[];
+		out.push([])
+		for(let w of z)
+		{
+			if(!w.length)
+				return Result.err("MissingField", "SharedSubroutes not array of arrays of arrays.");
+			let s = w as any[];
+			out[out.length-1].push([]);
+			for(let ssr of s)
+			{
+				/*
+				in_vert: number,
+				out_vert: number,
+			
+				in_edges: Option<[number, number]>,
+				out_edges: Option<[number, number]>,
+			
+				edges: number[],
+			
+				in_order: 1 | 0 | -1,
+				out_order: 1 | 0 | -1
+				*/
+				if(typeof ssr.in_vert != "number")
+					return Result.err("InvalidField", "SharedSubroute.in_vert not a number.");
+				if(typeof ssr.out_vert != "number")
+					return Result.err("InvalidField", "SharedSubroute.out_vert not a number.");
+				for(let field of ["in_edges", "out_edges"])
+				{
+					let data = ssr[field];
+					if( typeof data.valid != "boolean" )
+						return Result.err("InvalidField", `SharedSubroute.${field} not an Option.`);
+					if( typeof data.value != "undefined" && !is_list_of_numbers(data.value) )
+						return Result.err("InvalidField", `SharedSubroute.${field} not an Option.`);
+				}
+				if(!is_list_of_numbers(ssr.edges))
+					return Result.err("InvalidField", "SharedSubroute.edges not a list of numbers.");
+				if(!([-1,0,1].includes(ssr.in_order)))
+					return Result.err("InvalidField", "SharedSubroute.in_order not an orientation.");
+				if(!([-1,0,1].includes(ssr.out_order)))
+					return Result.err("InvalidField", "SharedSubroute.out_order not an orientation.");
+
+				let in_edges: Option<[number, number]> = Option.none();
+				let out_edges: Option<[number, number]> = Option.none();
+				(in_edges as any).valid = ssr.in_edges.valid;
+				(in_edges as any).value = ssr.in_edges.value;
+				(out_edges as any).valid = ssr.out_edges.valid;
+				(out_edges as any).value = ssr.out_edges.value;
+
+				let true_ssr: SharedSubroute = {
+					in_vert: ssr.in_vert,
+					out_vert: ssr.out_vert,
+
+					edges: ssr.edges,
+					in_order: ssr.in_order,
+					out_order: ssr.out_order,
+					in_edges,
+					out_edges
+				};
+
+				out[out.length-1][out[out.length-1].length-1].push(true_ssr);
+
+
+			}
+		}
+
+	}
+
+	return Result.ok(out);
 }
