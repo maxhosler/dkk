@@ -345,7 +345,23 @@ export class BoundingBox
 
 	static from_json_ob(ob: JSONBoundingBox): Result<BoundingBox>
 	{
-		//TODO: Validate 
+		
+		for(let field of ["empty", "top_corner", "bot_corner"])
+			if(!(field in ob))
+				return Result.err("MissingField", "BoundingBox is missing field: "+field)
+		if(typeof ob.empty != "boolean")
+			return Result.err("InvalidField", "BoundingBox 'empty' field is not boolean.")
+		for(let field of ["top_corner", "bot_corner"])
+		{
+			let entry = (ob as any)[field];
+			if(typeof entry != "object")
+				return Result.err("InvalidField", `BoundingBox '${field}' field is not array.`);
+			if(typeof entry[0] != "number")
+				return Result.err("InvalidField", `BoundingBox '${field}' field is missing x-coordinate.`);
+			if(typeof entry[1] != "number")
+				return Result.err("InvalidField", `BoundingBox '${field}' field is missing y-coordinate.`);
+		}
+
 		let bb = new BoundingBox([]);
 
 		if(!ob.empty)
