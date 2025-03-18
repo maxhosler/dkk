@@ -1,14 +1,24 @@
 import { get_cookie, set_cookie } from "./util/cookie";
 
-
 const EDITOR_OPTIONS_COOKIE_NAME = "editor-options-cookie"
+
+/*
+Structure saving options for the embedding editor.
+This data is saved to a cookie and loaded if possible
+on startup.
+*/
 
 export class EditorOptions
 {
+    /*
+    Fields starting with the characters 'f_' are 
+    the ones saved to a file and loaded from JSON.
+    */
     private f_reembed_add: boolean = true;
     private f_reembed_remove: boolean = true;
     private f_reembed_swap: boolean = true;
 
+    //Setters
     set_reembed_add(b: boolean)
     {
         this.f_reembed_add = b;
@@ -25,6 +35,7 @@ export class EditorOptions
         this.save_to_cookies();
     }
 
+    //Getters
     reembed_add(): boolean
     {
         return this.f_reembed_add;
@@ -38,6 +49,7 @@ export class EditorOptions
         return this.f_reembed_swap;
     }
 
+    //Constructor. Loads data from cookie if possible.
     constructor()
     {
         let cookie_str = get_cookie(EDITOR_OPTIONS_COOKIE_NAME);
@@ -57,10 +69,9 @@ export class EditorOptions
                 this[field] = json_ob[field];
         }
     }
-
+    
     save_to_cookies()
     {
-        //An awful hack to get around the fact that functions can't be cloned.
         let struct = structuredClone(this) as any;
 
         let this_as_str = JSON.stringify(struct);

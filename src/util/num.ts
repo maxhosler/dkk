@@ -1,5 +1,10 @@
 import { Result } from "./result";
 
+/*
+Various classes and methods for numerical and geometric stuff.
+Includes 2x2 matrices, 2-dimensional vectors, bounding boxes, etc.
+*/
+
 export type Matrix2x2 = [[number,number], [number, number]];
 export class Vector2
 {
@@ -117,6 +122,11 @@ export class Vector2
 	}
 }
 
+
+/*
+Bezier curve with two control points. Is a parametric function with
+B(0) = {start_point} and B(1) = {end_point}.
+*/
 export class Bezier 
 {
 	readonly start_point: Vector2;
@@ -132,6 +142,7 @@ export class Bezier
 		this.cp2 = cp2;
 	}
 
+	//Apply function {trans} to all points to get a new curve.
 	transform(trans: (v: Vector2) => Vector2): Bezier
 	{
 		return new Bezier
@@ -143,6 +154,7 @@ export class Bezier
 		)
 	}
 
+	//Gets derivative along curve at time {t}.
 	get_direc(t: number): Vector2
 	{
 		let it = 1-t;
@@ -152,6 +164,7 @@ export class Bezier
 			.add( this.end_point.scale( 3 * t * t ) );
 	}
 
+	//Get position along curve at time {t}.
 	get_point(t: number): Vector2
 	{
 		let it = 1-t;
@@ -161,17 +174,20 @@ export class Bezier
 			.add( this.end_point.scale( t * t * t ) );
 	}
 
+	//Approximates distance from this curve to {position}.
 	distance_to(position: Vector2): number
 	{
 		const EPSILON = 0.001;
-		const STEP = 0.02;
-	
+		
+		//Distance to point
 		let dist = (t: number) => this.get_point(t).sub(position).norm();
+		//Derivative of above
 		let d_dist = (t: number) => (dist(t+EPSILON) - dist(t)) / EPSILON;
 		
 		let min_t = 0;
 		let min_dst = dist(0);
-	
+		
+		//get closest amongst these 6 points.
 		for(let tp of [0, 0.2, 0.4, 0.6, 0.8, 1.0])
 		{
 			let d = dist(tp);
@@ -182,6 +198,7 @@ export class Bezier
 			}
 		}
 		
+		//Refine with binary search.
 		let low  = clamp(min_t - 0.2, 0, 1);
 		let high = clamp(min_t + 0.2, 0, 1);
 		
@@ -204,10 +221,11 @@ export class Bezier
 		return dist((low + high) / 2);
 	}
 
+	//Approximate point along line {dist} from the endpoint {from}.
 	point_distance_along(dist: number, from: "start" | "end"): Vector2
 	{
-		//const STEP_scal: number = 0.2;
-
+		//Guaranteed to be longer than the length of the curve, by the geometry
+		//of Bezier curves.
 		let length_overestimate = this.start_point.sub(this.cp1).norm() + 
 			this.cp1.sub(this.cp2).norm() + 
 			this.cp2.sub(this.end_point).norm();
@@ -224,6 +242,8 @@ export class Bezier
 		let travelled = 0;
 		let iterations = 0;
 
+		//Step along the curve until the total distance is greater than
+		//the desired distance, or 20 iterations.
 		while(travelled < dist && 0 <= t && t <= 1 && iterations < 20)
 		{
 			let dist_to_go = dist - travelled;
@@ -242,6 +262,7 @@ export class Bezier
 	}
 }
 
+//Bounding box.
 export class BoundingBox
 {
 	empty: boolean = true;
@@ -254,6 +275,7 @@ export class BoundingBox
 			this.add_point(v);
 	}
 
+	//If {point} not in box, expands to fit it.
 	add_point(v: Vector2)
 	{
 		if(this.empty)
@@ -269,14 +291,17 @@ export class BoundingBox
 		}
 	}
 
+	//Check if {point} in box.
 	contains(point: Vector2): boolean
 	{
+		if(this.empty) return false;
 		return this.top_corner.x <= point.x &&
 			   point.x <= this.bot_corner.x &&
 			   this.top_corner.y <= point.y &&
 			   point.y <= this.bot_corner.y
 	}
 
+	//Expand box by {w} units in all directions.
 	pad(w: number)
 	{
 		let delta = new Vector2(w,w);
@@ -284,6 +309,7 @@ export class BoundingBox
 		this.bot_corner = this.bot_corner.add(delta);
 	}
 
+	//Absolute size of vector furthest from zero in box.
 	extent(): Vector2
 	{
 		let x = Math.max(
