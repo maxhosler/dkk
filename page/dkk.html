@@ -8,11 +8,17 @@
 
     <body>
         <div id="top-bar">
-            <div class="top-bar-button" id="switch-button">Switch</div>
-            <div class="top-bar-button" id="open-button">Open</div>
-            <div class="top-bar-button" id="new-button">New</div>
-            <div class="top-bar-button" id="save-button">Save</div>
-            <div class="top-bar-button" id="settings-button">Settings</div>
+            <div class="top-bar-button" id="switch-button"><span>Switch</span></div>
+            <div class="top-bar-button" id="open-button"><span>Open</span></div>
+            <div class="top-bar-button" id="new-button"><span>New</span></div>
+            <div class="top-bar-button" id="save-button">
+                <span>Save</span>
+                <div class="dropdown-box" id="save-dropdown">
+                    <div class="dropdown-elem" id="dd-save-dag">Save DAG</div>
+                    <div class="dropdown-elem" id="dd-save-precomp">Save DAG and other data</div>
+                </div>
+            </div>
+            <div class="top-bar-button" id="settings-button"><span>Settings</span></div>
         </div>
         <div id="complete">
             <div id="sidebar">

@@ -1,4 +1,5 @@
-import { BoundingBox, Vector2 } from "../util/num";
+import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
+import { Result } from "../util/result";
 import { Clique } from "./routes";
 
 export class HasseDiagram
@@ -296,4 +297,58 @@ export class HasseDiagram
         return badness;
     }
 
+    to_json_ob(): JSONHasseDiagram
+    {
+        return {
+            poset_size: this.poset_size,
+            covering_relation: structuredClone(this.covering_relation),
+            layout_rows: this.layout_rows.map(x => x.to_json_ob()),
+            bounding_box: this.bounding_box.to_json_ob(),
+            minimal_elt: this.minimal_elt,
+            maximal_elt: this.maximal_elt,
+            cover_routes: structuredClone(this.cover_routes)
+        }
+    }
+
+    static from_json_ob(ob: JSONHasseDiagram): Result<HasseDiagram>
+    {
+        //TODO: Validate
+        let layout_rows: Vector2[] = ob.layout_rows.map(
+            (x) => new Vector2(x[0], x[1])
+        )
+        let bounding_box = BoundingBox.from_json_ob(ob.bounding_box);
+        if(bounding_box.is_err())
+            return bounding_box.err_to_err()
+        let just_fields = {
+            poset_size: ob.poset_size,
+            covering_relation: structuredClone(ob.covering_relation),
+            layout_rows,
+            bounding_box: bounding_box.unwrap(),
+            minimal_elt: ob.minimal_elt,
+            maximal_elt: ob.maximal_elt,
+            cover_routes: structuredClone(ob.cover_routes)
+        };
+        let base = hasse_empty();
+        for(let field in just_fields)
+            //@ts-ignore
+            base[field] = just_fields[field]
+        return Result.ok(base);
+    }
+
+}
+export type JSONHasseDiagram = {
+    poset_size: number;
+    covering_relation: boolean[][];
+    layout_rows: [number,number][];
+    bounding_box: JSONBoundingBox;
+    minimal_elt: number;
+    maximal_elt: number;
+    cover_routes: [lower: number, higher: number][][];
+}
+
+function hasse_empty(): HasseDiagram
+{
+    let cliques = [new Clique([1])];
+    let poset_relation = [[true]];
+    return new HasseDiagram(poset_relation, cliques);
 }

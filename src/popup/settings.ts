@@ -13,6 +13,7 @@ export class SettingsPopup extends Popup
 	show_exceptional_cb: HTMLInputElement;
 
 	hasse_weight_spinner: HTMLInputElement;
+	hasse_node_size_spinner: HTMLInputElement;
 	hasse_show_clique_cb: HTMLInputElement;
 	hasse_clique_spinner: HTMLInputElement;
 	hasse_vert_spinner: HTMLInputElement;
@@ -107,6 +108,13 @@ export class SettingsPopup extends Popup
 			(val) => this.parent.draw_options.set_hasse_edge_weight(val),
 			() => this.parent.draw_options.hasse_edge_weight()
 		);
+		this.hasse_node_size_spinner = this.add_stepper_row(
+			col1_table,
+			"Hasse node size",
+			"settings-hasse-node-size",
+			(val) => this.parent.draw_options.set_hasse_node_size(val),
+			() => this.parent.draw_options.hasse_node_size()
+		)
 		this.hasse_show_clique_cb = this.add_checkbox_row(
 			col1_table,
 			"Show cliques as nodes",

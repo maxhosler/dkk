@@ -1,3 +1,5 @@
+import { Result } from "./result";
+
 export type Matrix2x2 = [[number,number], [number, number]];
 export class Vector2
 {
@@ -107,6 +109,11 @@ export class Vector2
 			Math.max(this.x, other.x),
 			Math.max(this.y, other.y)
 		)
+	}
+
+	to_json_ob(): [number, number]
+	{
+		return [this.x, this.y];
 	}
 }
 
@@ -262,6 +269,14 @@ export class BoundingBox
 		}
 	}
 
+	contains(point: Vector2): boolean
+	{
+		return this.top_corner.x <= point.x &&
+			   point.x <= this.bot_corner.x &&
+			   this.top_corner.y <= point.y &&
+			   point.y <= this.bot_corner.y
+	}
+
 	pad(w: number)
 	{
 		let delta = new Vector2(w,w);
@@ -282,6 +297,51 @@ export class BoundingBox
 
 		return new Vector2(x,y);
 	}
+
+	width(): number
+	{
+		return this.bot_corner.x - this.top_corner.x
+	}
+
+	height(): number
+	{
+		return this.bot_corner.y - this.top_corner.y
+	}
+
+	to_json_ob(): JSONBoundingBox
+	{
+		return {
+			empty: this.empty,
+			top_corner: this.top_corner.to_json_ob(),
+			bot_corner: this.bot_corner.to_json_ob()
+		}
+	}
+
+	static from_json_ob(ob: JSONBoundingBox): Result<BoundingBox>
+	{
+		//TODO: Validate 
+		let bb = new BoundingBox([]);
+
+		if(!ob.empty)
+		{
+			bb.add_point(new Vector2(ob.top_corner[0], ob.top_corner[1]));
+			bb.add_point(new Vector2(ob.bot_corner[0], ob.bot_corner[1]));
+		}
+
+		return Result.ok(bb)
+	}
+
+	clone(): BoundingBox
+	{
+		let bb = new BoundingBox([this.top_corner, this.bot_corner]);
+		bb.empty = this.empty;
+		return bb;
+	}
+}
+export type JSONBoundingBox = {
+	empty: boolean,
+	top_corner: [number,number];
+	bot_corner: [number,number];
 }
 
 export const clamp: (num: number, min: number, max: number) => number

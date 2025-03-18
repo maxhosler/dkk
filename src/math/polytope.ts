@@ -1,3 +1,6 @@
+import { preset_dag_embedding } from "../preset";
+import { Result } from "../util/result";
+import { FramedDAG } from "./dag";
 import { DAGCliques } from "./routes";
 
 export class FlowPolytope
@@ -128,6 +131,44 @@ export class FlowPolytope
         }
         this.external_simplices = external_simplices;
     }
+
+    to_json_ob(): JSONFlowPolytope
+	{
+        let vertices: number[][] = [];
+        for(let vec of this.vertices)
+        {
+            vertices.push(structuredClone(vec.coordinates))
+        }
+		return {
+            dim: this.dim,
+            vertices,
+            external_simplices: structuredClone(this.external_simplices)
+        }
+	}
+
+    static from_json_ob(ob: JSONFlowPolytope): Result<FlowPolytope>
+    {
+        //TODO: Validate
+
+        let vertices: NVector[] = ob.vertices.map(
+            (x) => new NVector(x)
+        );
+        let just_fields = {
+            dim: ob.dim,
+            vertices,
+            external_simplices: structuredClone(ob.external_simplices)
+        };
+        let base = new FlowPolytope(empty_clique());
+        for(let field in just_fields)
+            //@ts-ignore
+            base[field] = just_fields[field]
+        return Result.ok(base);
+    }
+}
+export type JSONFlowPolytope = {
+    dim: number,
+    vertices: number[][],
+    external_simplices: number[][]
 }
 
 class NVector
@@ -227,11 +268,7 @@ class NVector
             inner.push([x])
         return new Matrix(1, this.dim(), inner);
     }
-    
-    static linearly_independent(vectors: NVector[]): boolean
-    {
-        throw new Error("Unimplemented.")
-    }
+
 }
 
 class Matrix
@@ -598,4 +635,9 @@ function cholesky_decomposition(A: Matrix): Matrix
     }
 
     return new Matrix(n,n,L);
+}
+
+function empty_clique(): DAGCliques
+{
+    return new DAGCliques(preset_dag_embedding("cube").dag)
 }

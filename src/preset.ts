@@ -1,7 +1,6 @@
 import { AngleOverride, FramedDAGEmbedding } from "./draw/dag_layout";
 import { FramedDAG } from "./math/dag";
 import { clamp } from "./util/num";
-import { Option } from "./util/result";
 
 type PresetOption = {name: string}; //This is a struct just in case I want to add additional data
 export const PRESETS: PresetOption[] = [
