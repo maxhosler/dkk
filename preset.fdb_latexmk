@@ -1,0 +1,10 @@
+# Fdb version 3
+["pdflatex"] 1741751757 "src/preset.ts" "preset.pdf" "preset" 1741751757
+  "/usr/local/texlive/2022/texmf-dist/web2c/texmf.cnf" 1646502317 40171 cdab547de63d26590bebb3baff566530 ""
+  "/usr/local/texlive/2022/texmf-var/web2c/pdftex/pdflatex.fmt" 1676940018 2826451 54d158cbf158dbedc6b92f14ec39f8ea ""
+  "/usr/local/texlive/2022/texmf.cnf" 1647878952 577 209b46be99c9075fd74d4c0369380e8c ""
+  "preset.aux" 1741751757 32 3985256e7290058c681f74d7a3565a19 ""
+  "src/preset.ts" 1741751757 7081 29c46a17128b052ceddf42d50533a14c ""
+  (generated)
+  "preset.log"
+  "preset.pdf"

@@ -1,6 +1,8 @@
 import { FramedDAG } from "./dag";
 import { Option } from "../util/result";
 import { HasseDiagram } from "./hasse";
+import { BrickHasseDiagram } from "./hasse";
+
 class Route
 {
 	readonly edges: number[];
@@ -10,6 +12,12 @@ class Route
 		this.edges = edges;
 	}
 }
+
+//JRB
+export class BrickClique
+{
+}
+//ENDJRB
 
 export class Clique
 {
@@ -92,6 +100,30 @@ class SharedSubrouteCollection
 	}
 }
 
+//JRB
+//The Brick type is similar to SharedSubroute
+//but differs in that in_edges and out_edges are always sorted lower below upper
+//so we don't need to keep track of in_order and out_order
+export type Brick =
+{
+	//indices of the start and end vertices in the FramedDAG
+	in_vert: number,
+	out_vert: number,
+
+	edges: number[],
+
+	//the order of the lower edge of the left corner in inc(in_vert)
+	in_edge_order: number,
+	//the order of the lower edge of the right corner in outg(out_vert)
+	out_edge_order: number,
+
+	//the indices of the edges of the left corner, ordered by inc(in_vert)
+	in_edges: [number,number],
+	//the indices of the edges of the right corner, ordered by inc(in_vert)
+	out_edges: [number,number]
+};
+//ENDJRB
+
 export class DAGCliques
 {
 	readonly dag: FramedDAG;
@@ -104,6 +136,18 @@ export class DAGCliques
 	readonly clique_leq_matrix: boolean[][];
 	readonly shared_subroutes_arr: SharedSubrouteCollection[][];
 	readonly hasse: HasseDiagram;
+
+	//JRB
+	readonly bricks: Brick[];
+	//the jth entry of downbricks is a list with clique_size elements
+	//the ith entry of the jth entry of downbricks is the downbrick of route i of clique j (if exists)
+	//and -1 otherwise
+	readonly downbricks: number[][];
+	readonly upbricks: number[][];
+	//brick_leq_matrix[i][j] is true if brick j is leq brick i, and false otherwise
+	readonly brick_leq_matrix: boolean[][];
+	readonly brick_hasse: BrickHasseDiagram;
+	//ENDJRB
 
 	constructor(dag: FramedDAG)
 	{
@@ -139,6 +183,77 @@ export class DAGCliques
 			incomplete_routes = new_paths;
 		}
 		this.routes = routes;
+
+		//JRB
+		//Let's enumerate the bricks!
+		//ISSUE / TODO: We need to EXCLUDE a brick if there is only one edge outgoing from out_vert or only one edge incoming from in_vert!
+		//ISSUE / TODO: It might be better to make in_edge be the actual label of the edge in the dag, and have a separate value in_order which is what we use in_edge for now. This would be useful I think?
+		let bricks: Brick[] = [];
+		let incomplete_bricks: number[][] = [];
+		//incomplete_bricks is a list of ``partial bricks.''
+		//Each ``incomplete brick'' aspires to be a list of numbers. The 0th entry is the leftmost (inner) vertex, the 1st is the lower incoming arrow on the left corner, the 2nd and on until the (length-2)rd are just the indices of the outgoing edges of the internal subpath, then we have the lower outgoing arrow of the right corner.
+		//To start enumerating the partial bricks, we iterate over the inner vertices.
+		for (let j = 0; j < dag.num_verts(); j++)
+		{
+			//Bricks can't start at the source/sink, so make sure we aren't the source/sink
+			if (j != source && j != sink) 
+			{
+				//iterate c over all possible LOWER edges of our corner (can't be highest)
+				for (let c = 0; c < dag.get_in_edges(j).unwrap_or([]).length-1; c++)
+				{
+					let arar: number[] = [j,c];
+					incomplete_bricks.push(arar);
+				}
+			}
+		}
+		//Now incomplete_bricks consists of all possible starting vertices and their left corners
+		//Each loop of the following we will take the ``incomplete brick with left corner'' and add all possible right corner versions of it to our bricks list
+		//and then it will add all possible edges to the list of incomplete_bricks
+		while (incomplete_bricks.length != 0)
+		{
+			let new_bricks: number[][] = [];
+			for (let brk of incomplete_bricks)
+			{
+				//Calculate where the brick would end
+				let finalvertex: number;
+				if (brk.length==2)
+				{
+					finalvertex=brk[0];
+				}
+				else
+				{
+					finalvertex=dag.get_edge(brk[brk.length-1]).unwrap().end;
+				}
+				//if the incomplete brick ends at the sink, we will skip over this one
+				if (finalvertex != sink)
+				{
+					//go through all possible right corners and add to bricks
+					for (let j=0; j < dag.get_out_edges(finalvertex).unwrap_or([]).length-1; j++)
+					{
+						let newbrick: Brick = {
+							in_vert: brk[0],
+							out_vert: finalvertex,
+							edges: brk.slice(2), //just the internal path without the 0th entry being the starting vertex
+							in_edge_order: brk[1],
+							out_edge_order: j,
+							in_edges: [dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]],
+dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
+							out_edges: [dag.get_out_edges(finalvertex).unwrap_or([0])[j], dag.get_out_edges(finalvertex).unwrap_or([0])[j+1]]
+
+						}
+						bricks.push(newbrick);
+					}
+					//add to incomplete_bricks all ways of continuing on with another arrow
+					for(let next_edge of dag.get_out_edges(finalvertex).unwrap_or([]))
+					{
+						new_bricks.push([...brk, next_edge]);
+					}
+				}
+			}
+			incomplete_bricks=new_bricks;
+		}
+		this.bricks = bricks;
+		//ENDJRB
 
 		//Compute shared subroutes
 		let shared_subroutes_arr: SharedSubrouteCollection[][] = [];
@@ -207,12 +322,19 @@ export class DAGCliques
 		//Computes the result of trying to 'swap' a given
 		//route
 		let clique_route_swaps: number[][] = [];
+		let downbricks: number[][] = []; //JRB
+		let upbricks: number[][] = []; //JRB
 		for(let i = 0; i < this.cliques.length; i++)
 		{
 			clique_route_swaps.push([]);
+			downbricks.push([]); //JRB
+			upbricks.push([]); //JRB
+
 			for(let j = 0; j < this.clique_size; j++)
 			{
 				clique_route_swaps[i].push(i);
+				downbricks[i].push(-1); //JRB
+				upbricks[i].push(-1); //JRB
 			}
 		}
 		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
@@ -224,21 +346,86 @@ export class DAGCliques
 				let intersection =  c1.routes.filter(value => c2.routes.includes(value));
 				if(intersection.length != c1.routes.length-1) continue;
 				
+				let root1 = -1;
+				let root2 = -1;
 				let i_r1 = -1;
 				for(let r1 of c1.routes)
 					if(!c2.routes.includes(r1))
+					//JRB
+					{
 						i_r1 = c1.routes.indexOf(r1);
+						root1=r1; //THIS IS WHAT I ADDED
+					}
+					//ENDJRB
 				let i_r2 = -1;
 				for(let r2 of c2.routes)
 					if(!c1.routes.includes(r2))
+					//JRB
+					{
 						i_r2 = c2.routes.indexOf(r2);
+						root2=r2;
+					}
+					//ENDJRB
 				
 				clique_route_swaps[clq1][i_r1] = clq2;
 				clique_route_swaps[clq2][i_r2] = clq1;
 
+				//JRB
+				//Here is where I can add downbricks
+				//Though I would need poset relation first
+				//Probably I can paste the Computes the poset relation right above this
+				//XXX TODO
+				//We have root1 in clique1 and root2 in clique2
+				
+				let shared_subr = this.inner_shared_subroutes(root1, root2);
+				for(let sub of shared_subr)
+				{
+					if (sub.in_order==-1 && sub.out_order==1)
+					{
+						for (let j=0; j < this.bricks.length; j++)
+						{
+							let brk = this.bricks[j]
+							if (brk.edges[0]==sub.edges[0] &&
+							    brk.edges[1]==sub.edges[1] &&
+							   brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[0] &&
+							   brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[1])
+							{
+								//XXX
+								upbricks[clq2][i_r2]=j;
+								downbricks[clq1][i_r1]=j;
+							}
+						}
+					}
+
+					if (sub.in_order==1 && sub.out_order==-1)
+					{
+						for (let j=0; j < this.bricks.length; j++)
+						{
+							let brk = this.bricks[j]
+							if (brk.edges[0]==sub.edges[0] &&
+							    brk.edges[1]==sub.edges[1] &&
+							   brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[1] &&
+							   brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[0])
+							{
+								//XXX
+								upbricks[clq1][i_r1]=j;
+								downbricks[clq2][i_r2]=j;
+							}
+						}
+					}
+
+
+				}
+
+
 			}
+
 		}
 		this.route_swaps = clique_route_swaps;
+		this.downbricks=downbricks;
+		this.upbricks=upbricks;
+				//Look for their shared subroutes and find the sign
+				//ENDJRB
 		
 		//Computes the poset relation
 		let clique_leq_matrix: boolean[][] = [];
@@ -271,8 +458,30 @@ export class DAGCliques
 			if(in_all)
 				exceptional_routes.push(i);
 		}
-
 		this.exceptional_routes = exceptional_routes;
+
+
+
+
+
+		//JRB
+		//Compute the poset relation on bricks
+		//Rather than do this directly, I will cheat by using the poset relation on cliques
+		//Strategy: Given brk1 and brk2, find the cliques clk1 and clk2 whose downbricks are brk1 and brk2 and return clique_leq_array[clk1][clk2]
+		let brick_leq_matrix: boolean[][] = [];
+		for (let brk1 = 0; brk1 < this.bricks.length; brk1++)
+		{
+			brick_leq_matrix.push([]);
+			for (let brk2 = 0; brk2 < this.bricks.length; brk2++)
+			{
+				let clq1=this.clique_from_bricks([brk1]);
+				let clq2=this.clique_from_bricks([brk2]);
+				brick_leq_matrix[brk1].push(this.clique_leq_matrix[clq1][clq2]);
+			}
+		}
+		this.brick_leq_matrix = brick_leq_matrix;
+		this.brick_hasse = new BrickHasseDiagram(brick_leq_matrix, this.bricks);
+		//ENDJRB
 	}
 
 	/*
@@ -444,6 +653,40 @@ export class DAGCliques
 	{
 		return this.clique_leq_matrix[clq_idx_1][clq_idx_2];
 	}
+	
+	//JRB
+	brick_leq(clq_idx_1: number, clq_idx_2: number): boolean
+	{
+		return this.brick_leq_matrix[clq_idx_1][clq_idx_2];
+	}
+
+	//takes in a list of bricks
+	//if these bricks are pairwise compatible, returns the index of the clique with those downbricks
+	//if not, returns -1
+	//subtleties: ignores duplicate elements, and ignores presence of -1
+	clique_from_bricks(brick_indices: number[]): number
+	{
+		for (let ind=0; ind < this.cliques.length; ind++)
+		{
+			//downbrick_real is the set of actual downbricks of clique ind
+			let downbricks_real = this.downbricks[ind];
+			let set1 = new Set(downbricks_real);
+			let set2 = new Set(brick_indices.concat([-1]));
+			if (downbricks_real.every(item => set2.has(item)) &&
+			        brick_indices.every(item => set1.has(item)))
+			{
+				return ind;
+			}
+		}
+		return -1;
+	}
+
+	//check if two bricks are compatible
+	bricks_compatible(brk_idx_1: number, brk_idx_2: number): boolean
+	{
+		return (this.clique_from_bricks([brk_idx_1,brk_idx_2])!=-1)
+	}
+	//ENDJRB
 
 	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
