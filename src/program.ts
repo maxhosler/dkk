@@ -4,7 +4,7 @@ import { FramedDAG } from "./math/dag";
 import { CliqueViewer, JSONCliqueData } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 import { IMode } from "./modes/mode";
-import { CVOpenPopup, EEOpenPopup } from "./popup/cv-open";
+import { CVOpenPopup, EEOpenPopup } from "./popup/open";
 import { NewPopup } from "./popup/new";
 import { SettingsPopup } from "./popup/settings";
 import { preset_dag_embedding } from "./preset";
