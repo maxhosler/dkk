@@ -1,7 +1,9 @@
 var colors_cache: { [key: number]: string[] } = {}
 
-//TODO: Document
-
+/*
+Wrapper around the get_colors_inner function which
+caches the results so they are only computed once.
+*/
 export function get_colors(num_colors: number): string[]
 {
 	if(!(num_colors in colors_cache))
@@ -11,7 +13,15 @@ export function get_colors(num_colors: number): string[]
 	return colors_cache[num_colors];
 }
 
-export function get_colors_inner(num_colors: number): string[]
+/*
+Function to generate a list of "num_colors" colors, avoiding 
+yellow and trying to be evenly spaced through the HSL color
+space. This is in hopes of maximizing contrast with the background
+and each other.
+
+Currently, the results are spotty, and this could use a rework.
+*/
+function get_colors_inner(num_colors: number): string[]
 {
 	let lum_rows: number;
 	let hue_rows: number;
