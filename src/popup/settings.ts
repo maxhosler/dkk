@@ -1,12 +1,16 @@
 import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
-//TODO: Document
+/*
+This is the popup that allows you to change the settings
+stored in the DrawOptions object.
+*/
 
 export class SettingsPopup extends Popup
 {
 	parent: DKKProgram;
 
+	//These are all the input objects.
 	vert_radius_spinner: HTMLInputElement;
 	edge_weight_spinner: HTMLInputElement;
 	route_weight_spinner: HTMLInputElement;
@@ -33,6 +37,11 @@ export class SettingsPopup extends Popup
 
 	reset_button: HTMLButtonElement;
 
+	/*
+	This is the list of functions which read the
+	contents of the DrawOptions object into the
+	input elements when they need to be updated
+	*/
 	get_funcs: (() => void)[] = [];
 
 	constructor(base: HTMLElement, parent: DKKProgram)
@@ -40,12 +49,14 @@ export class SettingsPopup extends Popup
 		super(base, "Settings", () => parent.popup_open = false);
 		this.parent = parent;
 
+		//Create table
 		let base_table = document.createElement("table");
 		base_table.className = "settings-column-table";
 		let column_holder = document.createElement("tr");
 		this.popup_body.appendChild(base_table);
 		base_table.appendChild(column_holder);
 
+		//Create the columns
 		let col1 = document.createElement("td");
 		let col2 = document.createElement("td");
 		column_holder.appendChild(col1);
@@ -250,6 +261,18 @@ export class SettingsPopup extends Popup
 			f();
 	}
 
+	/*
+	Each of these add_something_row methods follow a common pattern:
+	add to the "table" element (the current column) an input element
+	of the relevant type, with a label given by "name" and the input element
+	having id "id". the "onchange" method is to take the current value
+	and put it into the DrawOptions object; the "getter" method does the opposite,
+	writing the relevant value from DrawOptions into the input element.
+
+	It returns the HTMLInputElement so it can be stored.
+	*/
+
+	//This is for number inputs.
 	private add_stepper_row(
 		table: HTMLTableElement,
 		name: string,
@@ -289,6 +312,7 @@ export class SettingsPopup extends Popup
 		return spinner;
 	}
 
+	//This is for selectors (dropdown menus)
 	private add_selector_row(
 		table: HTMLTableElement,
 		name: string,
@@ -333,24 +357,7 @@ export class SettingsPopup extends Popup
 		return selector;
 	}
 
-	private add_title(
-		table: HTMLTableElement,
-		name: string
-	)
-	{
-		let row = document.createElement("tr");
-		let d1 = document.createElement("td");
-		let d2 = document.createElement("td");
-		row.appendChild(d1);
-		row.appendChild(d2);
-		table.appendChild(row);
-
-		let title = document.createElement("div");
-		title.className = "settings-head";
-		title.innerText = name;
-		d1.appendChild(title);
-	}
-
+	//This is for color selectors
 	private add_color_row(
 		table: HTMLTableElement,
 		name: string,
@@ -388,6 +395,7 @@ export class SettingsPopup extends Popup
 		return colorsel;
 	}
 
+	//And this is for checkboxes!
 	private add_checkbox_row(
 		table: HTMLTableElement,
 		name: string,
@@ -423,5 +431,25 @@ export class SettingsPopup extends Popup
 		)
 
 		return tickbox;
+	}
+
+	//This adds a title for different sections in the column.
+	//Similar idea as above, although it isn't an input element.
+	private add_title(
+		table: HTMLTableElement,
+		name: string
+	)
+	{
+		let row = document.createElement("tr");
+		let d1 = document.createElement("td");
+		let d2 = document.createElement("td");
+		row.appendChild(d1);
+		row.appendChild(d2);
+		table.appendChild(row);
+
+		let title = document.createElement("div");
+		title.className = "settings-head";
+		title.innerText = name;
+		d1.appendChild(title);
 	}
 }
