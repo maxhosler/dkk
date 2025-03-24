@@ -201,9 +201,6 @@ export class EmbeddingEditor implements IMode
 	current_embedding(): FramedDAGEmbedding {
         return this.embedding;
     }
-	current_data_json(): string {
-		return this.embedding.to_json();
-	}
 
 
 	static destructive_new(

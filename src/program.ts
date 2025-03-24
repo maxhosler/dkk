@@ -228,7 +228,7 @@ export class DKKProgram
     //Save DAG to json file.
     save_current_data()
     {
-        let json = this.mode.current_data_json();
+        let json = this.mode.current_embedding().to_json();
         save_json_string(json, "dag");
     }
 
