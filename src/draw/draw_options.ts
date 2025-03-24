@@ -1,16 +1,19 @@
 import { get_cookie, set_cookie } from "../util/cookie";
 import { get_colors } from "./colors";
 
-//TODO: Document
+/*
+This object stores all the settings relevant to how things are displayed.
+It is stored in a JSON-string cookie so that the editor remember selections.
 
-const ROUTE_RAINBOW: string[] = [
-    "#5b4db7",
-    "#42adc7",
-    "#81d152",
-    "#f5f263",
-    "#ff9d4f",
-    "#ff5347",
-];
+This class has some quirks. Fields starting with "f_" are automatically saved
+to and loaded from the JSON object, and no others.
+
+The protocol for adding a new field is the following:
+1. Choose a name, say "XYZ".
+2. Create a private field called f_XYZ
+3. Create a getter function just called XYZ() which returns the relevant value.
+4. Create a setter function called get_XYZ() which sets the relevant value and then calls on_change().
+*/
 
 const DRAW_OPTIONS_COOKIE_NAME: string = "draw-options-cookie"
 
@@ -60,12 +63,95 @@ export class DrawOptions
 	private f_edge_color: string = "#222222"; //Not in settings box
 	private f_hasse_current_color: string = "#cdcdcd"; //Not in settings
 	private f_hasse_node_color: string = "#000000";
-	private f_hasse_current_node_color: string = "#ffffff";
 
 	//AUXILIARY
 	private change_listeners: (()=>void)[] = [];
 	private do_sync_css: boolean;
 
+	/*
+	This constructor does nothing if the two boolean flags are set to
+	false. This is used to get a 'dummy' copy of DrawOptions to copy default 
+	values from.
+
+	If load_from_cookies is true, then it tries to load the JSON cookie and
+	copy in the values from it. It does nothing if this fails.
+
+	If sync_css is true, it will try to, you guessed it, sync certain values
+	into the current CSS style.
+	*/
+	constructor(load_from_cookies: boolean, sync_css: boolean)
+	{
+		this.do_sync_css = sync_css;
+		if(!load_from_cookies){
+			this.sync_css();
+			return
+		};
+		let cookie_str = get_cookie(DRAW_OPTIONS_COOKIE_NAME);
+		if(!cookie_str) return;
+
+		
+		let json_ob;
+		try{
+			json_ob = JSON.parse(cookie_str);
+		} catch(e)
+		{ console.warn("Failed to parse draw options cookie.", e); return; }
+
+		for(let field in this)
+		{
+			if(field.substring(0,2) == "f_" && field in json_ob)
+				// @ts-ignore
+				this[field] = json_ob[field];
+		}
+	
+		this.sync_css();
+	}
+
+	//Saves object to a cookie to be loaded during another session.
+	save_to_cookies()
+	{
+		let struct = {};
+		for(let field in this)
+		{
+			if(field.substring(0,2) == "f_")
+				// @ts-ignore
+				struct[field as string] = this[field]
+		}
+
+		let this_as_str = JSON.stringify(struct);
+		set_cookie(DRAW_OPTIONS_COOKIE_NAME, this_as_str, 1000000000);
+	}
+
+	//Resets to default values.
+	reset()
+	{
+		let def = new DrawOptions(false, false);
+
+		let old_mode: {mode: ColorSchemeMode, index: number} | null = null;
+		if(this.f_scheme_mode.mode == "computed")
+		{
+			old_mode = this.f_scheme_mode;
+		}
+
+		for(let field in def)
+		{
+			if(field.substring(0,2) == "f_")
+				// @ts-ignore
+				this[field] = def[field];
+		}
+
+		if(old_mode)
+		{
+			this.f_scheme_mode = old_mode;
+		}
+
+		this.on_change();
+	}
+
+	/*
+	Methods for 'change listeners'. These are methods
+	passed to this object by add_change_listener and
+	called whenever a value changes.
+	*/
 	add_change_listener(listener: () => void)
 	{
 		this.change_listeners.push(listener);
@@ -79,6 +165,24 @@ export class DrawOptions
 	{
 		this.change_listeners = [];
 	}
+	//To be called whenever an f_-value changes.
+	on_change()
+	{
+		this.sync_css();
+		this.fire_change_listeners()
+		try{ this.save_to_cookies() }
+		catch(e) { console.warn("Failed to save draw settings as cookie!", e) }
+	}
+	//Syncs certain CSS values with DrawOptions.
+	sync_css()
+	{
+		if(!this.do_sync_css) { return; }
+		document.documentElement.style.setProperty("--draw-background", this.background_color());
+	}
+
+	/****************
+	* SETTERS       *
+	****************/
 
 	set_vert_radius(rad: number)
 	{
@@ -140,7 +244,6 @@ export class DrawOptions
 		this.f_hasse_mini_dag_size = r;
 		this.on_change()
 	}
-
 	set_scale(scale: number)
 	{
 		this.f_scale = scale;
@@ -186,24 +289,6 @@ export class DrawOptions
 		this.f_simplex_color = color;
 		this.on_change();
 	}
-
-	hasse_node_size(): number
-	{
-		return this.f_hasse_node_size;
-	}
-	hasse_mini_vert_rad(): number
-	{
-		return this.f_hasse_mini_vert_rad;
-	}
-	hasse_mini_route_weight(): number
-	{
-		return this.f_hasse_mini_route_weight;
-	}
-	hasse_mini_dag_size(): number
-	{
-		return this.f_hasse_mini_dag_size;
-	}
-
 	set_dot_shade(b: boolean)
 	{
 		this.f_dot_shade = b;
@@ -220,30 +305,9 @@ export class DrawOptions
 		this.on_change();
 	}
 
-	save_to_cookies()
-	{
-		//An awful hack to get around the fact that functions can't be cloned.
-		let cl_store = this.change_listeners;
-		this.change_listeners = [];
-		let struct = structuredClone(this) as any;
-		delete struct.change_listeners;
-		this.change_listeners = cl_store;
-
-		let this_as_str = JSON.stringify(struct);
-		set_cookie(DRAW_OPTIONS_COOKIE_NAME, this_as_str, 1000000000);
-	}
-	on_change()
-	{
-		this.sync_css();
-		this.fire_change_listeners()
-		try{ this.save_to_cookies() }
-		catch(e) { console.warn("Failed to save draw settings as cookie!", e) }
-	}
-	sync_css()
-	{
-		if(!this.do_sync_css) { return; }
-		document.documentElement.style.setProperty("--draw-background", this.background_color());
-	}
+	/****************
+	* GETTERS       *
+	****************/
 
 	get_route_color(i: number): string
 	{
@@ -286,7 +350,6 @@ export class DrawOptions
 	{
 		return this.f_show_exceptional;
 	}
-	
 	tangent_handle_size(): number
 	{
 		return this.f_tangent_handle_size;
@@ -295,7 +358,6 @@ export class DrawOptions
 	{
 		return this.f_tangent_arm_weight;
 	}
-
 	route_weight(): number
 	{
 		return this.f_route_weight;
@@ -312,7 +374,6 @@ export class DrawOptions
 	{
 		return this.f_hasse_padding;
 	}
-
 	background_color(): string
 	{
 		return this.f_background_color;
@@ -353,7 +414,22 @@ export class DrawOptions
 	{
 		return this.f_hasse_current_color;
 	}
-
+	hasse_node_size(): number
+	{
+		return this.f_hasse_node_size;
+	}
+	hasse_mini_vert_rad(): number
+	{
+		return this.f_hasse_mini_vert_rad;
+	}
+	hasse_mini_route_weight(): number
+	{
+		return this.f_hasse_mini_route_weight;
+	}
+	hasse_mini_dag_size(): number
+	{
+		return this.f_hasse_mini_dag_size;
+	}
 	simplex_render_mode(): SimplexRenderMode
 	{
 		return this.f_simplex_render_mode;
@@ -369,57 +445,5 @@ export class DrawOptions
 	dot_radius(): number
 	{
 		return this.f_dot_radius;
-	}
-
-	constructor(load_from_cookies: boolean, sync_css: boolean)
-	{
-		this.do_sync_css = sync_css;
-		if(!load_from_cookies){
-			this.sync_css();
-			return
-		};
-		let cookie_str = get_cookie(DRAW_OPTIONS_COOKIE_NAME);
-		if(!cookie_str) return;
-
-		
-		let json_ob;
-		try{
-			json_ob = JSON.parse(cookie_str);
-		} catch(e)
-		{ console.warn("Failed to parse draw options cookie.", e); return; }
-
-		for(let field in this)
-		{
-			if(field.substring(0,2) == "f_" && field in json_ob)
-				// @ts-ignore
-				this[field] = json_ob[field];
-		}
-	
-		this.sync_css();
-	}
-
-	reset()
-	{
-		let def = new DrawOptions(false, false);
-
-		let old_mode: {mode: ColorSchemeMode, index: number} | null = null;
-		if(this.f_scheme_mode.mode == "computed")
-		{
-			old_mode = this.f_scheme_mode;
-		}
-
-		for(let field in def)
-		{
-			if(field.substring(0,2) == "f_")
-				// @ts-ignore
-				this[field] = def[field];
-		}
-
-		if(old_mode)
-		{
-			this.f_scheme_mode = old_mode;
-		}
-
-		this.on_change();
 	}
 }
