@@ -24,36 +24,55 @@ export class CliqueViewer implements IMode
 {
     readonly draw_options: DrawOptions;
 
-    readonly draw_options_box: DrawOptionBox;
-    readonly swap_box: SwapBox;
+    readonly draw_options_box: DrawOptionBox; //Box containing scale slider
+    readonly swap_box: SwapBox;               //Box containing route colors
     
+    //Precomputed DAG/framing/polytope data
     readonly dag: FramedDAGEmbedding;
     readonly polytope: FlowPolytope;
     readonly cliques: DAGCliques;
 
+    //Canvases
     readonly clique_canvas: DAGCanvas;
     readonly hasse_canvas: DAGCanvas;
     readonly poly_canvas: PolytopeCanvas;
 
+    //This is stored so the event can be deleted with clear_global_events
     readonly resize_event: (ev: UIEvent) => void;
 
     current_clique: number = 0;
-    
-    current_dag_bez: {bez: Bezier, route: number, width: number}[] = [];
-    current_hasse_boxes: {[clique: number]: BoundingBox } = {};
     moused_over_route: Option<number> = Option.none();
 
+    //Represents click-and-drag state for hasse diagram nodes
     h_drag: HasseDrag = {dragging: false, elem: 0, offset: Vector2.zero()};
 
+    //Overridden hasse node positions, for custom positioning
     hasse_overrides: {[key: number]: Vector2} = {};
 
+    /*
+    These values are computed once per draw-call, to avoid 
+    recomputing them.
+    */
+    cur_draw_beziers: {bez: Bezier, route: number, width: number}[] = [];
+    cur_draw_hasse_boxes: {[clique: number]: BoundingBox } = {};
+
+    //IMode implementations
     name(): ModeName {
         return "clique-viewer"
     }
     current_embedding(): FramedDAGEmbedding {
         return this.dag;
     }
+    clear_global_events(): void {
+        removeEventListener("resize", this.resize_event);
+    }
 
+    /*
+    This is 'destructive' in the send that calling this
+    function completely clears out SIDEBAR_HEAD, SIDEBAR_CONTENTS,
+    and RIGHT_AREA, which are the regions an IMode is supposed to
+    put its elements into.
+    */
     static destructive_new(
         dag: FramedDAGEmbedding,
         draw_options: DrawOptions,
@@ -73,20 +92,10 @@ export class CliqueViewer implements IMode
         );
     }
 
-    static dummy_new(
-        dag: FramedDAGEmbedding,
-        draw_options: DrawOptions,
-    ){
-        let get_dummy = () => document.createElement("div");
-        let cliques = new DAGCliques(dag.dag);
-        let polytope = new FlowPolytope(cliques);
-        return new CliqueViewer
-        (
-            dag, polytope, cliques, draw_options,
-            get_dummy(), get_dummy(), get_dummy()
-        );
-    }
-
+    /*
+    Same as above, but takes precomputed data rather than computing
+    from scratch.
+    */
     static precomp_destructive_new(
         data: JSONCliqueData,
         draw_options: DrawOptions,
@@ -303,10 +312,6 @@ export class CliqueViewer implements IMode
         this.recomp_hasse_scale();
     }
 
-    clear_global_events(): void {
-        removeEventListener("resize", this.resize_event);
-    }
-
 
     clique_canvas_click(position: Vector2)
     {
@@ -456,7 +461,7 @@ export class CliqueViewer implements IMode
     {		
         let ctx = this.clique_canvas.get_ctx();
         let data = this.dag.bake();
-        this.current_dag_bez = [];
+        this.cur_draw_beziers = [];
 
         ctx.clear();
 
@@ -493,7 +498,7 @@ export class CliqueViewer implements IMode
                     offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
                 let bez = edge.transform((v) => v.add(offset));
-                this.current_dag_bez.push({
+                this.cur_draw_beziers.push({
                     bez, route: r, width
                 });
                 ctx.draw_bez(
@@ -512,7 +517,7 @@ export class CliqueViewer implements IMode
                 this.draw_options.get_route_color(route),
                 0.15
             );
-            for(let cd of this.current_dag_bez)
+            for(let cd of this.cur_draw_beziers)
             {
                 if(cd.route != route) continue;
                 ctx.draw_bez(
@@ -535,6 +540,17 @@ export class CliqueViewer implements IMode
 
     }
 
+    /*
+    Function for drawing the Hasse diagram to this.hasse_canvas
+    A relatively simple procedure, first drawing the edges, then
+    drawing the cliques as either dots or mini-cliques, depending
+    on settings.
+
+    One oddity is that it saves the bounding boxes of the
+    mini-cliques to the current_hasse_boxes object as it draws them.
+    This is the mose efficient way to make sure the program knows where
+    it is clicking, for the purposes of Ctrl-click and drag.
+    */
     draw_hasse()
     {
         let ctx = this.hasse_canvas.get_ctx();
@@ -542,8 +558,9 @@ export class CliqueViewer implements IMode
 
         let hasse = this.cliques.hasse;
         let positions = this.get_hasse_positions();
-        this.current_hasse_boxes = {};
+        this.cur_draw_hasse_boxes = {};
 
+        //Draw the edges.
         for(let i = 0; i < hasse.covering_relation.length; i++)
         for(let j = 0; j < hasse.covering_relation.length; j++)
         {
@@ -552,36 +569,48 @@ export class CliqueViewer implements IMode
                 let pos_i = positions[i];
                 let pos_j = positions[j];
 
-                let mid = pos_i.add(pos_j).scale(0.5);
-                let rts = hasse.cover_routes[i][j];
-                let color1 = this.draw_options.get_route_color(rts[0]);
-                let color2 = this.draw_options.get_route_color(rts[1]);
+                let midpoint = pos_i.add(pos_j).scale(0.5);
+                let routes = hasse.cover_routes[i][j];
+
+                //Color each half of the edge by its associate route-color.
+                let color1 = this.draw_options.get_route_color(routes[0]);
+                let color2 = this.draw_options.get_route_color(routes[1]);
                 
-                if(pos_i.y >= pos_j.y)
+                //the clique (i) should be less than clique (j). So, if
+                //the node for (i) is somehow above (j), that makes the
+                //hasse diagram misleading. As such, we check for this,
+                //and color the edge red and mark it with exclamation
+                //points if it is bad.
+                let bad = pos_i.y >= pos_j.y
+
+                //Color red if bad.
+                if(bad)
                 {
                     color1 = this.draw_options.hasse_bad_edge_color();
                     color2 = this.draw_options.hasse_bad_edge_color();
                 }
 
+                //Draw the two halves of the segment
                 ctx.draw_line(
                     pos_i,
-                    mid,
+                    midpoint,
                     color1,
                     this.draw_options.hasse_edge_weight()
                 );
                 ctx.draw_line(
-                    mid,
+                    midpoint,
                     pos_j,
                     color2,
                     this.draw_options.hasse_edge_weight()
                 );
 
-                if(pos_i.y >= pos_j.y)
+                //Draw warning "!!!"
+                if(bad)
                 {
                     //TODO: Parametrize
                     ctx.draw_text(
                         "!!!",
-                        mid,
+                        midpoint,
                         "#ffffff",
                         "#000000",
                         20
@@ -590,8 +619,10 @@ export class CliqueViewer implements IMode
             }
         }
 
+        //Draw the nodes
         if(!this.draw_options.hasse_show_cliques())
         {
+            //Either: draw the nodes as dots
             for(let i = 0; i < positions.length; i++)
             {   
                 let color = this.draw_options.hasse_node_color();
@@ -608,6 +639,7 @@ export class CliqueViewer implements IMode
         }
         else
         {
+            //Or draw them as mini-cliques!
             let data = this.dag.bake();
             for(let i = 0; i < positions.length; i++)
             {   
@@ -624,6 +656,7 @@ export class CliqueViewer implements IMode
         
     }
 
+    //The poly_canvas handles its own drawing routine.
     draw_polytope()
     {
         this.poly_canvas.draw();
@@ -654,7 +687,7 @@ export class CliqueViewer implements IMode
             box.add_point(edge.end_point);
         }
         box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
-        this.current_hasse_boxes[clique_idx] = box;
+        this.cur_draw_hasse_boxes[clique_idx] = box;
         ctx.draw_box(
             box.top_corner,
             box.bot_corner,
@@ -725,7 +758,7 @@ export class CliqueViewer implements IMode
 
         if(this.draw_options.hasse_show_cliques())
         {
-            let box = this.current_hasse_boxes[0];
+            let box = this.cur_draw_hasse_boxes[0];
             if(box)
             {
                 padding_x = padding + box.width();
@@ -753,6 +786,7 @@ export class CliqueViewer implements IMode
         this.draw_hasse();
     }
 
+    //Get positions of hasse nodes
     get_hasse_positions(): Vector2[]
     {
         let out = [];
@@ -761,6 +795,9 @@ export class CliqueViewer implements IMode
         return out;
     }
 
+    //get position of hasse node for clique (i)
+    //If hasse diagram has been given an override, use that
+    //otherwise, use default computed value.
     get_hasse_position(i: number): Vector2
     {
         if(i in this.hasse_overrides)
@@ -768,8 +805,12 @@ export class CliqueViewer implements IMode
         return this.cliques.hasse.layout_rows[i];
     }
 
+    //Check if these is a hasse node to click as position (click_pos)
+    //Behavior adapts to whether nodes are drawn as mini_cliques or dots
     get_hasse_node_at(click_pos: Vector2): Option<number>
     {
+        //Finds the node closest to click_pos which is on top of a node
+
         let canvas_pos = this.hasse_canvas.local_trans_inv(click_pos);
         let positions = this.get_hasse_positions();
         let closest: Option<number> = Option.none();
@@ -781,12 +822,14 @@ export class CliqueViewer implements IMode
 
             if(this.draw_options.hasse_show_cliques())
             {
-                let box = this.current_hasse_boxes[i];
+                //If drawn as mini cliques, only valid of in bounding box
+                let box = this.cur_draw_hasse_boxes[i];
                 if(!box || !box.contains(canvas_pos))
                     continue;
             }
             else
             {
+                //If drawn as nodes, only valid if in node-circle.
                 let screen_dist = screen_node_pos.sub(click_pos).norm();
                 if(screen_dist > this.draw_options.hasse_node_size())
                     continue;
@@ -802,23 +845,15 @@ export class CliqueViewer implements IMode
 
         return closest;
     }
-    /*
-    Util
-    */
 
-    private set_hasse_overrides(hasse_overrides: {[key: number]: Vector2} )
-    {
-        this.hasse_overrides = hasse_overrides;
-        this.draw();
-    }
-
+    //Used to find if pos is overlapping some route in dag_canvas.
     get_route_at(pos: Vector2): Option<number>
     {
         let position = this.clique_canvas.local_trans_inv(pos);
         let closest_dist = Infinity;
         let closest: Option<number> = Option.none();
         let scale = this.draw_options.scale();
-        for(let current of this.current_dag_bez)
+        for(let current of this.cur_draw_beziers)
         {
             let dist = current.bez.distance_to(position);
             if(dist < closest_dist && dist * scale < current.width / 2)
@@ -829,6 +864,12 @@ export class CliqueViewer implements IMode
         }
 
         return closest;
+    }
+
+    private set_hasse_overrides(hasse_overrides: {[key: number]: Vector2} )
+    {
+        this.hasse_overrides = hasse_overrides;
+        this.draw();
     }
 
     to_data_json_ob(): JSONCliqueData
