@@ -75,7 +75,7 @@ export class Vector2
 		let n = this.norm();
 		if (Math.abs(n) < 0.00000000001) {
 			console.warn("Tried to normalize zero vector.")
-			return Vector2.zero();
+			return Vector2.right();
 		}
 		return this.scale(1/n);
 	}

@@ -2,7 +2,16 @@ import { AngleOverride, AngleOverrideType } from "../draw/dag_layout";
 import { Vector2 } from "../util/num";
 import { VecSpinner } from "./vec_spinner";
 
-//TODO: Document
+/*
+This object encapsulates a collection of input objects
+which represent an AngleOverride. Allows users to select
+which type is desired, and will show and hide the requisite
+input elements to input relevant values.
+
+AngleOverride value can be set with 'set_value' and gotten with 'get_value.'
+This does necessary translation, as the AngleOverride object assumes angles
+are given in radians, while the input objects display in degrees.
+*/
 
 const TYPES: AngleOverrideType[] = ["none", "relative", "absolute", "vec-abs"];
 export class AngleOverrideController

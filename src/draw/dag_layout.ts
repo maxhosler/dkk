@@ -2,13 +2,23 @@ import { Edge, FramedDAG, JSONFramedDag } from "../math/dag";
 import { Result } from "../util/result";
 import { Bezier, Vector2 } from "../util/num";
 
-//TODO: Document
 
+/*
+This object represents an "override" of the default behavior for rendering
+how edges are angled at their start and end.
+
+"none" is default behavior
+"absolute" is an absolute angle
+"relative" is an angle relative to the line between the start and end vertices
+"vec-abs" just directly sets the normal vector at the start of the bezier curve
+*/
 export type AngleOverrideType = "none" | "absolute" | "relative" | "vec-abs";
 export class AngleOverride
 {
 	readonly type: AngleOverrideType;
-	readonly inner: number | Vector2;
+	//Actual associated value, depends on the type
+	//Should be Vector2 for vec-abs, a number (in radians) otherwise.
+	readonly inner: number | Vector2; 
 
 	private constructor(type: AngleOverrideType, angle: number | Vector2)
 	{
@@ -16,6 +26,11 @@ export class AngleOverride
 		this.inner = angle;
 	}
 
+	/*
+	Function for actually getting the normal vector. 
+	Anywhere from all to none of the input values are
+	actually used, based on the type.
+	*/
 	get_vector(
 		default_angle: number,
 		direction_vec: Vector2,
@@ -33,6 +48,9 @@ export class AngleOverride
 		throw new Error("Unhandled branch");
 	}
 
+	/*
+	Factories, to guarantee the types match up
+	*/
 	static none(): AngleOverride
 	{
 		return new AngleOverride("none", 0);
@@ -45,7 +63,6 @@ export class AngleOverride
 	{
 		return new AngleOverride("relative", ang);
 	}
-
 	static vec_abs(vec: Vector2): AngleOverride
 	{
 		return new AngleOverride("vec-abs", vec);
@@ -78,16 +95,26 @@ export class AngleOverride
 	}
 }
 
+//Layout data for a given edge.
 export type EdgeData = {
-	start_list_pos: [pos: number, out_of: number],
+	//Position in the framing at the start,
+	//for example, [1,5] means the second (we index from 0) element out of 5
+	start_list_pos: [pos: number, out_of: number], 
+	//Same but for end
 	end_list_pos:   [pos: number, out_of: number],
 
+	//Overrides at start and end
 	start_ang_override: AngleOverride,
 	end_ang_override:   AngleOverride,
 }
 
+//Layout data for a given vertex
 export type VertData = {
 	position: Vector2,
+	/*
+	Spread is the angle over which edges are 
+	spread-out when using default behavior.
+	*/
 	spread_out: number,
 	spread_in: number
 }
@@ -108,6 +135,7 @@ export class FramedDAGEmbedding
 
 	constructor(dag: FramedDAG)
 	{
+		//Fill with default values.
 		this.dag = dag.clone();
 		this.vert_data = Array.from(
 			{length:dag.num_verts()},
@@ -138,6 +166,8 @@ export class FramedDAGEmbedding
 
 	default_edges()
 	{
+		//Assigns to each edge the default behavior, 
+		//with incorrect start_ and end_list_pos
 		this.edge_data = Array.from(
 			{length:this.dag.num_edges()},
 			() => ({ 
@@ -147,11 +177,21 @@ export class FramedDAGEmbedding
 				end_ang_override: AngleOverride.none(),
 			})
 		);
+		//Correct compute start_ and end_list_pos
 		this.recomp_list_pos();
 	}
 
 	default_verts()
 	{
+		/*
+		This just lays out the vertices in a line, and gives them
+		a spread of PI/2 radians.
+
+		The order of the line is guaranteed to respect the precedence
+		order of the DAG (so no edges go backwards). Position in the 
+		list of vertices is used to compare incomparables.
+		*/
+
 		this.vert_data = Array.from(
 			{length:this.dag.num_verts()},
 			() => ({
@@ -192,6 +232,8 @@ export class FramedDAGEmbedding
 
 	recomp_list_pos()
 	{
+		//Compute position in framing for each edge.
+
 		for(let v = 0; v < this.dag.num_verts(); v++)
 		{
 			let out_edges: number[] = this.dag.get_out_edges(v).unwrap();
@@ -210,16 +252,27 @@ export class FramedDAGEmbedding
 		}
 	}
 
+	/*
+	"Bake" into data that can be more directly rendered.
+	Vertices are just given positions, and all the other
+	data is used to compute the Bezier curves for the edges.
+	*/
 	bake(): BakedDAGEmbedding
 	{
 		let verts: Vector2[] = [];
 		let edges: Bezier[] = [];
 
+		//each entry is the a pair of vectors, the directions from a given
+		//vertex to its immediate predecessors and successors, respectively
+		//used for 'default' and 'relative' AngleOverride behavior.
 		let vert_in_out: [Vector2,Vector2][] = [];
 
+		//The list of verts just takes directly from the VertData
+		//No computation necessary!
 		for(let x of this.vert_data)
 			verts.push(x.position.clone());
 		
+		//Computing vert_in_out
 		for(let i = 0; i < this.dag.num_verts(); i++)
 		{
 			let before: number[] = [];
@@ -246,7 +299,6 @@ export class FramedDAGEmbedding
 			for(let a of after)
 				after_avg = after_avg.add(verts[a].scale(1/after.length))
 
-			//TODO: Handle when zero.
 			vert_in_out.push(
 				[
 					verts[i].sub(before_avg).normalized(),
@@ -255,21 +307,29 @@ export class FramedDAGEmbedding
 			)
 		}
 
+
+		//Compute the bezier curves
 		for(let i = 0; i < this.dag.num_edges(); i++)
 		{
 			let edge: Edge = this.dag.get_edge(i).unwrap();
 			let edge_data = this.edge_data[i];
 
+			//Vertex data for the start and end.
 			let start_data = this.vert_data[edge.start];
 			let end_data = this.vert_data[edge.end];
 
+			//Start and end of bezier curves are just the vertices.
 			let start_pos = start_data.position;
 			let end_pos = end_data.position;
+
+			//Default length of the tangent vector is half the length between
+			//the endpoints
 			let delta = end_pos.sub(start_pos);
 			let tan_len = delta.norm() / 2;
 
 			let spread_percents = spread_percent(edge_data);
 
+			//Compute tangent vectors
 			let start_tan = edge_data.start_ang_override
 				.get_vector(
 					spread_percents[0] * start_data.spread_out,
@@ -283,6 +343,7 @@ export class FramedDAGEmbedding
 					tan_len
 				);
 
+			//Compute control points
 			let cp1 = start_pos.add( start_tan );
 			let cp2 = end_pos.sub( end_tan );
 
@@ -302,6 +363,8 @@ export class FramedDAGEmbedding
 		};
 	}
 
+	//Remove an edge from the framing,
+	//doing any necessary housekeeping.
 	remove_edge(idx: number): boolean
 	{
 		if(this.dag.remove_edge(idx))
