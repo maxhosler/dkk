@@ -549,22 +549,44 @@ export class CliqueViewer implements IMode
         {
             if(hasse.covering_relation[i][j])
             {
-                let mid = positions[i].add(positions[j]).scale(0.5);
+                let pos_i = positions[i];
+                let pos_j = positions[j];
+
+                let mid = pos_i.add(pos_j).scale(0.5);
                 let rts = hasse.cover_routes[i][j];
                 let color1 = this.draw_options.get_route_color(rts[0]);
                 let color2 = this.draw_options.get_route_color(rts[1]);
+                
+                if(pos_i.y >= pos_j.y)
+                {
+                    color1 = this.draw_options.hasse_bad_edge_color();
+                    color2 = this.draw_options.hasse_bad_edge_color();
+                }
+
                 ctx.draw_line(
-                    positions[i],
+                    pos_i,
                     mid,
                     color1,
                     this.draw_options.hasse_edge_weight()
                 );
                 ctx.draw_line(
                     mid,
-                    positions[j],
+                    pos_j,
                     color2,
                     this.draw_options.hasse_edge_weight()
                 );
+
+                if(pos_i.y >= pos_j.y)
+                {
+                    //TODO: Parametrize
+                    ctx.draw_text(
+                        "!!!",
+                        mid,
+                        "#ffffff",
+                        "#000000",
+                        20
+                    );
+                }
             }
         }
 

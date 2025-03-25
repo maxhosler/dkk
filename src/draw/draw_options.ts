@@ -63,6 +63,7 @@ export class DrawOptions
 	private f_edge_color: string = "#222222"; //Not in settings box
 	private f_hasse_current_color: string = "#cdcdcd"; //Not in settings
 	private f_hasse_node_color: string = "#000000";
+	private f_hasse_bad_edge_color: string = "#ff0000";
 
 	//AUXILIARY
 	private change_listeners: (()=>void)[] = [];
@@ -304,6 +305,11 @@ export class DrawOptions
 		this.f_dot_radius = rad;
 		this.on_change();
 	}
+	set_hasse_bad_edge_color(col: string)
+	{
+		this.f_hasse_bad_edge_color = col;
+		this.on_change();
+	}
 
 	/****************
 	* GETTERS       *
@@ -445,5 +451,9 @@ export class DrawOptions
 	dot_radius(): number
 	{
 		return this.f_dot_radius;
+	}
+	hasse_bad_edge_color(): string
+	{
+		return this.f_hasse_bad_edge_color;
 	}
 }
