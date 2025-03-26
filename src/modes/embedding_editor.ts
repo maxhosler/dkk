@@ -14,6 +14,11 @@ import { VecSpinner } from "../subelements/vec_spinner";
 
 //TODO: Document
 
+/*
+Represents current selection, with possibilities of nothing, one vertex/edge
+or two vertices/edges.
+
+*/
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
 class Selection
@@ -59,13 +64,23 @@ class Selection
 		return this.type == "pair_verts" || this.type == "pair_edges";
 	}
 
+	/*
+	Takes in what and what type of thing has been clicked,
+	and returns the next type of selection.
+	*/
 	change(
 		clicked: "vertex" | "edge",
 		index: number,
 		shift_held: boolean
 	): Selection
 	{
-
+		/*
+		If any of the following is true:
+		(1) nothing is selected
+		(2) shift isn't held
+		(3) the clicked thing is of a different type from the selected ones
+		Just select the current thing alone.
+		*/
 		if( this.type == "none" ||
 			!shift_held ||
 			(this.single() && this.type != clicked) ||
@@ -78,6 +93,8 @@ class Selection
 		//Some of these conditions are redundant,
 		//but they make it more explicit what is going on
 
+		//If you're clicking a new thing of the same type,
+		//select both.
 		if(shift_held && this.single() && this.type == clicked)
 		{
 			let pair: [number, number] = [this.inner as number, index];
@@ -101,6 +118,9 @@ class Selection
 			}
 		}
 
+		//If a pair is selected:
+		//If you clicked on one of the things in the pair, deselect it.
+		//Otherwise, swap the first of the selected things with the new thing
 		if(shift_held && this.pair() && this.pair_of(clicked))
 		{
 			let pair: [number, number] = [(this.inner as [number, number])[1], index];
@@ -128,6 +148,7 @@ class Selection
 	}
 }
 
+//Represent dragging various things
 type EdgeDragState =
 {
 	dragging: boolean,

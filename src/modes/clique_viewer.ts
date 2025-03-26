@@ -312,7 +312,6 @@ export class CliqueViewer implements IMode
         this.recomp_hasse_scale();
     }
 
-
     clique_canvas_click(position: Vector2)
     {
         if(this.moused_over_route.is_some())
@@ -337,6 +336,9 @@ export class CliqueViewer implements IMode
         this.draw()
     }
 
+    //Since the swap-box only changes the color of the mutated
+    //it needs to be entirely refreshed when changing directly 
+    //to another clique
     refresh_swapbox()
     {
         let clq = this.cliques.cliques[this.current_clique];
@@ -358,6 +360,7 @@ export class CliqueViewer implements IMode
         this.poly_canvas.set_clique(clq)
     }
 
+    //Mutate across the (idx)th route in the current clique.
     route_swap(idx: number)
     {
         let old_clq = this.current_clique;

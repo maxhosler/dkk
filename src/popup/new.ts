@@ -3,8 +3,9 @@ import { FramedDAG } from "../math/dag";
 import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
-//TODO: Document
-
+/*
+The popup that allows you to create new dags in the EmbeddingEditor
+*/
 export class NewPopup extends Popup
 {
 	input: HTMLInputElement;
@@ -47,6 +48,7 @@ export class NewPopup extends Popup
 		col3.appendChild(button);
 	}
 
+	//Load DAG into EmbeddingEditor
 	done()
 	{
 		let num = parseInt(this.input.value);
