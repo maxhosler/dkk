@@ -194,12 +194,6 @@ export class CliqueViewer implements IMode
         let segments = build_right_area_zones();
         right_area.appendChild(segments.root);
 
-        //Resize
-        if(this.polytope.dim > 3)
-        {
-            segments.poly.className = "clq-minify";
-        }
-
         //Graph Canvas
         let {canvas: clique_canvas, element: c_canvas_element} = DAGCanvas.create(draw_options);
         segments.clique.appendChild(c_canvas_element);
@@ -492,10 +486,8 @@ export class CliqueViewer implements IMode
     brick_canvas_click(friend: Vector2)
     {
 	    //If we are mousing over a brick we can add to our complex, then add it to our complex!
-	    //
 	    //If we are mousing over a brick already in our complex, remove it!
     
-
 	    if (this.moused_over_brick.is_some())
 	    {
 		    //first let's check if we mousing over a brick in our current clique
@@ -543,13 +535,12 @@ export class CliqueViewer implements IMode
                 min_dist = dist;
             }
         }
-	if (min_dist <= 0.5)
-	{
-		this.moused_over_brick=closest;
-	}
-	else
-		this.moused_over_brick=Option.none();
-	    this.draw_bricks(); //TODO: Maybe want to only draw when we have changed probably
+        if (min_dist <= 0.5)
+            this.moused_over_brick=closest;
+        else
+            this.moused_over_brick=Option.none();
+
+	    this.draw_bricks(); 
     }
     //ENDJRB
 
@@ -984,7 +975,6 @@ export class CliqueViewer implements IMode
 
     }
 
-
     //JRB
     draw_bricks()
     {
@@ -1177,7 +1167,6 @@ export class CliqueViewer implements IMode
         }
     }
     //ENDJRB
-
 
     /*
     Function for drawing the Hasse diagram to this.hasse_canvas
