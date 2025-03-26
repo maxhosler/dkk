@@ -887,9 +887,7 @@ function verify_ssr(x: any): Result<SharedSubrouteCollection[][]>
 					return Result.err("InvalidField", "SharedSubroute.in_vert not a number.");
 				if(typeof ssr.out_vert != "number")
 				{
-					console.log(ssr);
 					return Result.err("InvalidField", "SharedSubroute.out_vert not a number.");
-
 				}
 				for(let field of ["in_edges", "out_edges"])
 				{

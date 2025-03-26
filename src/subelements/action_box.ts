@@ -202,6 +202,31 @@ export class ActionBox
 		return row;
 	}
 
+	add_selector(
+		name: string,
+		val_name_pairs: [string,string][],
+		on_change: (new_val: string) => void
+	): HTMLSelectElement
+	{
+		let selector = document.createElement("select");
+		selector.addEventListener("change",
+			(ev) => {
+				on_change(selector.value);
+			}
+		);
+		for(let vnp of val_name_pairs)
+		{
+			let opt = document.createElement("option");
+			opt.value = vnp[0];
+			opt.innerText = vnp[1];
+			selector.appendChild(opt);
+		}
+
+		this.add_labelled_row(selector, name);
+
+		return selector;
+	}
+
 	add_space(height: number)
 	{
 		let spacer = document.createElement("div");

@@ -11,6 +11,7 @@ import { DrawOptions } from "../draw/draw_options";
 import { IMode, ModeName } from "./mode";
 import { Option, Result } from "../util/result";
 import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
+import { ActionBox } from "../subelements/action_box";
 
 type HasseDrag = {
     dragging: boolean,
@@ -190,6 +191,18 @@ export class CliqueViewer implements IMode
         sidebar_contents.appendChild(swap_box_element);
         this.swap_box = swap_box;
 
+        //left corner selector
+        let possible: [string,string][] = [["brick", "Bricks"]];
+        if([2,3].includes(polytope.dim))
+            possible.push(["polytope", "Polytopes"])
+        let ab = ActionBox.create();
+        sidebar_contents.appendChild(ab.element);
+        ab.box.add_selector(
+            "Left corner view",
+            possible,
+            (val) => this.change_left_corner_view(val)
+        )
+
         //Right area dividers
         let segments = build_right_area_zones();
         right_area.appendChild(segments.root);
@@ -266,14 +279,14 @@ export class CliqueViewer implements IMode
                 this.h_drag.dragging = false;
                 this.recomp_hasse_scale();
             }
-        )
+        );
         h_canvas_element.addEventListener("mouseleave",
             (ev) => {
                 //release drag
                 this.h_drag.dragging = false;
                 this.recomp_hasse_scale();
             }
-        )
+        );
         h_canvas_element.addEventListener("mousemove",
             (ev) => {
                 if (this.h_drag.dragging)
@@ -285,8 +298,7 @@ export class CliqueViewer implements IMode
                     this.draw();
                 }
             }
-        )
-        
+        );
         this.hasse_canvas = hasse_canvas;
 
         //Polytope canvas
@@ -343,9 +355,28 @@ export class CliqueViewer implements IMode
 
         this.update_route_enabled();
         this.update_swap_box();
+        this.change_left_corner_view("brick");
         
         window.dispatchEvent(new Event('resize'));
         this.recomp_hasse_scale();
+    }
+
+    change_left_corner_view(view: string)
+    {
+        if(view == "polytope")
+        {
+            this.poly_canvas.canvas.style.display = "";
+            this.brick_canvas.canvas.style.display = "none";
+        }
+        else if (view == "brick")
+        {
+            this.brick_canvas.canvas.style.display = "";
+            this.poly_canvas.canvas.style.display = "none";
+        }
+        else
+        {
+            console.warn("Tried to change left corner to invalid name!")
+        }
     }
 
     //Handle canvas clicks, currently just handles clicking
@@ -497,10 +528,7 @@ export class CliqueViewer implements IMode
 			    {
 				    //XXX
 				    let new_downbricks: number[] = this.cliques.downbricks[this.current_clique].slice();
-				    console.log("DOWNBRICKS (old then new):");
-				    console.log(new_downbricks);
 				    new_downbricks.splice(j,1);
-				    console.log(new_downbricks);
 				    this.current_clique=this.cliques.clique_from_bricks(new_downbricks);
 			            this.refresh_swapbox();
 				    this.draw();
