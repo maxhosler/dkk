@@ -12,8 +12,6 @@ import { IMode, ModeName } from "./mode";
 import { Option, Result } from "../util/result";
 import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
 
-//TODO: Document
-
 type HasseDrag = {
     dragging: boolean,
     elem: number,
@@ -229,8 +227,15 @@ export class CliqueViewer implements IMode
         let {canvas: hasse_canvas, element: h_canvas_element} = DAGCanvas.create(draw_options);
         segments.hasse.appendChild(h_canvas_element);
         hasse_canvas.resize_canvas();
+
+        //These events handle clicking and dragging
+        //in the hasse diagram.
         h_canvas_element.addEventListener("mousedown",
             (ev) => {
+                /*
+                On mousedown, check to see if over hasse node.
+                If so, make it the current target of dragging.
+                */
                 if(ev.ctrlKey){
                     this.h_drag.dragging = true
                     let mp = new Vector2(ev.layerX, ev.layerY);
@@ -241,6 +246,7 @@ export class CliqueViewer implements IMode
                         let pos = this.get_hasse_position(idx);
                         let descaled_mp = this.hasse_canvas.local_trans_inv(mp);
                         let offset = pos.sub(descaled_mp);
+
                         this.h_drag.dragging = true;
                         this.h_drag.elem = idx;
                         this.h_drag.offset = offset;
@@ -254,16 +260,20 @@ export class CliqueViewer implements IMode
         );
         h_canvas_element.addEventListener("mouseup",
             (ev) => {
+                //If not dragging, treat as click
                 if(!this.h_drag.dragging)
                 {
                     this.hasse_canvas_click(new Vector2(ev.layerX, ev.layerY));
                 }
+
+                //release drag
                 this.h_drag.dragging = false;
                 this.recomp_hasse_scale();
             }
         )
         h_canvas_element.addEventListener("mouseleave",
             (ev) => {
+                //release drag
                 this.h_drag.dragging = false;
                 this.recomp_hasse_scale();
             }
@@ -272,6 +282,7 @@ export class CliqueViewer implements IMode
             (ev) => {
                 if (this.h_drag.dragging)
                 {
+                    //Mouse the dragged vertex around if we're dragging
                     let mp = new Vector2(ev.layerX, ev.layerY);
                     let descaled_mp = this.hasse_canvas.local_trans_inv(mp);
                     this.hasse_overrides[this.h_drag.elem] = descaled_mp.add(this.h_drag.offset);
@@ -312,6 +323,8 @@ export class CliqueViewer implements IMode
         this.recomp_hasse_scale();
     }
 
+    //Handle canvas clicks, currently just handles clicking
+    //on routes to mutate.
     clique_canvas_click(position: Vector2)
     {
         if(this.moused_over_route.is_some())
@@ -324,6 +337,8 @@ export class CliqueViewer implements IMode
         this.update_moused_over(position);
     }
 
+    //Handle hasse clicks, currently just
+    //swaps to clicked node
     hasse_canvas_click(position: Vector2)
     {
         let clicked = this.get_hasse_node_at(position);
@@ -375,7 +390,11 @@ export class CliqueViewer implements IMode
         let nc = this.cliques.cliques[new_clq];
         this.poly_canvas.set_clique(nc);
 
+        //If cliques are different, update swap box.
         if(old_clq != new_clq) {
+            //Find the route unqiue to each of the cliques,
+            //the two that are one but not the other.
+
             let old_route = -1;
             for(let r of oc.routes)
             {
@@ -396,11 +415,13 @@ export class CliqueViewer implements IMode
                 }
             }
 
+            //Swap if found, otherwise warn something has gone awry
             if(old_route !== -1 && new_route !== -1)
                 this.swap_box.swap_color(old_route, new_route);
             else
                 console.warn("Old route and new clique do not differ as expected.")
-        
+
+            //Update moused over route
             if(this.moused_over_route.is_some() && old_route == this.moused_over_route.unwrap())
                 this.moused_over_route = Option.some(new_route);
 
@@ -410,6 +431,7 @@ export class CliqueViewer implements IMode
         this.draw();
     }
 
+    //Mark routes in swap box based on whether you can mutate accross them.
     update_route_enabled()
     {
         let nc = this.cliques.cliques[this.current_clique];
@@ -423,6 +445,8 @@ export class CliqueViewer implements IMode
         }
     }
 
+    //Handles showing/hiding boxes based on 
+    //whether exceptional routes are shown
     update_swap_box()
     {
         this.swap_box.update_color();
@@ -433,6 +457,8 @@ export class CliqueViewer implements IMode
                 this.swap_box.hide_box(r);
     }
 
+    //Find route at (position) and record in (this.moused_over_route)
+    //if it exists.
     update_moused_over(position: Vector2)
     {
         let route_at = this.get_route_at(position);
@@ -451,7 +477,6 @@ export class CliqueViewer implements IMode
     Code for drawing
     */
 
-
     draw()
     {
         this.draw_clique();
@@ -460,6 +485,10 @@ export class CliqueViewer implements IMode
         this.swap_box.update_color();
     }
 
+    /*
+    Draw cliques in the clique_canvas, and store Bezier curves
+    associated to routes for mouseover checking.
+    */
     draw_clique()
     {		
         let ctx = this.clique_canvas.get_ctx();
@@ -468,6 +497,7 @@ export class CliqueViewer implements IMode
 
         ctx.clear();
 
+        //Draw edges
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++)
         {
             let edge = data.edges[edge_idx];
@@ -475,6 +505,9 @@ export class CliqueViewer implements IMode
                 .sub(edge.start_point)
                 .rot90()
                 .normalized();
+
+            //Draw 'ghost edge.' Should not be visible unless exceptional
+            //routes are hidden.
             ctx.draw_bez(
                 edge, 
                 this.draw_options.edge_color() + "22",
@@ -482,24 +515,40 @@ export class CliqueViewer implements IMode
                 false
             );
 
-            //routes
+            //Here we draw the routes at a given edge.
             let routes = this.cliques.routes_at(edge_idx, this.current_clique);
+
+            //Filter out exceptional if that option is set.
             if(!this.draw_options.show_exceptional())
                 routes = routes.filter( i => !this.cliques.exceptional_routes.includes(i));
+
+            //If there are no routes, you're done (otherwise, the following would divide by 0)
             if(routes.length == 0)
                 continue;
-            let full_width = this.draw_options.route_weight() * Math.pow(routes.length, 0.8);
+            
+            //Total width of the 'bundle' of routes is sub-linear in the number of routes
+            //This means it will get thicker, but doesn't get out of control. Capped at width
+            //of node, so it doesn't spill over.
+            let full_width = Math.min(
+                this.draw_options.route_weight() * Math.pow(routes.length, 0.8),
+                this.draw_options.vert_radius() * 2
+            );
+
             let width = full_width / routes.length * 1.01;
+            //Draw bezier for each route, offset in the direction orthogonal
+            //to the line between the endpoints.
             for(let i = 0; i < routes.length; i++)
             {
                 let r = routes[i];
                 let color = this.draw_options.get_route_color(r);
                 let offset = Vector2.zero();
+
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
                     offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
+
                 let bez = edge.transform((v) => v.add(offset));
                 this.cur_draw_beziers.push({
                     bez, route: r, width
@@ -513,6 +562,7 @@ export class CliqueViewer implements IMode
             }
         }
 
+        //Draw moused over route as lighter and thicker (and on top)
         if(this.moused_over_route.is_some())
         {
             let route = this.moused_over_route.unwrap();
@@ -532,12 +582,14 @@ export class CliqueViewer implements IMode
             }
         }
 
+        //Decorate with framing numbers
         if(this.draw_options.label_framing())
 			ctx.decorate_edges_num(
 				this.dag.dag,
 				data
 			);
-
+        
+        //Draw nodes
         for(let vert of data.verts)
         { ctx.draw_node(vert); }
 
@@ -665,6 +717,10 @@ export class CliqueViewer implements IMode
         this.poly_canvas.draw();
     }
 
+    /*
+    Draws mini-clique in hasse diagram.
+    A lot of this is duplicated code from draw_clique. Should be refactored into a single function.
+    */
     draw_mini_clique(
         center: Vector2,
         clique_idx: number,
