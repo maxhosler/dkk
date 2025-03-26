@@ -26,11 +26,7 @@ export class CliqueViewer implements IMode
     readonly clique_canvas: DAGCanvas;
     readonly hasse_canvas: DAGCanvas;
     readonly poly_canvas: PolytopeCanvas;
-    readonly brick_canvas: DAGCanvas; //JRB
-
-    readonly POLYTOPECANVAS: Boolean //JRB
-    readonly BRICKCANVAS: Boolean //JRB
-
+    readonly brick_canvas: DAGCanvas;
 
     readonly resize_event: (ev: UIEvent) => void;
 
@@ -87,8 +83,7 @@ export class CliqueViewer implements IMode
     )
     {
         this.dag = dag;
-	this.POLYTOPECANVAS = false;
-	this.BRICKCANVAS = true;
+
         this.draw_options = draw_options;
         this.cliques = new DAGCliques(dag.dag);
         this.polytope = new FlowPolytope(this.cliques);
@@ -137,20 +132,19 @@ export class CliqueViewer implements IMode
         right_area.appendChild(segments.root);
 
         //Resize
-        if(this.polytope.dim > 3 && this.POLYTOPECANVAS)
+        if(this.polytope.dim > 3)
         {
             segments.poly.className = "clq-minify";
         }
 
-
         //Graph Canvas
         let {canvas: clique_canvas, element: c_canvas_element} = DAGCanvas.create(draw_options);
-	segments.clique.appendChild(c_canvas_element);
-	c_canvas_element.addEventListener("click",
-		(ev) => {
-			this.clique_canvas_click(new Vector2(ev.layerX, ev.layerY))
-		}
-	)
+        segments.clique.appendChild(c_canvas_element);
+        c_canvas_element.addEventListener("click",
+            (ev) => {
+                this.clique_canvas_click(new Vector2(ev.layerX, ev.layerY))
+            }
+        )
         c_canvas_element.addEventListener("mousemove",
             (ev) => {
                 this.update_moused_over(new Vector2(ev.layerX, ev.layerY))
@@ -181,53 +175,44 @@ export class CliqueViewer implements IMode
 
         //Polytope canvas
         let {canvas: poly_canvas, element: p_canvas_element} = PolytopeCanvas.create(draw_options);
-
-	if (this.POLYTOPECANVAS)	//JRB
-	{
-        	poly_canvas.set_polytope(this.polytope, this.cliques.cliques[this.current_clique]);
-        	segments.poly.appendChild(p_canvas_element);
-	        poly_canvas.resize_canvas();
-	}
+        poly_canvas.set_polytope(this.polytope, this.cliques.cliques[this.current_clique]);
+        segments.poly.appendChild(p_canvas_element);
+        poly_canvas.resize_canvas();
         this.poly_canvas = poly_canvas;
 
-	//JRB
-	//Brick Canvas
-	let {canvas: brick_canvas, element: b_canvas_element} = DAGCanvas.create(draw_options);
-	if (this.BRICKCANVAS)
-	{
-	        segments.poly.appendChild(b_canvas_element);
-	        brick_canvas.resize_canvas();
-		b_canvas_element.addEventListener("click",
-		(ev) => {
-			this.brick_canvas_click(new Vector2(ev.layerX, ev.layerY))
-		}
-		)
-	        b_canvas_element.addEventListener("mousemove",
-	            (ev) => {
-	                this.update_moused_over_brick(new Vector2(ev.layerX, ev.layerY))
-			this.draw();
-	            }
-	        );
-	        b_canvas_element.addEventListener("mouseleave",
-	            (ev) => {
-	                this.moused_over_brick.is_some()
-	                {
-	                    this.moused_over_brick = Option.none();
-	                    this.draw();
-	                }
-	            }
-	        )
-	}
+        //JRB
+        //Brick Canvas
+        let {canvas: brick_canvas, element: b_canvas_element} = DAGCanvas.create(draw_options);
+        segments.poly.appendChild(b_canvas_element);
+        brick_canvas.resize_canvas();
+        b_canvas_element.addEventListener("click",
+            (ev) => {
+                this.brick_canvas_click(new Vector2(ev.layerX, ev.layerY))
+            }
+        )
+        b_canvas_element.addEventListener("mousemove",
+            (ev) => {
+                this.update_moused_over_brick(new Vector2(ev.layerX, ev.layerY))
+                this.draw();
+            }
+        );
+        b_canvas_element.addEventListener("mouseleave",
+            (ev) => {
+                this.moused_over_brick.is_some()
+                {
+                    this.moused_over_brick = Option.none();
+                    this.draw();
+                }
+            }
+        )
         this.brick_canvas = brick_canvas;
-	//ENDJRB
+	    //ENDJRB
 
         //Draw and setup redraw
         this.resize_event = (event) => {
             this.clique_canvas.resize_canvas();
             this.hasse_canvas.resize_canvas();
-	    if (this.POLYTOPECANVAS) //JRB
-	            this.poly_canvas.resize_canvas();
-	    if (this.BRICKCANVAS) //JRB
+	        this.poly_canvas.resize_canvas();
 		    this.brick_canvas.resize_canvas();
 
             this.draw()
@@ -246,7 +231,6 @@ export class CliqueViewer implements IMode
     clear_global_events(): void {
         removeEventListener("resize", this.resize_event);
     }
-
 
     clique_canvas_click(position: Vector2)
     {
@@ -410,12 +394,8 @@ export class CliqueViewer implements IMode
 			    return;
 		    }
 	    }
-    
-    
-    
-    
-    
     }
+
     update_moused_over_brick(position: Vector2)
     {
         let canvas_pos = this.brick_canvas.local_trans_inv(position);
@@ -465,9 +445,7 @@ export class CliqueViewer implements IMode
     {
         this.draw_clique();
         this.draw_hasse();
-	if (this.POLYTOPECANVAS)
-	        this.draw_polytope();
-	if (this.BRICKCANVAS)
+	    this.draw_polytope();
 		this.draw_bricks();
         this.swap_box.update_color();
     }
@@ -480,303 +458,296 @@ export class CliqueViewer implements IMode
 
         ctx.clear();
 
-	//JRB
-	//JRB
-	//draw all downbricks of our chosen clique, in the color of the routes
-	if (this.draw_options.draw_all_downbricks())
-	{
-		//this.current_clique
-		//XXX
-		let size: number = this.draw_options.brick_width()+10;
-		for (let route_index=0; route_index < this.cliques.clique_size; route_index++)
-		{
-			if (this.cliques.downbricks[this.current_clique][route_index]!=-1)
-			{
-				size-=5
-				//draw downbrick
-				//color is darkening of route color with alpha added
-			    	let color = lighten_css_str(
-					this.draw_options.get_route_color(this.cliques.cliques[this.current_clique].routes[route_index]),
-		        	        -0.15
-				).replace(')',', 0.5').replace('rgb','rgba');
+        //JRB
+        //draw all downbricks of our chosen clique, in the color of the routes
+        if (this.draw_options.draw_all_downbricks())
+        {
+            //this.current_clique
+            //XXX
+            let size: number = this.draw_options.brick_width()+10;
+            for (let route_index=0; route_index < this.cliques.clique_size; route_index++)
+            {
+                if (this.cliques.downbricks[this.current_clique][route_index]!=-1)
+                {
+                    size-=5
+                    //draw downbrick
+                    //color is darkening of route color with alpha added
+                        let color = lighten_css_str(
+                        this.draw_options.get_route_color(this.cliques.cliques[this.current_clique].routes[route_index]),
+                                -0.15
+                    ).replace(')',', 0.5').replace('rgb','rgba');
 
 
-				let brk=this.cliques.bricks[
-				    this.cliques.downbricks[this.current_clique][route_index]];
-				let intpath = brk.edges;
-				for (let i = 0; i < intpath.length; i++)
-				{
-			            let edge = data.edges[intpath[i]];
-			            ctx.draw_bez(
-			                edge, 
-			                color,
-			                size,
-			                false
-			            );
-				}
-				//now draw along the corners
-				let cornerarrows = [];
-				cornerarrows.push(brk.in_edges[0])
-				cornerarrows.push(brk.in_edges[1])
-				cornerarrows.push(brk.out_edges[0])
-				cornerarrows.push(brk.out_edges[1])
-				for (let j=0; j < 4; j++)
-				{
-					let in1 = data.edges[cornerarrows[j]];
-					let P0 = in1.start_point;
-					let P1 = in1.cp1;
-					let P2 = in1.cp2;
-					let P3 = in1.end_point;
-					let Q0= P0.scale(0.5).add(P1.scale(0.5));
-					let Q1=P1.scale(0.5).add(P2.scale(0.5));
-					let Q2=P2.scale(0.5).add(P3.scale(0.5));
-					let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-					let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-					let S0=R0.scale(0.5).add(R1.scale(0.5));
-					let halfbez: Bezier = in1;
-					if (j==2 || j==3)
-					{
-						halfbez = new Bezier(
-							P0,
-							Q0,
-							R0,
-							S0
-						);
-					}
-					else
-					{
-						halfbez = new Bezier(
-							S0,
-							R1,
-							Q2,
-							P3
-						);
-					}
-					ctx.draw_bez(
-			                halfbez, 
-					color,
-			                size,
-			                false
-			       		);
-				}
-			}
+                    let brk=this.cliques.bricks[
+                        this.cliques.downbricks[this.current_clique][route_index]];
+                    let intpath = brk.edges;
+                    for (let i = 0; i < intpath.length; i++)
+                    {
+                            let edge = data.edges[intpath[i]];
+                            ctx.draw_bez(
+                                edge, 
+                                color,
+                                size,
+                                false
+                            );
+                    }
+                    //now draw along the corners
+                    let cornerarrows = [];
+                    cornerarrows.push(brk.in_edges[0])
+                    cornerarrows.push(brk.in_edges[1])
+                    cornerarrows.push(brk.out_edges[0])
+                    cornerarrows.push(brk.out_edges[1])
+                    for (let j=0; j < 4; j++)
+                    {
+                        let in1 = data.edges[cornerarrows[j]];
+                        let P0 = in1.start_point;
+                        let P1 = in1.cp1;
+                        let P2 = in1.cp2;
+                        let P3 = in1.end_point;
+                        let Q0= P0.scale(0.5).add(P1.scale(0.5));
+                        let Q1=P1.scale(0.5).add(P2.scale(0.5));
+                        let Q2=P2.scale(0.5).add(P3.scale(0.5));
+                        let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+                        let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+                        let S0=R0.scale(0.5).add(R1.scale(0.5));
+                        let halfbez: Bezier = in1;
+                        if (j==2 || j==3)
+                        {
+                            halfbez = new Bezier(
+                                P0,
+                                Q0,
+                                R0,
+                                S0
+                            );
+                        }
+                        else
+                        {
+                            halfbez = new Bezier(
+                                S0,
+                                R1,
+                                Q2,
+                                P3
+                            );
+                        }
+                        ctx.draw_bez(
+                                halfbez, 
+                        color,
+                                size,
+                                false
+                            );
+                    }
+                }
+            }
+            this.cliques.cliques[this.current_clique]
+        }
+        //draw the brick of highlighted route, if we want to
+        if (this.draw_options.draw_brick_of_highlighted_route())
+        {
+            if(this.moused_over_route.is_some())
+                {
+                    let route = this.moused_over_route.unwrap();
+        
+                //now let's find the index of route in our current_clique
+                let route_index : number = -1;
+                for (let j=0; j < this.cliques.clique_size; j++)
+                {
+                    if (this.cliques.cliques[this.current_clique].routes[j]==route)
+                        route_index=j;
+                }
+        
+                //draw downbrick
+                let brk=this.cliques.bricks[
+                    this.cliques.downbricks[this.current_clique][route_index]];
+                if (this.cliques.downbricks[this.current_clique][route_index] != -1)
+                {
+                let intpath = brk.edges;
+                for (let i = 0; i < intpath.length; i++)
+                {
+                        let edge = data.edges[intpath[i]];
+                        ctx.draw_bez(
+                            edge, 
+                            this.draw_options.down_brick_color(),
+                            this.draw_options.brick_width(),
+                            false
+                        );
+                }
+                //now draw along the corners
+                let cornerarrows = [];
+                cornerarrows.push(brk.in_edges[0])
+                cornerarrows.push(brk.in_edges[1])
+                cornerarrows.push(brk.out_edges[0])
+                cornerarrows.push(brk.out_edges[1])
+                for (let j=0; j < 4; j++)
+                {
+                    let in1 = data.edges[cornerarrows[j]];
+                    let P0 = in1.start_point;
+                    let P1 = in1.cp1;
+                    let P2 = in1.cp2;
+                    let P3 = in1.end_point;
+                    let Q0= P0.scale(0.5).add(P1.scale(0.5));
+                    let Q1=P1.scale(0.5).add(P2.scale(0.5));
+                    let Q2=P2.scale(0.5).add(P3.scale(0.5));
+                    let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+                    let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+                    let S0=R0.scale(0.5).add(R1.scale(0.5));
+                    let halfbez: Bezier = in1;
+                    if (j==2 || j==3)
+                    {
+                        halfbez = new Bezier(
+                            P0,
+                            Q0,
+                            R0,
+                            S0
+                        );
+                    }
+                    else
+                    {
+                        halfbez = new Bezier(
+                            S0,
+                            R1,
+                            Q2,
+                            P3
+                        );
+                    }
+                    ctx.draw_bez(
+                            halfbez, 
+                            this.draw_options.down_brick_color(),
+                            this.draw_options.brick_width(),
+                            false
+                        );
+                }
+                }
+                //draw upbrick
+                let brk2=this.cliques.bricks[
+                    this.cliques.upbricks[this.current_clique][route_index]];
+                if (this.cliques.upbricks[this.current_clique][route_index] != -1)
+                {
+                let intpath = brk2.edges;
+                for (let i = 0; i < intpath.length; i++)
+                {
+                        let edge = data.edges[intpath[i]];
+                        ctx.draw_bez(
+                            edge, 
+                            this.draw_options.up_brick_color(),
+                            this.draw_options.brick_width(),
+                            false
+                        );
+                }
+                //now draw along the corners
+                let cornerarrows = [];
+                cornerarrows.push(brk2.in_edges[0])
+                cornerarrows.push(brk2.in_edges[1])
+                cornerarrows.push(brk2.out_edges[0])
+                cornerarrows.push(brk2.out_edges[1])
+                for (let j=0; j < 4; j++)
+                {
+                    let in1 = data.edges[cornerarrows[j]];
+                    let P0 = in1.start_point;
+                    let P1 = in1.cp1;
+                    let P2 = in1.cp2;
+                    let P3 = in1.end_point;
+                    let Q0= P0.scale(0.5).add(P1.scale(0.5));
+                    let Q1=P1.scale(0.5).add(P2.scale(0.5));
+                    let Q2=P2.scale(0.5).add(P3.scale(0.5));
+                    let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+                    let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+                    let S0=R0.scale(0.5).add(R1.scale(0.5));
+                    let halfbez: Bezier = in1;
+                    if (j==2 || j==3)
+                    {
+                        halfbez = new Bezier(
+                            P0,
+                            Q0,
+                            R0,
+                            S0
+                        );
+                    }
+                    else
+                    {
+                        halfbez = new Bezier(
+                            S0,
+                            R1,
+                            Q2,
+                            P3
+                        );
+                    }
+                    ctx.draw_bez(
+                            halfbez, 
+                            this.draw_options.up_brick_color(),
+                            this.draw_options.brick_width(),
+                            false
+                        );
+                    }
+                }
 		}
-		this.cliques.cliques[this.current_clique]
-	}
-	//draw the brick of highlighted route, if we want to
-	if (this.draw_options.draw_brick_of_highlighted_route())
-	{
-		if(this.moused_over_route.is_some())
-	        {
-	            let route = this.moused_over_route.unwrap();
-	
-		    //now let's find the index of route in our current_clique
-		    let route_index : number = -1;
-		    for (let j=0; j < this.cliques.clique_size; j++)
-		    {
-			    if (this.cliques.cliques[this.current_clique].routes[j]==route)
-				    route_index=j;
-		    }
-	
-		    //draw downbrick
-		    let brk=this.cliques.bricks[
-			    this.cliques.downbricks[this.current_clique][route_index]];
-		    if (this.cliques.downbricks[this.current_clique][route_index] != -1)
-		    {
-			let intpath = brk.edges;
-			for (let i = 0; i < intpath.length; i++)
-			{
-		            let edge = data.edges[intpath[i]];
-		            ctx.draw_bez(
-		                edge, 
-		                this.draw_options.down_brick_color(),
-		                this.draw_options.brick_width(),
-		                false
-		            );
-			}
-			//now draw along the corners
-			let cornerarrows = [];
-			cornerarrows.push(brk.in_edges[0])
-			cornerarrows.push(brk.in_edges[1])
-			cornerarrows.push(brk.out_edges[0])
-			cornerarrows.push(brk.out_edges[1])
-			for (let j=0; j < 4; j++)
-			{
-				let in1 = data.edges[cornerarrows[j]];
-				let P0 = in1.start_point;
-				let P1 = in1.cp1;
-				let P2 = in1.cp2;
-				let P3 = in1.end_point;
-				let Q0= P0.scale(0.5).add(P1.scale(0.5));
-				let Q1=P1.scale(0.5).add(P2.scale(0.5));
-				let Q2=P2.scale(0.5).add(P3.scale(0.5));
-				let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-				let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-				let S0=R0.scale(0.5).add(R1.scale(0.5));
-				let halfbez: Bezier = in1;
-				if (j==2 || j==3)
-				{
-					halfbez = new Bezier(
-						P0,
-						Q0,
-						R0,
-						S0
-					);
-				}
-				else
-				{
-					halfbez = new Bezier(
-						S0,
-						R1,
-						Q2,
-						P3
-					);
-				}
-				ctx.draw_bez(
-		                halfbez, 
-		                this.draw_options.down_brick_color(),
-		                this.draw_options.brick_width(),
-		                false
-		       		);
-			}
-		    }
-		    //draw upbrick
-		    let brk2=this.cliques.bricks[
-			    this.cliques.upbricks[this.current_clique][route_index]];
-		    if (this.cliques.upbricks[this.current_clique][route_index] != -1)
-		    {
-			let intpath = brk2.edges;
-			for (let i = 0; i < intpath.length; i++)
-			{
-		            let edge = data.edges[intpath[i]];
-		            ctx.draw_bez(
-		                edge, 
-		                this.draw_options.up_brick_color(),
-		                this.draw_options.brick_width(),
-		                false
-		            );
-			}
-			//now draw along the corners
-			let cornerarrows = [];
-			cornerarrows.push(brk2.in_edges[0])
-			cornerarrows.push(brk2.in_edges[1])
-			cornerarrows.push(brk2.out_edges[0])
-			cornerarrows.push(brk2.out_edges[1])
-			for (let j=0; j < 4; j++)
-			{
-				let in1 = data.edges[cornerarrows[j]];
-				let P0 = in1.start_point;
-				let P1 = in1.cp1;
-				let P2 = in1.cp2;
-				let P3 = in1.end_point;
-				let Q0= P0.scale(0.5).add(P1.scale(0.5));
-				let Q1=P1.scale(0.5).add(P2.scale(0.5));
-				let Q2=P2.scale(0.5).add(P3.scale(0.5));
-				let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-				let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-				let S0=R0.scale(0.5).add(R1.scale(0.5));
-				let halfbez: Bezier = in1;
-				if (j==2 || j==3)
-				{
-					halfbez = new Bezier(
-						P0,
-						Q0,
-						R0,
-						S0
-					);
-				}
-				else
-				{
-					halfbez = new Bezier(
-						S0,
-						R1,
-						Q2,
-						P3
-					);
-				}
-				ctx.draw_bez(
-		                halfbez, 
-		                this.draw_options.up_brick_color(),
-		                this.draw_options.brick_width(),
-		                false
-		       		);
-			}
-		    }
-	
-	
-		}
-	}
-	//DRAW HIGHLIGHTED BRICK ON CLIQUE IF WE WANT TO
-	if (this.draw_options.draw_brick_of_highlighted_brick())
-	{
-		if(this.moused_over_brick.is_some())
-	        {
-	            let brk=this.cliques.bricks[this.moused_over_brick.unwrap()];
-		    {
-			let intpath = brk.edges;
-			for (let i = 0; i < intpath.length; i++)
-			{
-		            let edge = data.edges[intpath[i]];
-		            ctx.draw_bez(
-		                edge, 
-		                this.draw_options.down_brick_color(),
-		                this.draw_options.brick_width(),
-		                false
-		            );
-			}
-			//now draw along the corners
-			let cornerarrows = [];
-			cornerarrows.push(brk.in_edges[0])
-			cornerarrows.push(brk.in_edges[1])
-			cornerarrows.push(brk.out_edges[0])
-			cornerarrows.push(brk.out_edges[1])
-			for (let j=0; j < 4; j++)
-			{
-				let in1 = data.edges[cornerarrows[j]];
-				let P0 = in1.start_point;
-				let P1 = in1.cp1;
-				let P2 = in1.cp2;
-				let P3 = in1.end_point;
-				let Q0= P0.scale(0.5).add(P1.scale(0.5));
-				let Q1=P1.scale(0.5).add(P2.scale(0.5));
-				let Q2=P2.scale(0.5).add(P3.scale(0.5));
-				let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-				let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-				let S0=R0.scale(0.5).add(R1.scale(0.5));
-				let halfbez: Bezier = in1;
-				if (j==2 || j==3)
-				{
-					halfbez = new Bezier(
-						P0,
-						Q0,
-						R0,
-						S0
-					);
-				}
-				else
-				{
-					halfbez = new Bezier(
-						S0,
-						R1,
-						Q2,
-						P3
-					);
-				}
-				ctx.draw_bez(
-		                halfbez, 
-		                this.draw_options.down_brick_color(),
-		                this.draw_options.brick_width(),
-		                false
-		       		);
-			}
-		    }
-		}
-	}
-	//ENDJRB
-
-
-	//ENDJRB
-
+        }
+        //DRAW HIGHLIGHTED BRICK ON CLIQUE IF WE WANT TO
+        if (this.draw_options.draw_brick_of_highlighted_brick())
+        {
+            if(this.moused_over_brick.is_some())
+                {
+                    let brk=this.cliques.bricks[this.moused_over_brick.unwrap()];
+                {
+                let intpath = brk.edges;
+                for (let i = 0; i < intpath.length; i++)
+                {
+                        let edge = data.edges[intpath[i]];
+                        ctx.draw_bez(
+                            edge, 
+                            this.draw_options.down_brick_color(),
+                            this.draw_options.brick_width(),
+                            false
+                        );
+                }
+                //now draw along the corners
+                let cornerarrows = [];
+                cornerarrows.push(brk.in_edges[0])
+                cornerarrows.push(brk.in_edges[1])
+                cornerarrows.push(brk.out_edges[0])
+                cornerarrows.push(brk.out_edges[1])
+                for (let j=0; j < 4; j++)
+                {
+                    let in1 = data.edges[cornerarrows[j]];
+                    let P0 = in1.start_point;
+                    let P1 = in1.cp1;
+                    let P2 = in1.cp2;
+                    let P3 = in1.end_point;
+                    let Q0= P0.scale(0.5).add(P1.scale(0.5));
+                    let Q1=P1.scale(0.5).add(P2.scale(0.5));
+                    let Q2=P2.scale(0.5).add(P3.scale(0.5));
+                    let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+                    let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+                    let S0=R0.scale(0.5).add(R1.scale(0.5));
+                    let halfbez: Bezier = in1;
+                    if (j==2 || j==3)
+                    {
+                        halfbez = new Bezier(
+                            P0,
+                            Q0,
+                            R0,
+                            S0
+                        );
+                    }
+                    else
+                    {
+                        halfbez = new Bezier(
+                            S0,
+                            R1,
+                            Q2,
+                            P3
+                        );
+                    }
+                    ctx.draw_bez(
+                            halfbez, 
+                            this.draw_options.down_brick_color(),
+                            this.draw_options.brick_width(),
+                            false
+                        );
+                }
+                }
+            }
+        }
+        //ENDJRB
 
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++)
         {
@@ -824,9 +795,6 @@ export class CliqueViewer implements IMode
 
         }
 
-
-
-
         if(this.moused_over_route.is_some())
         {
             let route = this.moused_over_route.unwrap();
@@ -858,17 +826,16 @@ export class CliqueViewer implements IMode
     }
 
 
-    //JRB XXX
+    //JRB
     draw_bricks()
     {
-	let ctx=this.brick_canvas.get_ctx();
+	    let ctx=this.brick_canvas.get_ctx();
 	    ctx.clear();
 
-	let clique_hasse=this.cliques.hasse;
     	let hasse=this.cliques.brick_hasse;
-	//positions is a list of vector2s
-	let positions = this.get_brick_positions();
-	//DRAW THE LINES OF THE HASSE DIAGRAM
+        //positions is a list of vector2s
+        let positions = this.get_brick_positions();
+        //DRAW THE LINES OF THE HASSE DIAGRAM
         for(let i = 0; i < hasse.covering_relation.length; i++)
         for(let j = 0; j < hasse.covering_relation.length; j++)
         {
@@ -882,46 +849,39 @@ export class CliqueViewer implements IMode
                 );
             }
         }
-	//OPTIONALLY DRAW THE LINES INDICATING COMPATIBILITY OF BRICKS
-	if (this.draw_options.draw_compat_edges())
-	{
-	        for(let i = 0; i < this.cliques.bricks.length; i++)
-	        for(let j = i+1; j < this.cliques.bricks.length; j++)
-	        {
-			if (this.cliques.bricks_compatible(i,j))
-			{
-	                ctx.draw_line(
-	                    positions[i],
-			    positions[j],
-			    this.draw_options.compat_edge_color(),
-	                    this.draw_options.hasse_edge_weight()-2
-	                );
-	
-			}
-		}
-	}
+        //OPTIONALLY DRAW THE LINES INDICATING COMPATIBILITY OF BRICKS
+        if (this.draw_options.brick_draw_compat_edges())
+        {
+            for(let i = 0; i < this.cliques.bricks.length; i++)
+            for(let j = i+1; j < this.cliques.bricks.length; j++)
+            {
+                if (this.cliques.bricks_compatible(i,j))
+                    ctx.draw_line(
+                        positions[i],
+                        positions[j],
+                        this.draw_options.brick_compat_edge_color(),
+                        this.draw_options.hasse_edge_weight()-2
+                    );
+            }
+        }
 
-	//NOW DRAW THE BRICKS
-	let data = this.dag.bake();
-	for(let i = 0; i < positions.length; i++)
-	{   
-	    let pos = positions[i];
-	    this.draw_mini_brick(
-	        pos,
-		i,
-	        this.cliques.clique_from_bricks([i]),
-	        data,
-	        ctx
-	    );
-	}
+        //NOW DRAW THE BRICKS
+        let data = this.dag.bake();
+        for(let i = 0; i < positions.length; i++)
+        {   
+            let pos = positions[i];
+            this.draw_mini_brick(
+                pos,
+                i,
+                data,
+                ctx
+            );
+        }
     }
-    //ENDJRB
 
-    //JRB
     draw_mini_brick(
         center: Vector2,
-	brick_idx: number,
-        clique_idx: number,
+	    brick_idx: number,
         data: BakedDAGEmbedding,
         ctx: DAGCanvasContext
     )
@@ -950,113 +910,104 @@ export class CliqueViewer implements IMode
             this.draw_options.background_color()
         )
 
-	//If the current clique has this down brick, then highlight!
-	//If we are mousing over a clique NOT in our current clique which could be, then highlight blue!
-	//Also if we are mousing over a brick which is in our current clique, highlight blue!
-	//If we are mousing over a brick which cannot be in our current clique, then highlight red!
-	for (let j=0; j < this.cliques.clique_size; j++)
-	{
-		if (brick_idx==this.cliques.downbricks[this.current_clique][j])
-		{
-	            ctx.draw_rounded_box(
-	                box.top_corner,
-	                box.bot_corner,
-	                10,
-	                this.draw_options.hasse_current_color()
-	            );
-		}
-	}
-	if (this.moused_over_brick.is_some() && this.moused_over_brick.unwrap()==brick_idx)
-	{
-		let expanded_array = this.cliques.downbricks[this.current_clique].concat([this.moused_over_brick.unwrap()]);
-		let real_expanded_array = []
-		for (let j=0; j < expanded_array.length; j++)
-		{
-			if (expanded_array[j]!=-1)
-				real_expanded_array.push(expanded_array[j]);
-		}
-		if (this.cliques.clique_from_bricks(real_expanded_array)!=-1)
-		{
-	            ctx.draw_rounded_box(
-	                box.top_corner,
-	                box.bot_corner,
-	                10,
-	                this.draw_options.good_highlight_color()
-	            );
-		}
-		else
-		{
-	            ctx.draw_rounded_box(
-	                box.top_corner,
-	                box.bot_corner,
-	                10,
-	                this.draw_options.bad_highlight_color()
-	            );
+        //If the current clique has this down brick, then highlight!
+        //If we are mousing over a clique NOT in our current clique which could be, then highlight blue!
+        //Also if we are mousing over a brick which is in our current clique, highlight blue!
+        //If we are mousing over a brick which cannot be in our current clique, then highlight red!
+        for (let j=0; j < this.cliques.clique_size; j++)
+        {
+            if (brick_idx==this.cliques.downbricks[this.current_clique][j])
+            {
+                    ctx.draw_rounded_box(
+                        box.top_corner,
+                        box.bot_corner,
+                        10,
+                        this.draw_options.hasse_current_color()
+                    );
+            }
+        }
+        if (this.moused_over_brick.is_some() && this.moused_over_brick.unwrap()==brick_idx)
+        {
+            let expanded_array = this.cliques.downbricks[this.current_clique].concat([this.moused_over_brick.unwrap()]);
+            let real_expanded_array = []
+            for (let j=0; j < expanded_array.length; j++)
+            {
+                if (expanded_array[j]!=-1)
+                    real_expanded_array.push(expanded_array[j]);
+            }
+            if (this.cliques.clique_from_bricks(real_expanded_array)!=-1)
+            {
+                    ctx.draw_rounded_box(
+                        box.top_corner,
+                        box.bot_corner,
+                        10,
+                        this.draw_options.good_highlight_color()
+                    );
+            }
+            else
+            {
+                    ctx.draw_rounded_box(
+                        box.top_corner,
+                        box.bot_corner,
+                        10,
+                        this.draw_options.bad_highlight_color()
+                    );
 
-		}
-	}
+            }
+	    }
 
 
-	let brk=this.cliques.bricks[brick_idx];
-	let intpath = brk.edges;
-	for (let i = 0; i < intpath.length; i++)
-	{
-        	let edge = data.edges[intpath[i]].transform(
-		    (v) => v.scale(scale).add(center)
-		    );
-		ctx.draw_bez(
-		                edge, 
-		                this.draw_options.down_brick_color(),
-		                this.draw_options.hasse_mini_route_weight(),
-		                false
-		);
-	}
-	//now draw along the corners
-	let cornerarrows = [];
-	cornerarrows.push(brk.in_edges[0]);
-	cornerarrows.push(brk.in_edges[1]);
-	cornerarrows.push(brk.out_edges[0]);
-	cornerarrows.push(brk.out_edges[1]);
-	for (let j=0; j < 4; j++)
-	{
-		let in1 = data.edges[cornerarrows[j]];
-		let P0 = in1.start_point;
-		let P1 = in1.cp1;
-		let P2 = in1.cp2;
-		let P3 = in1.end_point;
-		let Q0= P0.scale(0.5).add(P1.scale(0.5));
-		let Q1=P1.scale(0.5).add(P2.scale(0.5));
-		let Q2=P2.scale(0.5).add(P3.scale(0.5));
-		let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-		let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-		let S0=R0.scale(0.5).add(R1.scale(0.5));
-		let halfbez: Bezier = in1;
-		if (j==2 || j==3)
-		{
-			halfbez = new Bezier(
-				P0,
-				Q0,
-				R0,
-				S0
-			).transform((v) => v.scale(scale).add(center));
-
-		}
-		else
-		{
-			halfbez = new Bezier(
-				S0,
-				R1,
-				Q2,
-				P3
-			).transform((v) => v.scale(scale).add(center));
-		}
-		ctx.draw_bez(
+        let brk=this.cliques.bricks[brick_idx];
+        let intpath = brk.edges;
+        for (let i = 0; i < intpath.length; i++)
+        {
+            let edge = data.edges[intpath[i]].transform(
+                (v) => v.scale(scale).add(center)
+            );
+            ctx.draw_bez(
+                edge, 
+                this.draw_options.down_brick_color(),
+                this.draw_options.hasse_mini_route_weight(),
+                false
+            );
+        }
+        //now draw along the corners
+        let cornerarrows = [];
+        cornerarrows.push(brk.in_edges[0]);
+        cornerarrows.push(brk.in_edges[1]);
+        cornerarrows.push(brk.out_edges[0]);
+        cornerarrows.push(brk.out_edges[1]);
+        for (let j=0; j < 4; j++)
+        {
+            let in1 = data.edges[cornerarrows[j]];
+            let P0 = in1.start_point;
+            let P1 = in1.cp1;
+            let P2 = in1.cp2;
+            let P3 = in1.end_point;
+            let Q0=P0.scale(0.5).add(P1.scale(0.5));
+            let Q1=P1.scale(0.5).add(P2.scale(0.5));
+            let Q2=P2.scale(0.5).add(P3.scale(0.5));
+            let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+            let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+            let S0=R0.scale(0.5).add(R1.scale(0.5));
+            let halfbez: Bezier = in1;
+            if (j==2 || j==3)
+            {
+                halfbez = new Bezier( P0, Q0, R0, S0 )
+                    .transform((v) => v.scale(scale).add(center));
+            }
+            else
+            {
+                halfbez = new Bezier( S0, R1, Q2, P3 )
+                    .transform((v) => v.scale(scale).add(center));
+            }
+            ctx.draw_bez(
                 halfbez, 
                 this.draw_options.down_brick_color(),
                 this.draw_options.hasse_mini_route_weight(),
                 false
-       		);
-	}
+            );
+        }
         for(let pos of data.verts)
         {
             ctx.draw_circ(
@@ -1241,34 +1192,30 @@ export class CliqueViewer implements IMode
             this.brick_canvas.height() - 2*PADDING
         );
 
-	//JRB: Let's make a bounding box for our lattice
-	//IDK how Max did his in the HasseDiagram class, but we are doing ours here?
-	//Strategy: make brick_layout_rows by stealing entries of hasse.layout_rows from join-irreducibles
-	//Then make a bounding box from it
-	let brick_layout_rows: Vector2[] = []
-	for (let j=0; j < this.cliques.bricks.length; j++)
-	{
-		brick_layout_rows.push(this.cliques.hasse.layout_rows[this.cliques.clique_from_bricks([j])]);
-	}
+        //JRB: Let's make a bounding box for our lattice
+        //IDK how Max did his in the HasseDiagram class, but we are doing ours here?
+        //Strategy: make brick_layout_rows by stealing entries of hasse.layout_rows from join-irreducibles
+        //Then make a bounding box from it
+        let brick_layout_rows: Vector2[] = []
+        for (let j=0; j < this.cliques.bricks.length; j++)
+        {
+            brick_layout_rows.push(this.cliques.hasse.layout_rows[this.cliques.clique_from_bricks([j])]);
+        }
 
+        let bb = new BoundingBox(brick_layout_rows);
+        //this.cliques.hasse.layout_rows is centered at 0, but brick_layout_rows may not be!
+        //so let's center brick_layout_rows
+        let brick_mid = bb.top_corner.add(bb.bot_corner).scale(0.5);
+        for (let j=0; j < this.cliques.bricks.length; j++)
+        {
+            brick_layout_rows[j]=brick_layout_rows[j].add((brick_mid.scale(-1)));
+        }
 
-
-	let bb = new BoundingBox(brick_layout_rows);
-	//this.cliques.hasse.layout_rows is centered at 0, but brick_layout_rows may not be!
-	//so let's center brick_layout_rows
-	let brick_mid = bb.top_corner.add(bb.bot_corner).scale(0.5);
-	for (let j=0; j < this.cliques.bricks.length; j++)
-	{
-		brick_layout_rows[j]=brick_layout_rows[j].add((brick_mid.scale(-1)));
-	}
-
-	let hasse_ext= new BoundingBox(brick_layout_rows).extent().scale(2);
+        let hasse_ext= new BoundingBox(brick_layout_rows).extent().scale(2);
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
-//       	return brick_layout_rows
-//            .map(v => v.transform([[scale,0],[0,scale]));
-	return brick_layout_rows.map(v => v.transform([[w_scale / this.draw_options.scale(),0],[0,h_scale / this.draw_options.scale()]]));
+        return brick_layout_rows.map(v => v.transform([[w_scale / this.draw_options.scale(),0],[0,h_scale / this.draw_options.scale()]]));
     }
     //ENDJRB
 

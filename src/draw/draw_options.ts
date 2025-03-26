@@ -48,22 +48,17 @@ export class DrawOptions
 	private f_tangent_arm_weight: number = 5;
 
 	//BRICK
-	//JRB
-	//private b_draw_bricks: string = true;
-	private b_up_brick_color: string = '#00FF00';
-	private b_down_brick_color: string = '#FFFF00';
-	//private b_mini_brick_width: number = 3;
-	private b_compat_edge_color: string = '#FFFF00';
-	private b_draw_compat_edges: boolean = true;
-	private b_bad_highlight_color: string = '#FF0000';
-	private b_good_highlight_color: string = '#ADD8E6';
-	private b_make_hasse_diagram_bricks: boolean = false; //TODO: make this functionality
-
-	private b_brick_width: number = 30;
+	private f_up_brick_color: string = '#00FF00';
+	private f_down_brick_color: string = '#FFFF00';
+	private f_brick_compat_edge_color: string = '#FFFF00';
+	private f_brick_draw_compat_edges: boolean = true;
+	private f_bad_highlight_color: string = '#FF0000';
+	private f_good_highlight_color: string = '#ADD8E6';
+	private f_make_hasse_diagram_bricks: boolean = false; //TODO: make this functionality
+	private f_brick_width: number = 30;
 	private b_draw_all_downbricks: boolean = true;
 	private b_draw_brick_of_highlighted_route: boolean = false;
 	private b_draw_brick_of_highlighted_brick: boolean = true;
-	//ENDJRB
 
 	//COLORS
 	private f_background_color: string = "#b0b0b0";
@@ -429,47 +424,39 @@ export class DrawOptions
 		this.on_change();
 	}
 
-
-
-
-
 	//JRB
 	//BRICK STUFF
 	up_brick_color(): string
 	{
-		return this.b_up_brick_color;
+		return this.f_up_brick_color;
 	}
 	down_brick_color(): string
 	{
-		return this.b_down_brick_color;
+		return this.f_down_brick_color;
 	}
-//	mini_brick_width(): number
-//	{
-//		return this.b_mini_brick_width;
-//	}
-	compat_edge_color(): string
+	brick_compat_edge_color(): string
 	{
-		return this.b_compat_edge_color;
+		return this.f_brick_compat_edge_color;
 	}
-	draw_compat_edges(): boolean
+	brick_draw_compat_edges(): boolean
 	{
-		return this.b_draw_compat_edges;
+		return this.f_brick_draw_compat_edges;
 	}
 	bad_highlight_color(): string
 	{
-		return this.b_bad_highlight_color;
+		return this.f_bad_highlight_color;
 	}
 	good_highlight_color(): string
 	{
-		return this.b_good_highlight_color;
+		return this.f_good_highlight_color;
 	}
 	make_hasse_diagram_bricks(): boolean
 	{
-		return this.b_make_hasse_diagram_bricks;
+		return this.f_make_hasse_diagram_bricks;
 	}
 	brick_width(): number
 	{
-		return this.b_brick_width;
+		return this.f_brick_width;
 	}
 	draw_all_downbricks(): boolean
 	{
