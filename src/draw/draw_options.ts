@@ -53,6 +53,19 @@ export class DrawOptions
 	private f_tangent_handle_size: number = 8;
 	private f_tangent_arm_weight: number = 5;
 
+	//BRICK
+	private f_up_brick_color: string = '#00FF00';
+	private f_down_brick_color: string = '#FFFF00';
+	private f_brick_compat_edge_color: string = '#FFFF00';
+	private f_brick_draw_compat_edges: boolean = true;
+	private f_bad_highlight_color: string = '#FF0000';
+	private f_good_highlight_color: string = '#ADD8E6';
+	private f_make_hasse_diagram_bricks: boolean = false; //TODO: make this functionality
+	private f_brick_width: number = 30;
+	private b_draw_all_downbricks: boolean = true;
+	private b_draw_brick_of_highlighted_route: boolean = false;
+	private b_draw_brick_of_highlighted_brick: boolean = true;
+
 	//COLORS
 	private f_background_color: string = "#b0b0b0";
 	private f_vertex_color: string = "#000000";
@@ -456,4 +469,53 @@ export class DrawOptions
 	{
 		return this.f_hasse_bad_edge_color;
 	}
+
+	//JRB
+	//BRICK STUFF
+	up_brick_color(): string
+	{
+		return this.f_up_brick_color;
+	}
+	down_brick_color(): string
+	{
+		return this.f_down_brick_color;
+	}
+	brick_compat_edge_color(): string
+	{
+		return this.f_brick_compat_edge_color;
+	}
+	brick_draw_compat_edges(): boolean
+	{
+		return this.f_brick_draw_compat_edges;
+	}
+	bad_highlight_color(): string
+	{
+		return this.f_bad_highlight_color;
+	}
+	good_highlight_color(): string
+	{
+		return this.f_good_highlight_color;
+	}
+	make_hasse_diagram_bricks(): boolean
+	{
+		return this.f_make_hasse_diagram_bricks;
+	}
+	brick_width(): number
+	{
+		return this.f_brick_width;
+	}
+	draw_all_downbricks(): boolean
+	{
+		return this.b_draw_all_downbricks;
+	}
+	draw_brick_of_highlighted_route(): boolean
+	{
+		return this.b_draw_brick_of_highlighted_route;
+	}
+	draw_brick_of_highlighted_brick(): boolean
+	{
+		return this.b_draw_brick_of_highlighted_brick;
+	}
+
+	//ENDJRB
 }
