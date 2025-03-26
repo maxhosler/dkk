@@ -1,5 +1,12 @@
 /*
-    Implementation of Rust-style errors, because those are nicer.
+    Implementation of Rust-style errors and options, because those are nicer.
+*/
+
+/*
+    Honestly, I'm not sure how good an idea doing this was. Without 
+    the syntactic support provided by Rust, using these is still a bit hacky.
+    The error stuff is still good, but I might want to go through and change all my
+    Option<T>s to T?s.
 */
 
 export type ResultError =
@@ -8,6 +15,11 @@ export type ResultError =
     readonly err_message: string
 }
 
+/*
+Result type. Either contains the expected value,
+or an error explaining what went wrong. Prevents the need
+for try{}catch{} blocks.
+*/
 export class Result<T> {
     public success: boolean;
     private ok: T | undefined = undefined;
@@ -50,13 +62,15 @@ export class Result<T> {
         return new Result<T>(false, undefined, err);
     }
 
-      unwrap(): T
+    //Gets inner T, throws error if no such T
+    unwrap(): T
     {
         if(!this.success)
         { throw new Error("Tried to unwrap failed Result.\nError: "+this.err?.err_name + "\nMessage: "+this.err?.err_message) }
         return this.ok as T;
     }
 
+    //Gets innter T, returns {val} if no such T
     unwrap_or(val: T): T
     {
         if(this.success)
@@ -64,6 +78,7 @@ export class Result<T> {
         return val;
     }
 
+    //Just convert to nullable
     unwrap_or_null(): T | null
     {
         if(this.success)
@@ -81,6 +96,7 @@ export class Result<T> {
         return !this.success;
     }
 
+    //Get inner error, throws error if no such error.
     error(): ResultError
     {
         if(this.success)
@@ -88,6 +104,7 @@ export class Result<T> {
         return this.err as ResultError;
     }
 
+    //Maps inner value using {fn} if it exists, does nothing otherwise.
     map<S>(fn: (a: T) => S): Result<S>
     {
         if(this.success)
@@ -112,6 +129,7 @@ export class Result<T> {
     }
 }
 
+//Optional type. Either contains a copy of T or nothing.
 export class Option<T>
 {
     valid: boolean;
@@ -146,6 +164,7 @@ export class Option<T>
         return new Option<T>(false, undefined);
     }
 
+    //Gets inner T if it exists, throws error otherwise.
     unwrap(): T
     {
         if(!this.valid)
@@ -153,6 +172,7 @@ export class Option<T>
         return this.value as T;
     }
 
+    //Gets inner T if it exists, returns {val} otherwise.
     unwrap_or(val: T): T
     {
         if(this.valid)
@@ -160,6 +180,7 @@ export class Option<T>
         return val;
     }
 
+    //To nullable
     unwrap_or_null(): T | null
     {
         if(this.valid)
@@ -167,6 +188,7 @@ export class Option<T>
         return null;
     }
 
+    //Unwraps or throws error containing {err} otherwise.
     expect(err: string): T
     {
         if(!this.valid)
@@ -184,6 +206,7 @@ export class Option<T>
         return !this.valid;
     }
 
+    //Maps inner value using {fn} if it exists, does nothing otherwise.
     map<S>(fn: (a: T) => S): Option<S>
     {
         if(this.valid)
@@ -196,4 +219,5 @@ export class Option<T>
             return Option.none();
         }
     }
+
 }

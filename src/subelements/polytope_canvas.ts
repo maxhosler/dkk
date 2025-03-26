@@ -1,11 +1,10 @@
 import { css_str_to_rgb } from "../draw/colors";
 import { DrawOptions } from "../draw/draw_options";
 import { FlowPolytope } from "../math/polytope";
-import { Clique } from "../math/routes";
-import { Vector2 } from "../util/num";
+import { Clique } from "../math/cliques";
 import { EXTERNAL_FRAG_SHADER, VERT_SHADER } from "./shaders";
 
-
+//TODO: Document
 
 type ProgramData =
 {

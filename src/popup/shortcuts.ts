@@ -1,5 +1,15 @@
-import { DKKProgram } from "../program";
 import { Popup } from "./popup";
+
+/*
+This is the only current Popup object not constructed
+by the DKKProgram object; instead, these are used in the
+EmbeddingEditor to list keyboard shortcuts.
+
+The "data" argument is a list of pairs of strings; the first
+is the action and the second is the keyboard shortcut.
+
+Each will be a row in a table in the resulting Popup.
+*/
 
 export class ShortcutsPopup extends Popup
 {

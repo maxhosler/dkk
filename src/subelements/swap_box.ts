@@ -1,5 +1,7 @@
 import { DrawOptions } from "../draw/draw_options";
-import { Clique } from "../math/routes";
+import { Clique } from "../math/cliques";
+
+//TODO: Document
 
 export class SwapBox
 {

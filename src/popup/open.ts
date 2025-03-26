@@ -4,6 +4,15 @@ import { preset_dag_embedding, PRESETS } from "../preset";
 import { Popup } from "./popup";
 import { JSONCliqueData } from "../modes/clique_viewer";
 
+/*
+Popup for opening saved data.
+
+The OpenPopup itself is not directly constructed;
+instead it is inherited by a version for the CliqueViewer
+and the EmbeddingEditor. Currently, the latter adds nothing
+to the base, but this is done for symmetry and future extensibility.
+*/
+
 export class OpenPopup extends Popup
 {
 	error_div: HTMLDivElement;
@@ -39,14 +48,19 @@ export class OpenPopup extends Popup
 		preset_button.onclick = () => this.load_preset();
 		this.add_row("From preset", preset_dropdown, preset_button);
 		
+		//Create normal file-opening option.
 		let file_open = document.createElement("input");
 		file_open.type = "file";
 		file_open.accept = "json";
 		file_open.addEventListener("change", async () => {
-			if (file_open.files)
-			if (file_open.files.length == 1) {
+			//only run if exactly 1 file is selected.
+			if (file_open.files && file_open.files.length == 1) {
+				//Get first file
 				let file = file_open.files[0];
 				let reader = new FileReader();
+
+				//when successfully read, parse JSON.
+				//If malformed, show error. Otherwise, close and load.
 				reader.onload = () => {
 					let fe = FramedDAGEmbedding.from_json(reader.result as string);
 					if(fe.is_err())
@@ -78,6 +92,8 @@ export class OpenPopup extends Popup
 		this.close();
 	}
 
+	//Add row to internal table; text is label, element1 and element2 are the 
+	//elements of the next columns
 	add_row(text: string, element1: HTMLElement | null, element2: HTMLElement | null)
 	{
 		let row = document.createElement("tr");
@@ -108,6 +124,7 @@ export class OpenPopup extends Popup
 		this.table.appendChild(row);
 	}
 
+	//Shows error as red text.
 	show_err(err: string)
 	{
 		this.error_div.innerText = err;
@@ -122,17 +139,21 @@ export class EEOpenPopup extends OpenPopup
 	}
 }
 
+//This adds the additional option to load DAG with precomputed data.
 export class CVOpenPopup extends OpenPopup
 {
 	constructor(base: HTMLElement, parent: DKKProgram)
 	{
 		super(base, parent);
+
+		//This is the precompted file opener
 		let file_open = document.createElement("input");
 		file_open.type = "file";
 		file_open.accept = "json";
 		file_open.addEventListener("change", async () => {
-			if (file_open.files)
-			if (file_open.files.length == 1) {
+			//Functions exactly the same as above, 
+			//Just with a different parsing function.
+			if (file_open.files && file_open.files.length == 1) {
 				let file = file_open.files[0];
 				let reader = new FileReader();
 				reader.onload = () => {

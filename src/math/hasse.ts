@@ -1,23 +1,42 @@
 import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Result } from "../util/result";
-import { Clique } from "./routes";
+import { Clique } from "./cliques";
+
+/*
+Structure containing information for the Hasse diagram.
+*/
 
 export class HasseDiagram
 {
     readonly poset_size: number;
-    readonly covering_relation: boolean[][];
+    //this.covering_relation[i][j] (is true) => C_i is covered by C_j
+    readonly covering_relation: boolean[][]; 
     
-    readonly layout_rows: Vector2[];
-    readonly bounding_box: BoundingBox;
-    
+    //Minimal and maximal elements of the poset
     readonly minimal_elt: number;
     readonly maximal_elt: number;
 
+    //this.cover_routes[i][j] -> If C_i is covered C_j, then this is
+    //the pair of routes mutated across, with lower in C_i and higher in C_j
+    //Otherwise, its [-1,-1]
     readonly cover_routes: [lower: number, higher: number][][];
+
+    /*
+    Default layout information, computed as best I can.
+    Notably, its presence here is a bit odd; HasseDiagram is
+    constructed as a part of CliqueData, which contains no
+    other layout information. However, putting this elsewhere
+    would be jank.
+    */
+    readonly layout_rows: Vector2[];    //this.layout_rows[i] is the position of the ith clique
+    readonly bounding_box: BoundingBox; //Bounding box of above.
 
     constructor(poset_relation: boolean[][], cliques: Clique[])
     {
         //Extracts the covering relation from the poset relation.
+        //Does this by literally just checking:
+        // (1) a < b
+        // (2) make sure there are no c such that a < c < b
         let covering_relation: boolean[][] = structuredClone(poset_relation);
         this.poset_size = covering_relation.length;
         for(let clq1 = 0; clq1 < this.poset_size; clq1++){
@@ -42,6 +61,7 @@ export class HasseDiagram
         }
         this.covering_relation = covering_relation;
 
+        //Find minimal and maximal elements.
         this.maximal_elt = -1
         this.minimal_elt = -1;
         for(let i = 0; i < this.poset_size; i++)
@@ -59,13 +79,18 @@ export class HasseDiagram
                 this.minimal_elt = i;
         }
 
+        //Compute the layout
         this.layout_rows = HasseDiagram.compute_layout_rows(
             this.minimal_elt,
             this.covering_relation
         )
 
+        //Compute the bounding box of the layout
         this.bounding_box = new BoundingBox(this.layout_rows);
 
+        //Compute the cover routes, i.e., for C_i covered by C_j
+        //find the routes which you mutate across to get from one
+        //to the other
         this.cover_routes = [];
         for(let i = 0; i < this.poset_size; i++) {
             this.cover_routes.push([])
@@ -113,18 +138,31 @@ export class HasseDiagram
         
     }
 
+    /*
+    This messy function does its best to lay out the Hasse diagram in a sensible way.
+    It works in the following steps:
+    (1) Assign to each node a height based on the minimal chain length from it to the minimal elt.
+    (2) Assign each node to a 'row' based on its height.
+    (3) For each covering relation which skips rows (because of non-gradedness), add dummy nodes
+        in the intermediate rows.
+    (4) Try to find swaps which minimize a 'badness' value
+    (5) Assign each non-dummy node a position based on its row and position in the row.
+    */
     private static compute_layout_rows(
         min: number,
         covering_relation: boolean[][]
     ): Vector2[]
     {
     
+        //Compute the max chain length from \hat0 to C_i
+        //and put it in max_depths[i]
         let max_depths: number[] = [];
         for(let i = 0; i < covering_relation.length; i++)
         {
             max_depths.push(0);
         }
 
+        //Breadth-first search
         let srch = [min];
         let cur_depth = 0;
         while(srch.length != 0)
@@ -142,6 +180,7 @@ export class HasseDiagram
             srch = next_row;
         }
 
+        //Find the maximal height
         let max_depth = max_depths.reduce((a,b) => Math.max(a,b), 0);
         let rows: number[][] = [];
         for(let d = 0; d <= max_depth; d++)
@@ -154,12 +193,14 @@ export class HasseDiagram
                 rows.push(next_row);
         }        
 
+        //Add edge for each covering relation
         let edges: [number, number][] = [];
         for(let i = 0; i < covering_relation.length; i++)
             for(let j = 0; j < covering_relation.length; j++)
                 if(covering_relation[i][j])
                     edges.push([i,j]);
 
+        //Get row from number
         let row_of: {[key: number]: number} = {}
         for(let i = 0; i < rows.length; i++)
             for(let e of rows[i])
@@ -171,6 +212,7 @@ export class HasseDiagram
             return dummy;
         }
 
+        //Handle row-skipping by adding dummy nodes and edges
         let extended_edges = []
         let extended_rows = structuredClone(rows);
         for(let edge of edges)
@@ -202,13 +244,17 @@ export class HasseDiagram
             }
         }
 
+        //Sort for consistency
         for(let row of extended_rows)
         {
             row.sort();
         }
         
+        //Badness function
         let badness = () => HasseDiagram.comp_badness(extended_rows, edges, row_of);
 
+        //Deteriministically try to decrease badness by finding transpositions in rows
+        //which decrease it. End when no such transposition found.
         while(true)
         {
             let start_val = badness();
@@ -246,6 +292,7 @@ export class HasseDiagram
                 break;
         }
 
+        //Compute positions
         let positions: Vector2[] = [];
         for(let i = 0; i < covering_relation.length; i++)
         {
@@ -273,6 +320,8 @@ export class HasseDiagram
             .map(v => v.sub(avg));
     }
 
+    //Badness = total distance between vertices
+    //and the things covering them
     private static comp_badness(
         extended_rows: number[][], 
         edges: [number,number][], 

@@ -1,12 +1,31 @@
+/*
+This abstract class is for 'popups'; specifically, the boxes
+which darken the screen behind them, have a title, and are closed
+with an 'x' in the corner.
+
+Classes that inherit from this need to add their own content,
+which should be appended to the 'popup_body' field.
+
+The object should be constructed when the popup appears, and
+expected to disappear with the popup.
+
+Objects extending this are found in the same directory.
+*/
+
 export abstract class Popup
 {
-	close_callback: () => void;
+	close_callback: () => void;  //Function to call on close.
 
-	base: HTMLDivElement;
-	window: HTMLDivElement;
-	top_bar: HTMLDivElement;
-	popup_body: HTMLDivElement;
-	xout: HTMLDivElement;
+	base: HTMLDivElement;        //The div shadowing out the background
+	window: HTMLDivElement;      //The body of the window
+	top_bar: HTMLDivElement;     //The top bar, containing the title and 'x'
+	popup_body: HTMLDivElement;  //The body, where content is added by implementations
+	xout: HTMLDivElement;        //the x-out button
+
+	/*
+	All of this builds the popup as a child of 'body'; in all uses, this is the
+	'body' element of the HTML document.
+	*/
 	constructor(body: HTMLElement, title_name: string, close_callback: () => void)
 	{
 		this.close_callback = close_callback;
@@ -47,6 +66,7 @@ export abstract class Popup
 		
 	}
 
+	//Method to close the popup.
 	close()
 	{
 		this.base.remove();

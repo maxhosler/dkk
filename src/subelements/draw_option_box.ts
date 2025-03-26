@@ -3,6 +3,7 @@ import { DrawOptions } from "../draw/draw_options";
 const SCALE_LOWER: number = 80;
 const SCALE_UPPER: number = 300;
 
+//This just contains the scale bar.
 
 export class DrawOptionBox
 {

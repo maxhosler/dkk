@@ -1,5 +1,11 @@
 import { ShortcutsPopup } from "../popup/shortcuts";
 
+/*
+Abstraction for building up a table of input elements,
+used in embedding editor. Each method adds a different 
+type of input (or title, tip, ect), and returns the added
+element for additional processing
+*/
 export class ActionBox
 {
 	box: HTMLDivElement;

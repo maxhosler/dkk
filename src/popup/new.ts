@@ -1,6 +1,11 @@
+import { FramedDAGEmbedding } from "../draw/dag_layout";
+import { FramedDAG } from "../math/dag";
 import { DKKProgram } from "../program";
 import { Popup } from "./popup";
 
+/*
+The popup that allows you to create new dags in the EmbeddingEditor
+*/
 export class NewPopup extends Popup
 {
 	input: HTMLInputElement;
@@ -43,10 +48,14 @@ export class NewPopup extends Popup
 		col3.appendChild(button);
 	}
 
+	//Load DAG into EmbeddingEditor
 	done()
 	{
 		let num = parseInt(this.input.value);
 		this.close();
-		this.parent.set_new_clique(num);
+
+		var newblank = new FramedDAG(num);
+		let layout = new FramedDAGEmbedding(newblank);
+		this.parent.set_dag(layout);
 	}
 }

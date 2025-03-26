@@ -12,6 +12,11 @@ import { AngleOverrideController } from "../subelements/angle_override";
 import { EditorOptions } from "../editor_options";
 import { VecSpinner } from "../subelements/vec_spinner";
 
+/*
+Represents current selection, with possibilities of nothing, one vertex/edge
+or two vertices/edges.
+
+*/
 type SelectionType = "none" | "vertex" | "edge" | "pair_verts" | "pair_edges";
 type SelectionInner = null|number|[number,number]
 class Selection
@@ -57,13 +62,23 @@ class Selection
 		return this.type == "pair_verts" || this.type == "pair_edges";
 	}
 
+	/*
+	Takes in what and what type of thing has been clicked,
+	and returns the next type of selection.
+	*/
 	change(
 		clicked: "vertex" | "edge",
 		index: number,
 		shift_held: boolean
 	): Selection
 	{
-
+		/*
+		If any of the following is true:
+		(1) nothing is selected
+		(2) shift isn't held
+		(3) the clicked thing is of a different type from the selected ones
+		Just select the current thing alone.
+		*/
 		if( this.type == "none" ||
 			!shift_held ||
 			(this.single() && this.type != clicked) ||
@@ -76,6 +91,8 @@ class Selection
 		//Some of these conditions are redundant,
 		//but they make it more explicit what is going on
 
+		//If you're clicking a new thing of the same type,
+		//select both.
 		if(shift_held && this.single() && this.type == clicked)
 		{
 			let pair: [number, number] = [this.inner as number, index];
@@ -99,6 +116,9 @@ class Selection
 			}
 		}
 
+		//If a pair is selected:
+		//If you clicked on one of the things in the pair, deselect it.
+		//Otherwise, swap the first of the selected things with the new thing
 		if(shift_held && this.pair() && this.pair_of(clicked))
 		{
 			let pair: [number, number] = [(this.inner as [number, number])[1], index];
@@ -126,6 +146,7 @@ class Selection
 	}
 }
 
+//Represent dragging various things
 type EdgeDragState =
 {
 	dragging: boolean,
@@ -147,8 +168,10 @@ export class EmbeddingEditor implements IMode
 	readonly draw_options: DrawOptions;
 	readonly draw_options_box: DrawOptionsBox;
 
+	//Place to display errors
 	readonly error_box: HTMLDivElement;
 
+	//Many, manny elements and editor buttons
 	readonly add_edge_button: HTMLButtonElement;
 	readonly remove_edge_button: HTMLButtonElement;
 	readonly swap_start_button: HTMLButtonElement;
@@ -176,22 +199,27 @@ export class EmbeddingEditor implements IMode
 	embedding: FramedDAGEmbedding;
 
 	selected: Selection = Selection.none();
+	//Click and drag for adding edges
 	e_drag: EdgeDragState = {
 		dragging: false,
 		vert: 0
 	};
+	//click and drag for mocing vertices
 	v_drag: VertMoveDragState = {
 		dragging: false, 
 		vert: 0
 	};
+	//click and drag for moving vec-abs handles
 	h_drag: HandleDragState = {
 		dragging: false, 
 		edge: 0,
 		side: "start"
 	};
 	
+	//current mouse position
 	mouse_pos: Vector2 = Vector2.zero();
 
+	//IMode implementations
 	name(): ModeName
 	{
 		return "embedding-editor";
@@ -199,11 +227,17 @@ export class EmbeddingEditor implements IMode
 	current_embedding(): FramedDAGEmbedding {
         return this.embedding;
     }
-	current_data_json(): string {
-		return this.embedding.to_json();
+	clear_global_events(): void {
+		removeEventListener("resize", this.resize_event);
+        removeEventListener("keydown", this.keydown_event);
 	}
 
-
+	/*
+    This is 'destructive' in the send that calling this
+    function completely clears out SIDEBAR_HEAD, SIDEBAR_CONTENTS,
+    and RIGHT_AREA, which are the regions an IMode is supposed to
+    put its elements into.
+    */
 	static destructive_new(
 		dag: FramedDAGEmbedding,
 		draw_options: DrawOptions,
@@ -218,18 +252,6 @@ export class EmbeddingEditor implements IMode
 			SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
 		);
 	}
-
-	static dummy_new(
-        dag: FramedDAGEmbedding,
-        draw_options: DrawOptions,
-    ){
-        let get_dummy = () => document.createElement("div");
-        return new EmbeddingEditor
-        (
-            dag, draw_options,
-            get_dummy(), get_dummy(), get_dummy()
-        );
-    }
 
 	private constructor(
 		dag: FramedDAGEmbedding,
@@ -254,6 +276,7 @@ export class EmbeddingEditor implements IMode
 		this.error_box.id = "ee-error-zone";
 		sidebar_contents.appendChild(this.error_box);
 
+		//Building up options for editing DAG
 		let {box: dag_box, element: dag_element} = ActionBox.create();
 		sidebar_contents.appendChild(dag_element);
 		dag_box.add_title("DAG Edit");
@@ -301,6 +324,7 @@ export class EmbeddingEditor implements IMode
 			]
 		);
 
+		//Building up options for editing embedding
 		let {box: emb_box, element: emb_element} = ActionBox.create();
 		sidebar_contents.appendChild(emb_element);
 		emb_box.add_title("Embedding Edit");
@@ -369,8 +393,11 @@ export class EmbeddingEditor implements IMode
 
 		]);
 
+		//Setting up the canvas and events
 		let {canvas, element: can_element} = DAGCanvas.create(draw_options);
 		right_area.appendChild(can_element);
+
+		//Events for handling clicking and dragging
 		can_element.addEventListener("mousedown",
 			(ev) => {
 				let pos = new Vector2(ev.layerX, ev.layerY)
@@ -429,11 +456,7 @@ export class EmbeddingEditor implements IMode
 		this.update_sidebar();
 	}
 
-	clear_global_events(): void {
-		removeEventListener("resize", this.resize_event);
-        removeEventListener("keydown", this.keydown_event);
-	}
-
+	//Set selection and update
 	change_selection(sel: Selection)
 	{
 		this.selected = sel;
@@ -441,13 +464,14 @@ export class EmbeddingEditor implements IMode
 		this.update_sidebar();
 	}
 
+	//handle clicks
 	canvas_click(position: Vector2, shift_held: boolean)
 	{
 
 		let clicked_vert = this.get_vertex_at(position);
 		let clicked_edge = this.get_edge_at(position);
 
-
+		//Change selection; verts have priority over edges
 		if (clicked_vert.is_some())
 		{
 			this.change_selection(
@@ -477,6 +501,8 @@ export class EmbeddingEditor implements IMode
 			
 	}
 
+	//See if its valid to start dragging a vec-abs handle at (position)
+	//and initiate if so
 	try_handle_drag_start(position: Vector2)
 	{
 		let clicked_handle = this.get_handle_at(position);
@@ -491,6 +517,8 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
+	//See if its valid to start creating an edge at (position)
+	//and initiate if so
 	try_edge_drag_start(position: Vector2)
 	{
 		let v = this.get_vertex_at(position);
@@ -504,6 +532,8 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
+	//See if its valid to start dragging a vertex at (position)
+	//and initiate if so
 	try_vert_drag_start(position: Vector2)
 	{
 		let v = this.get_vertex_at(position);
@@ -517,6 +547,8 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
+	//When we finish dragging an edge,
+	//add the edge if the endpoint is valid
 	edge_drag_end(position: Vector2)
 	{
 		if(!this.e_drag.dragging) return;
@@ -536,6 +568,7 @@ export class EmbeddingEditor implements IMode
 		this.e_drag.dragging = false;
 	}
 
+	//When we finish dragging a vertex, cleanup
 	vert_drag_end()
 	{
 		if(!this.v_drag.dragging) return;
@@ -544,6 +577,7 @@ export class EmbeddingEditor implements IMode
 		this.selected = Selection.vertex(this.v_drag.vert);
 	}
 
+	//When we finish dragging a vec-abs handle, cleanup
 	handle_drag_end(): boolean
 	{
 		if(!this.h_drag.dragging) return false;
@@ -553,6 +587,7 @@ export class EmbeddingEditor implements IMode
 		return true;
 	}
 
+	//Move vert to mouse_pos
 	move_dragged_vert()
 	{
 		if(!this.v_drag.dragging) return;
@@ -561,6 +596,7 @@ export class EmbeddingEditor implements IMode
 		this.update_sidebar();
 	}
 
+	//Move handle to mouse_pos
 	move_dragged_handle()
 	{
 		if(!this.h_drag.dragging) return;
@@ -583,6 +619,7 @@ export class EmbeddingEditor implements IMode
 		this.update_sidebar();
 	}
 
+	//Add edge if valid
 	add_edge_selected()
 	{
 		if(this.selected.type == "pair_verts")
@@ -674,6 +711,8 @@ export class EmbeddingEditor implements IMode
 		this.draw();
 	}
 
+	//This updates the sidebar to hide/show and disable/enable
+	//options that are irrelevant or unusable
 	update_sidebar()
 	{
 		this.add_edge_button.disabled = this.selected.type != "pair_verts";
@@ -728,6 +767,7 @@ export class EmbeddingEditor implements IMode
 		}
 	}
 
+	//Handle keyboard shortcuts
 	handle_keypress(ev: KeyboardEvent)
 	{
 		if(in_typable_box()) return;

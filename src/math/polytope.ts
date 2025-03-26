@@ -1,12 +1,26 @@
 import { preset_dag_embedding } from "../preset";
 import { Result } from "../util/result";
-import { FramedDAG } from "./dag";
-import { DAGCliques } from "./routes";
+import { DAGCliques } from "./cliques";
+
+/*
+This class contains the geometric data about the polytope, 
+precomputed when it is passed a copy of the DAGCliques object.
+*/
 
 export class FlowPolytope
 {
+    
     readonly dim: number;
     readonly vertices: NVector[]
+    
+    /*
+    This is a list of all 'external' simplices of the polytope, i.e. those
+    that make up the facets. Usually.
+
+    This shouldn't be used for math-y purposes! It is entirely for rendering,
+    so for 2-dimensional polytopes, *all* full-dimensional simplices are 
+    considered "external", since that's what's needed to properly render them.
+    */
     readonly external_simplices: number[][];
 
     constructor(dag_cliques: DAGCliques)
@@ -14,6 +28,7 @@ export class FlowPolytope
         let unreduced_dim = dag_cliques.dag.num_edges();
         this.dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
 
+        //Convert routes to vertices
         let unred_vertices: NVector[] = [];
         for(let route of dag_cliques.routes)
         {
@@ -23,6 +38,7 @@ export class FlowPolytope
             unred_vertices.push(vertex);
         }
 
+        //Maximal clique, guaranteeing that the basis is chosen consistently.
         let max_clique = dag_cliques.cliques[
             dag_cliques.hasse.maximal_elt
         ];
@@ -31,10 +47,22 @@ export class FlowPolytope
             .map((idx: number) => {
                 return unred_vertices[idx].sub(center)
         });
- 
+        
+        //Shift all vectors so 'basis' is actually a basis.
         let centered_vertices = unred_vertices
             .map((v: NVector) => v.sub(center));
 
+
+        /*
+        The following is Gauss-Jordan elimination,
+        with the end of reducing the dimensionality
+        of the vertices to the 'true' dimension of the polytope.
+
+        Projects onto a new set of basis vectors, given by N-1 of
+        the vertices of the maximal clique, minus the remaining one.
+
+        The final matrix E is the necessary projection.
+        */    
         let A = Matrix.from_columns(basis);
         let E = Matrix.id(unreduced_dim);
 
@@ -83,9 +111,17 @@ export class FlowPolytope
         
         if(this.dim == 3 || this.dim == 2)
         {
+            /*
+            This procedure tries to find an affine transformation that will make the 
+            polytope look 'nice' (i.e. not squashed), for visualization purposes. It
+            does this by finding the minimum bounding ellipsoid, and computing a 
+            transformation which will turn that ellipsoid into a sphere.
+            */
+
             let {matrix: A, center} = min_bounding_ellipsoid(projected_vertices);
 
             let B = cholesky_decomposition(A.inv());
+
             //This has the property that B^T A B = I
             //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
             //(x-c)^TA(x-c)=1 to the unit sphere.
@@ -98,9 +134,11 @@ export class FlowPolytope
             this.vertices = projected_vertices;
         }
 
+        //computing the external simplices
         let external_simplices: number[][] = [];
         for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
         {
+            //If 2-dimensional, *all* simplicies are external.
             if (this.dim == 2)
             {
                 external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
@@ -111,7 +149,7 @@ export class FlowPolytope
             let no_flip: number[] = [];
             for(let route_idx = 0; route_idx < clq.routes.length; route_idx++)
             {
-                if(dag_cliques.route_swap_by_idx_in_clq(clq_idx, route_idx) == clq_idx)
+                if(dag_cliques.mutate_by_idx_in_clq(clq_idx, route_idx) == clq_idx)
                 {
                     no_flip.push(route_idx);
                 }
@@ -148,7 +186,20 @@ export class FlowPolytope
 
     static from_json_ob(ob: JSONFlowPolytope): Result<FlowPolytope>
     {
-        //TODO: Validate
+        for(let field of ["dim", "vertices", "external_simplices"])
+			if(!(field in ob))
+				return Result.err("MissingField", "FlowPolytope is missing field: "+field);
+        if(typeof ob.dim != "number")
+            return Result.err("InvalidField", "FlowPolytope field 'num' is not a number.");
+        for(let field of ["vertices", "external_simplices"]) {
+            let data = (ob as any)[field];
+            if(typeof data.length != "number")
+                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array.`);
+            if(data.length > 0 && typeof data[0].length != "number")
+                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays.`);
+            if(data[0].length > 0 && typeof data[0][0]!= "number")
+                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays of numbers.`);
+        }
 
         let vertices: NVector[] = ob.vertices.map(
             (x) => new NVector(x)
@@ -171,6 +222,7 @@ export type JSONFlowPolytope = {
     external_simplices: number[][]
 }
 
+//A class representing an arbitrary-length vector.
 class NVector
 {
     coordinates: number[]
@@ -271,6 +323,7 @@ class NVector
 
 }
 
+//A class representing an arbitrary matrix. Used in the shape normalization procedure. 
 class Matrix
 {
     width: number;

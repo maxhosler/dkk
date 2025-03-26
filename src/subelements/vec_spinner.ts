@@ -1,5 +1,9 @@
 import { Vector2 } from "../util/num";
 
+/*
+Wrapper around a pair of number inputs, which treats its value
+as a Vector2.
+*/
 export class VecSpinner
 {
     base: HTMLDivElement;

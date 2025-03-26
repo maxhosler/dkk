@@ -1,10 +1,21 @@
 import { Result, Option } from "../util/result";
 
+/*
+This is the object used for the DAG and its framing.
+It is constructed as a DAG with no edges, and some number
+of vertices. Edges can be added and removed with methods,
+and the framing modified (new edges are added as the last
+element of the framings at their endpoints by default).
+
+However, note that these methods should not be used when
+the DAG is loaded into the CliqueViewer! Things like the 
+polytope and lattice are computed on load, and will not
+be precomputed if modifications are made to the DAG.
+*/
 
 export const dag_error_types = {
     NoSuchVertex: "NoSuchVertex",
     IllegalCycle: "IllegalCycle",
-
 };
 export type Edge = { start: number, end: number };
 export type JSONFramedDag = {num_verts: number, out_edges: number[][], in_edges: number[][]};
@@ -12,7 +23,7 @@ export class FramedDAG {
     private f_num_edges: number;
     private f_num_verts: number;
     private out_edges: number[][]; // out_edges[i] is the list of edges going out
-                                             // of vertex v_i, in order
+                                   // of vertex v_i, in order
     private in_edges:  number[][]; // Same as above, except with in-edges.
     private edges: Array<Edge> = [];
 
@@ -255,6 +266,8 @@ export class FramedDAG {
         return out;
     }
 
+    //Check if this is a valid framed DAG
+    //with one source and sink, and connected
     valid(): boolean
     {
         let onesource = this.sources().length == 1;
@@ -369,6 +382,7 @@ export class FramedDAG {
     }
 }
 
+//Basically checks that two arrays are equal as (multi-)sets.
 function valid_replacement(arr1: Array<number>, arr2: Array<number>): boolean
 {
     if(arr1.length != arr2.length) { return false; }
