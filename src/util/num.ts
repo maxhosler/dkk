@@ -281,7 +281,6 @@ export class BoundingBox
 		);
 
 		return new Vector2(x,y);
-		//return new Vector2(this.bot_corner.x-this.top_corner.x, this.bot_corner.y-this.top_corner.y); //JRB WTF WAS THE PREVIOUS VERSION OF THIS???
 	}
 }
 
