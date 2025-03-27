@@ -10,35 +10,6 @@ export class SettingsPopup extends Popup
 {
 	parent: DKKProgram;
 
-	//These are all the input objects.
-	vert_radius_spinner: HTMLInputElement;
-	edge_weight_spinner: HTMLInputElement;
-	route_weight_spinner: HTMLInputElement;
-	label_checkbox: HTMLInputElement;
-	arrow_checkbox: HTMLInputElement;
-	show_exceptional_cb: HTMLInputElement;
-
-	hasse_weight_spinner: HTMLInputElement;
-	hasse_node_size_spinner: HTMLInputElement;
-	hasse_show_clique_cb: HTMLInputElement;
-	hasse_clique_spinner: HTMLInputElement;
-	hasse_vert_spinner: HTMLInputElement;
-	hasse_route_spinner: HTMLInputElement;
-
-	simplrend_dropdown: HTMLSelectElement;
-	dot_on_top_cb: HTMLInputElement;
-	dot_shade_cb: HTMLInputElement;
-	dot_radius_spinner: HTMLInputElement;
-
-	vertex_color_selector: HTMLInputElement;
-	edge_color_selector: HTMLInputElement;
-	background_color_selector: HTMLInputElement;
-	polytope_color_selector: HTMLInputElement;
-	simplex_color_selector: HTMLInputElement;
-	up_brick_color_selector: HTMLInputElement;
-	down_brick_color_selector: HTMLInputElement;
-	brick_compat_edge_color_selector: HTMLInputElement;
-
 	reset_button: HTMLButtonElement;
 
 	/*
@@ -75,42 +46,42 @@ export class SettingsPopup extends Popup
 
 		this.add_title(col1_table, "DAG");
 
-		this.vert_radius_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Vertex radius",
 			"settings-vert-radius",
 			(val) => this.parent.draw_options.set_vert_radius(val),
 			() => this.parent.draw_options.vert_radius()
 		);
-		this.edge_weight_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Edge weight",
 			"settings-edge-weight",
 			(val) => this.parent.draw_options.set_edge_weight(val),
 			() => this.parent.draw_options.edge_weight()
 		);
-		this.route_weight_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Route weight",
 			"settings-route-weight",
 			(val) => this.parent.draw_options.set_route_weight(val),
 			() => this.parent.draw_options.route_weight()
 		);
-		this.label_checkbox = this.add_checkbox_row(
+		this.add_checkbox_row(
 			col1_table,
 			"Framing labels",
 			"settings-labels-cb",
 			(val) => this.parent.draw_options.set_label_framing(val),
 			() => this.parent.draw_options.label_framing()
 		)
-		this.arrow_checkbox = this.add_checkbox_row(
+		this.add_checkbox_row(
 			col1_table,
 			"Direction arrows",
 			"settings-arrows-cb",
 			(val) => this.parent.draw_options.set_arrows(val),
 			() => this.parent.draw_options.arrows()
 		)
-		this.show_exceptional_cb = this.add_checkbox_row(
+		this.add_checkbox_row(
 			col1_table,
 			"Show exceptional routes",
 			"settings-exceptional-cb",
@@ -120,42 +91,42 @@ export class SettingsPopup extends Popup
 
 		this.add_title(col1_table, "Hasse diagram");
 
-		this.hasse_weight_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Hasse edge weight",
 			"settings-hasse-weight",
 			(val) => this.parent.draw_options.set_hasse_edge_weight(val),
 			() => this.parent.draw_options.hasse_edge_weight()
 		);
-		this.hasse_node_size_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Hasse node size",
 			"settings-hasse-node-size",
 			(val) => this.parent.draw_options.set_hasse_node_size(val),
 			() => this.parent.draw_options.hasse_node_size()
 		)
-		this.hasse_show_clique_cb = this.add_checkbox_row(
+		this.add_checkbox_row(
 			col1_table,
 			"Show cliques as nodes",
 			"settings-hasse-cliques",
 			(b) => this.parent.draw_options.set_hasse_show_cliques(b),
 			() => this.parent.draw_options.hasse_show_cliques()
 		);
-		this.hasse_clique_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Clique size",
 			"settings-h-clique-size",
 			(val) => this.parent.draw_options.set_hasse_mini_dag_size(val),
 			() => this.parent.draw_options.hasse_mini_dag_size()
 		);
-		this.hasse_vert_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Vertex size",
 			"settings-h-vertex-size",
 			(val) => this.parent.draw_options.set_hasse_mini_vert_rad(val),
 			() => this.parent.draw_options.hasse_mini_vert_rad()
 		);
-		this.hasse_route_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col1_table,
 			"Route weight",
 			"settings-h-route-weight",
@@ -169,7 +140,7 @@ export class SettingsPopup extends Popup
 		col2.appendChild(col2_table);
 
 		this.add_title(col2_table, "Polytope");
-		this.simplrend_dropdown = this.add_selector_row(
+		this.add_selector_row(
 			col2_table,
 			"Simplex mode",
 			"settings-simpl-mode",
@@ -183,21 +154,21 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.simplex_render_mode()
 		);
-		this.dot_on_top_cb = this.add_checkbox_row(
+		this.add_checkbox_row(
 			col2_table,
 			"Draw dots on top",
 			"settings-dots-on-top",
 			(b) => this.parent.draw_options.set_dot_on_top(b),
 			() => this.parent.draw_options.dot_on_top()
 		);
-		this.dot_shade_cb = this.add_checkbox_row(
+		this.add_checkbox_row(
 			col2_table,
 			"Shade dots",
 			"settings-dots-shade",
 			(b) => this.parent.draw_options.set_dot_shade(b),
 			() => this.parent.draw_options.dot_shade()
 		);
-		this.dot_radius_spinner = this.add_stepper_row(
+		this.add_stepper_row(
 			col2_table,
 			"Dot radius",
 			"settings-dot-radius",
@@ -216,7 +187,7 @@ export class SettingsPopup extends Popup
 
 		this.add_title(col3_table, "Colors");
 
-		this.vertex_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Vertex color",
 			"settings-vert-color",
@@ -225,7 +196,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.vertex_color()
 		);
-		this.edge_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Edge color",
 			"settings-edge-color",
@@ -234,7 +205,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.edge_color()
 		);
-		this.background_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Background color",
 			"settings-bg-color",
@@ -243,7 +214,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.background_color()
 		);
-		this.polytope_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Polytope color",
 			"settings-polytope-color",
@@ -252,7 +223,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.polytope_color()
 		);
-		this.simplex_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Simplex color",
 			"settings-simplex-color",
@@ -261,7 +232,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.simplex_color()
 		);
-		this.up_brick_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Up-brick color",
 			"settings-upbrick-color",
@@ -270,7 +241,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.up_brick_color()
 		);
-		this.down_brick_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Down-brick color",
 			"settings-downbrick-color",
@@ -279,7 +250,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.down_brick_color()
 		);
-		this.brick_compat_edge_color_selector = this.add_color_row(
+		this.add_color_row(
 			col3_table,
 			"Brick compat. color",
 			"settings-brickcompat-color",
