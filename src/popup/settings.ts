@@ -31,9 +31,13 @@ export class SettingsPopup extends Popup
 	dot_radius_spinner: HTMLInputElement;
 
 	vertex_color_selector: HTMLInputElement;
+	edge_color_selector: HTMLInputElement;
 	background_color_selector: HTMLInputElement;
 	polytope_color_selector: HTMLInputElement;
 	simplex_color_selector: HTMLInputElement;
+	up_brick_color_selector: HTMLInputElement;
+	down_brick_color_selector: HTMLInputElement;
+	brick_compat_edge_color_selector: HTMLInputElement;
 
 	reset_button: HTMLButtonElement;
 
@@ -59,8 +63,10 @@ export class SettingsPopup extends Popup
 		//Create the columns
 		let col1 = document.createElement("td");
 		let col2 = document.createElement("td");
+		let col3 = document.createElement("td");
 		column_holder.appendChild(col1);
 		column_holder.appendChild(col2);
+		column_holder.appendChild(col3);
 
 		//FIRST COLUMN
 		let col1_table = document.createElement("table");
@@ -156,11 +162,15 @@ export class SettingsPopup extends Popup
 			(val) => this.parent.draw_options.set_hasse_mini_route_weight(val),
 			() => this.parent.draw_options.hasse_mini_route_weight()
 		);
-		
 
-		this.add_title(col1_table, "Polytope");
+		//SECOND COLUMN
+		let col2_table = document.createElement("table");
+		col2_table.className = "settings-table";
+		col2.appendChild(col2_table);
+
+		this.add_title(col2_table, "Polytope");
 		this.simplrend_dropdown = this.add_selector_row(
-			col1_table,
+			col2_table,
 			"Simplex mode",
 			"settings-simpl-mode",
 			[
@@ -174,36 +184,40 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.simplex_render_mode()
 		);
 		this.dot_on_top_cb = this.add_checkbox_row(
-			col1_table,
+			col2_table,
 			"Draw dots on top",
 			"settings-dots-on-top",
 			(b) => this.parent.draw_options.set_dot_on_top(b),
 			() => this.parent.draw_options.dot_on_top()
 		);
 		this.dot_shade_cb = this.add_checkbox_row(
-			col1_table,
+			col2_table,
 			"Shade dots",
 			"settings-dots-shade",
 			(b) => this.parent.draw_options.set_dot_shade(b),
 			() => this.parent.draw_options.dot_shade()
 		);
 		this.dot_radius_spinner = this.add_stepper_row(
-			col1_table,
+			col2_table,
 			"Dot radius",
 			"settings-dot-radius",
 			(v) => this.parent.draw_options.set_dot_radius(v),
 			() => this.parent.draw_options.dot_radius()
-		)
+		);
 
-		//SECOND COLUMN
-		let col2_table = document.createElement("table");
-		col2_table.className = "settings-table";
-		col2.appendChild(col2_table);
+		this.add_title(col2_table, "Brick diagram");
+		//TODO:
 
-		this.add_title(col2_table, "Colors");
+
+		//THIRD COLUMN
+		let col3_table = document.createElement("table");
+		col3_table.className = "settings-table";
+		col3.appendChild(col3_table);
+
+		this.add_title(col3_table, "Colors");
 
 		this.vertex_color_selector = this.add_color_row(
-			col2_table,
+			col3_table,
 			"Vertex color",
 			"settings-vert-color",
 			(val) => {
@@ -211,8 +225,17 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.vertex_color()
 		);
+		this.edge_color_selector = this.add_color_row(
+			col3_table,
+			"Edge color",
+			"settings-edge-color",
+			(val) => {
+				this.parent.draw_options.set_edge_color(val);
+			},
+			() => this.parent.draw_options.edge_color()
+		);
 		this.background_color_selector = this.add_color_row(
-			col2_table,
+			col3_table,
 			"Background color",
 			"settings-bg-color",
 			(val) => {
@@ -221,7 +244,7 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.background_color()
 		);
 		this.polytope_color_selector = this.add_color_row(
-			col2_table,
+			col3_table,
 			"Polytope color",
 			"settings-polytope-color",
 			(val) => {
@@ -230,7 +253,7 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.polytope_color()
 		);
 		this.simplex_color_selector = this.add_color_row(
-			col2_table,
+			col3_table,
 			"Simplex color",
 			"settings-simplex-color",
 			(val) => {
@@ -238,6 +261,34 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.simplex_color()
 		);
+		this.up_brick_color_selector = this.add_color_row(
+			col3_table,
+			"Up-brick color",
+			"settings-upbrick-color",
+			(val) => {
+				this.parent.draw_options.set_up_brick_color(val);
+			},
+			() => this.parent.draw_options.up_brick_color()
+		);
+		this.down_brick_color_selector = this.add_color_row(
+			col3_table,
+			"Down-brick color",
+			"settings-downbrick-color",
+			(val) => {
+				this.parent.draw_options.set_down_brick_color(val);
+			},
+			() => this.parent.draw_options.down_brick_color()
+		);
+		this.brick_compat_edge_color_selector = this.add_color_row(
+			col3_table,
+			"Brick compat. color",
+			"settings-brickcompat-color",
+			(val) => {
+				this.parent.draw_options.set_brick_compat_edge_color(val);
+			},
+			() => this.parent.draw_options.brick_compat_edge_color()
+		);
+
 
 		//RESET BUTTON
 		this.reset_button = document.createElement("button");
