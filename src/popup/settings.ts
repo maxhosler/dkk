@@ -11,6 +11,7 @@ export class SettingsPopup extends Popup
 	parent: DKKProgram;
 
 	reset_button: HTMLButtonElement;
+	column_holder: HTMLTableRowElement;
 
 	/*
 	This is the list of functions which read the
@@ -27,107 +28,84 @@ export class SettingsPopup extends Popup
 		//Create table
 		let base_table = document.createElement("table");
 		base_table.className = "settings-column-table";
-		let column_holder = document.createElement("tr");
+		this.column_holder = document.createElement("tr");
 		this.popup_body.appendChild(base_table);
-		base_table.appendChild(column_holder);
-
-		//Create the columns
-		let col1 = document.createElement("td");
-		let col2 = document.createElement("td");
-		let col3 = document.createElement("td");
-		column_holder.appendChild(col1);
-		column_holder.appendChild(col2);
-		column_holder.appendChild(col3);
+		base_table.appendChild(this.column_holder);
 
 		//FIRST COLUMN
-		let col1_table = document.createElement("table");
-		col1_table.className = "settings-table";
-		col1.appendChild(col1_table);
-
-		this.add_title(col1_table, "DAG");
+		this.add_column();
+		this.add_title("DAG");
 
 		this.add_stepper_row(
-			col1_table,
 			"Vertex radius",
 			"settings-vert-radius",
 			(val) => this.parent.draw_options.set_vert_radius(val),
 			() => this.parent.draw_options.vert_radius()
 		);
 		this.add_stepper_row(
-			col1_table,
 			"Edge weight",
 			"settings-edge-weight",
 			(val) => this.parent.draw_options.set_edge_weight(val),
 			() => this.parent.draw_options.edge_weight()
 		);
 		this.add_stepper_row(
-			col1_table,
 			"Route weight",
 			"settings-route-weight",
 			(val) => this.parent.draw_options.set_route_weight(val),
 			() => this.parent.draw_options.route_weight()
 		);
 		this.add_checkbox_row(
-			col1_table,
 			"Framing labels",
 			"settings-labels-cb",
 			(val) => this.parent.draw_options.set_label_framing(val),
 			() => this.parent.draw_options.label_framing()
 		)
 		this.add_checkbox_row(
-			col1_table,
 			"Direction arrows",
 			"settings-arrows-cb",
 			(val) => this.parent.draw_options.set_arrows(val),
 			() => this.parent.draw_options.arrows()
 		)
 		this.add_checkbox_row(
-			col1_table,
 			"Show exceptional routes",
 			"settings-exceptional-cb",
 			(val) => this.parent.draw_options.set_show_exceptional(val),
 			() => this.parent.draw_options.show_exceptional()
 		)
 
-		this.add_title(col1_table, "Hasse diagram");
+		this.add_title("Hasse diagram");
 
 		this.add_stepper_row(
-			col1_table,
 			"Hasse edge weight",
 			"settings-hasse-weight",
 			(val) => this.parent.draw_options.set_hasse_edge_weight(val),
 			() => this.parent.draw_options.hasse_edge_weight()
 		);
 		this.add_stepper_row(
-			col1_table,
 			"Hasse node size",
 			"settings-hasse-node-size",
 			(val) => this.parent.draw_options.set_hasse_node_size(val),
 			() => this.parent.draw_options.hasse_node_size()
 		)
 		this.add_checkbox_row(
-			col1_table,
 			"Show cliques as nodes",
 			"settings-hasse-cliques",
 			(b) => this.parent.draw_options.set_hasse_show_cliques(b),
 			() => this.parent.draw_options.hasse_show_cliques()
 		);
 		this.add_stepper_row(
-			col1_table,
 			"Clique size",
 			"settings-h-clique-size",
 			(val) => this.parent.draw_options.set_hasse_mini_dag_size(val),
 			() => this.parent.draw_options.hasse_mini_dag_size()
 		);
 		this.add_stepper_row(
-			col1_table,
 			"Vertex size",
 			"settings-h-vertex-size",
 			(val) => this.parent.draw_options.set_hasse_mini_vert_rad(val),
 			() => this.parent.draw_options.hasse_mini_vert_rad()
 		);
 		this.add_stepper_row(
-			col1_table,
 			"Route weight",
 			"settings-h-route-weight",
 			(val) => this.parent.draw_options.set_hasse_mini_route_weight(val),
@@ -135,13 +113,9 @@ export class SettingsPopup extends Popup
 		);
 
 		//SECOND COLUMN
-		let col2_table = document.createElement("table");
-		col2_table.className = "settings-table";
-		col2.appendChild(col2_table);
-
-		this.add_title(col2_table, "Polytope");
+		this.add_column();
+		this.add_title("Polytope");
 		this.add_selector_row(
-			col2_table,
 			"Simplex mode",
 			"settings-simpl-mode",
 			[
@@ -155,40 +129,33 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.simplex_render_mode()
 		);
 		this.add_checkbox_row(
-			col2_table,
 			"Draw dots on top",
 			"settings-dots-on-top",
 			(b) => this.parent.draw_options.set_dot_on_top(b),
 			() => this.parent.draw_options.dot_on_top()
 		);
 		this.add_checkbox_row(
-			col2_table,
 			"Shade dots",
 			"settings-dots-shade",
 			(b) => this.parent.draw_options.set_dot_shade(b),
 			() => this.parent.draw_options.dot_shade()
 		);
 		this.add_stepper_row(
-			col2_table,
 			"Dot radius",
 			"settings-dot-radius",
 			(v) => this.parent.draw_options.set_dot_radius(v),
 			() => this.parent.draw_options.dot_radius()
 		);
 
-		this.add_title(col2_table, "Brick diagram");
+		this.add_title("Brick diagram");
 		//TODO:
 
 
 		//THIRD COLUMN
-		let col3_table = document.createElement("table");
-		col3_table.className = "settings-table";
-		col3.appendChild(col3_table);
-
-		this.add_title(col3_table, "Colors");
+		this.add_column();
+		this.add_title("Colors");
 
 		this.add_color_row(
-			col3_table,
 			"Vertex color",
 			"settings-vert-color",
 			(val) => {
@@ -197,7 +164,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.vertex_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Edge color",
 			"settings-edge-color",
 			(val) => {
@@ -206,7 +172,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.edge_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Background color",
 			"settings-bg-color",
 			(val) => {
@@ -215,7 +180,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.background_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Polytope color",
 			"settings-polytope-color",
 			(val) => {
@@ -224,7 +188,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.polytope_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Simplex color",
 			"settings-simplex-color",
 			(val) => {
@@ -233,7 +196,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.simplex_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Up-brick color",
 			"settings-upbrick-color",
 			(val) => {
@@ -242,7 +204,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.up_brick_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Down-brick color",
 			"settings-downbrick-color",
 			(val) => {
@@ -251,7 +212,6 @@ export class SettingsPopup extends Popup
 			() => this.parent.draw_options.down_brick_color()
 		);
 		this.add_color_row(
-			col3_table,
 			"Brick compat. color",
 			"settings-brickcompat-color",
 			(val) => {
@@ -283,9 +243,26 @@ export class SettingsPopup extends Popup
 			f();
 	}
 
+	private add_column(): HTMLTableElement
+	{
+		let col = document.createElement("td");
+		this.column_holder.appendChild(col);
+		let table = document.createElement("table");
+		table.className = "settings-table";
+		col.appendChild(table)
+		return table;
+	}
+
+	private get_last_column(): HTMLTableElement
+	{
+		if(!this.column_holder.lastChild || !this.column_holder.lastChild.lastChild)
+			return this.add_column();
+		return this.column_holder.lastChild.lastChild as HTMLTableElement;
+	}
+
 	/*
 	Each of these add_something_row methods follow a common pattern:
-	add to the "table" element (the current column) an input element
+	add to the current last column of this.column_holder an input element
 	of the relevant type, with a label given by "name" and the input element
 	having id "id". the "onchange" method is to take the current value
 	and put it into the DrawOptions object; the "getter" method does the opposite,
@@ -296,7 +273,6 @@ export class SettingsPopup extends Popup
 
 	//This is for number inputs.
 	private add_stepper_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		onchange: (val: number) => void,
@@ -325,7 +301,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(spinner);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => spinner.value = getter().toString()
@@ -336,7 +312,6 @@ export class SettingsPopup extends Popup
 
 	//This is for selectors (dropdown menus)
 	private add_selector_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		name_val_pairs: [string, string][],
@@ -370,7 +345,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(selector);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => selector.value = getter()
@@ -381,7 +356,6 @@ export class SettingsPopup extends Popup
 
 	//This is for color selectors
 	private add_color_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		onchange: (val: string) => void,
@@ -408,7 +382,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(colorsel);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => colorsel.value = getter()
@@ -419,7 +393,6 @@ export class SettingsPopup extends Popup
 
 	//And this is for checkboxes!
 	private add_checkbox_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		onchange: (val: boolean) => void,
@@ -446,7 +419,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(tickbox);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => tickbox.checked = getter()
@@ -458,7 +431,6 @@ export class SettingsPopup extends Popup
 	//This adds a title for different sections in the column.
 	//Similar idea as above, although it isn't an input element.
 	private add_title(
-		table: HTMLTableElement,
 		name: string
 	)
 	{
@@ -467,7 +439,7 @@ export class SettingsPopup extends Popup
 		let d2 = document.createElement("td");
 		row.appendChild(d1);
 		row.appendChild(d2);
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		let title = document.createElement("div");
 		title.className = "settings-head";
