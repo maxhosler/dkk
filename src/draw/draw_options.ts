@@ -356,6 +356,11 @@ export class DrawOptions
 		this.f_brick_compat_edge_color = col;
 		this.on_change();
 	}
+	set_draw_all_downbricks(b: boolean)
+	{
+		this.f_draw_all_downbricks = b;
+		this.on_change();
+	}
 
 	/****************
 	* GETTERS       *

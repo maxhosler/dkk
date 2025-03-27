@@ -72,6 +72,12 @@ export class SettingsPopup extends Popup
 			(val) => this.parent.draw_options.set_show_exceptional(val),
 			() => this.parent.draw_options.show_exceptional()
 		)
+		this.add_checkbox_row(
+			"Show bricks",
+			"settings-show-bricks",
+			(val) => this.parent.draw_options.set_draw_all_downbricks(val),
+			() => this.parent.draw_options.draw_all_downbricks()
+		)
 
 		this.add_title("Hasse diagram");
 
