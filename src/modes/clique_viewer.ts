@@ -986,12 +986,12 @@ export class CliqueViewer implements IMode
         {
             if (brick_idx==this.cliques.downbricks[this.current_clique][j])
             {
-                    ctx.draw_rounded_box(
-                        box.top_corner,
-                        box.bot_corner,
-                        10,
-                        this.draw_options.hasse_current_color()
-                    );
+                ctx.draw_rounded_box(
+                    box.top_corner,
+                    box.bot_corner,
+                    10,
+                    this.draw_options.hasse_current_color()
+                );
             }
         }
         if (this.moused_over_brick.is_some() && this.moused_over_brick.unwrap()==brick_idx)
