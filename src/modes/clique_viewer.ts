@@ -647,49 +647,23 @@ export class CliqueViewer implements IMode
                             );
                     }
                     //now draw along the corners
-                    let cornerarrows = [];
-                    cornerarrows.push(brk.in_edges[0])
-                    cornerarrows.push(brk.in_edges[1])
-                    cornerarrows.push(brk.out_edges[0])
-                    cornerarrows.push(brk.out_edges[1])
+                    let cornerarrows = [
+                        brk.in_edges[0],
+                        brk.in_edges[1],
+                        brk.out_edges[0],
+                        brk.out_edges[1]
+                    ];
                     for (let j=0; j < 4; j++)
                     {
-                        let in1 = data.edges[cornerarrows[j]];
-                        let P0 = in1.start_point;
-                        let P1 = in1.cp1;
-                        let P2 = in1.cp2;
-                        let P3 = in1.end_point;
-                        let Q0= P0.scale(0.5).add(P1.scale(0.5));
-                        let Q1=P1.scale(0.5).add(P2.scale(0.5));
-                        let Q2=P2.scale(0.5).add(P3.scale(0.5));
-                        let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-                        let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-                        let S0=R0.scale(0.5).add(R1.scale(0.5));
-                        let halfbez: Bezier = in1;
-                        if (j==2 || j==3)
-                        {
-                            halfbez = new Bezier(
-                                P0,
-                                Q0,
-                                R0,
-                                S0
-                            );
-                        }
-                        else
-                        {
-                            halfbez = new Bezier(
-                                S0,
-                                R1,
-                                Q2,
-                                P3
-                            );
-                        }
+                        let halfbez = data.edges[cornerarrows[j]]
+                            .half_bezier(j==2||j==3);
+
                         ctx.draw_bez(
-                                halfbez, 
-                        color,
-                                size,
-                                false
-                            );
+                            halfbez, 
+                            color,
+                            size,
+                            false
+                        );
                     }
                 }
             }
@@ -711,13 +685,13 @@ export class CliqueViewer implements IMode
                 }
         
                 //draw downbrick
-                let brk=this.cliques.bricks[
-                    this.cliques.downbricks[this.current_clique][route_index]];
-                if (this.cliques.downbricks[this.current_clique][route_index] != -1)
+                let db = this.cliques.downbricks[this.current_clique][route_index];
+                let brk=this.cliques.bricks[db];
+                if (db != -1)
                 {
-                let intpath = brk.edges;
-                for (let i = 0; i < intpath.length; i++)
-                {
+                    let intpath = brk.edges;
+                    for (let i = 0; i < intpath.length; i++)
+                    {
                         let edge = data.edges[intpath[i]];
                         ctx.draw_bez(
                             edge, 
@@ -725,61 +699,35 @@ export class CliqueViewer implements IMode
                             this.draw_options.brick_width(),
                             false
                         );
-                }
-                //now draw along the corners
-                let cornerarrows = [];
-                cornerarrows.push(brk.in_edges[0])
-                cornerarrows.push(brk.in_edges[1])
-                cornerarrows.push(brk.out_edges[0])
-                cornerarrows.push(brk.out_edges[1])
-                for (let j=0; j < 4; j++)
-                {
-                    let in1 = data.edges[cornerarrows[j]];
-                    let P0 = in1.start_point;
-                    let P1 = in1.cp1;
-                    let P2 = in1.cp2;
-                    let P3 = in1.end_point;
-                    let Q0= P0.scale(0.5).add(P1.scale(0.5));
-                    let Q1=P1.scale(0.5).add(P2.scale(0.5));
-                    let Q2=P2.scale(0.5).add(P3.scale(0.5));
-                    let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-                    let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-                    let S0=R0.scale(0.5).add(R1.scale(0.5));
-                    let halfbez: Bezier = in1;
-                    if (j==2 || j==3)
-                    {
-                        halfbez = new Bezier(
-                            P0,
-                            Q0,
-                            R0,
-                            S0
-                        );
                     }
-                    else
+                    //now draw along the corners
+                    let cornerarrows = [
+                        brk.in_edges[0],
+                        brk.in_edges[1],
+                        brk.out_edges[0],
+                        brk.out_edges[1]
+                    ];
+                    for (let j=0; j < 4; j++)
                     {
-                        halfbez = new Bezier(
-                            S0,
-                            R1,
-                            Q2,
-                            P3
-                        );
-                    }
-                    ctx.draw_bez(
+                        let halfbez = data.edges[cornerarrows[j]]
+                            .half_bezier(j==2||j==3);
+
+                        ctx.draw_bez(
                             halfbez, 
                             this.draw_options.down_brick_color(),
                             this.draw_options.brick_width(),
                             false
                         );
-                }
+                    }
                 }
                 //draw upbrick
-                let brk2=this.cliques.bricks[
-                    this.cliques.upbricks[this.current_clique][route_index]];
-                if (this.cliques.upbricks[this.current_clique][route_index] != -1)
+                let ub = this.cliques.upbricks[this.current_clique][route_index];
+                let brk2=this.cliques.bricks[ub];
+                if (ub != -1)
                 {
-                let intpath = brk2.edges;
-                for (let i = 0; i < intpath.length; i++)
-                {
+                    let intpath = brk2.edges;
+                    for (let i = 0; i < intpath.length; i++)
+                    {
                         let edge = data.edges[intpath[i]];
                         ctx.draw_bez(
                             edge, 
@@ -787,46 +735,19 @@ export class CliqueViewer implements IMode
                             this.draw_options.brick_width(),
                             false
                         );
-                }
-                //now draw along the corners
-                let cornerarrows = [];
-                cornerarrows.push(brk2.in_edges[0])
-                cornerarrows.push(brk2.in_edges[1])
-                cornerarrows.push(brk2.out_edges[0])
-                cornerarrows.push(brk2.out_edges[1])
-                for (let j=0; j < 4; j++)
-                {
-                    let in1 = data.edges[cornerarrows[j]];
-                    let P0 = in1.start_point;
-                    let P1 = in1.cp1;
-                    let P2 = in1.cp2;
-                    let P3 = in1.end_point;
-                    let Q0= P0.scale(0.5).add(P1.scale(0.5));
-                    let Q1=P1.scale(0.5).add(P2.scale(0.5));
-                    let Q2=P2.scale(0.5).add(P3.scale(0.5));
-                    let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-                    let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-                    let S0=R0.scale(0.5).add(R1.scale(0.5));
-                    let halfbez: Bezier = in1;
-                    if (j==2 || j==3)
-                    {
-                        halfbez = new Bezier(
-                            P0,
-                            Q0,
-                            R0,
-                            S0
-                        );
                     }
-                    else
+                    //now draw along the corners
+                    let cornerarrows = [
+                        brk.in_edges[0],
+                        brk.in_edges[1],
+                        brk.out_edges[0],
+                        brk.out_edges[1]
+                    ];
+                    for (let j=0; j < 4; j++)
                     {
-                        halfbez = new Bezier(
-                            S0,
-                            R1,
-                            Q2,
-                            P3
-                        );
-                    }
-                    ctx.draw_bez(
+                        let halfbez = data.edges[cornerarrows[j]]
+                            .half_bezier(j==2||j==3);
+                        ctx.draw_bez(
                             halfbez, 
                             this.draw_options.up_brick_color(),
                             this.draw_options.brick_width(),
@@ -840,65 +761,36 @@ export class CliqueViewer implements IMode
         if (this.draw_options.draw_brick_of_highlighted_brick())
         {
             if(this.moused_over_brick.is_some())
-                {
-                    let brk=this.cliques.bricks[this.moused_over_brick.unwrap()];
-                {
+            {
+                let brk=this.cliques.bricks[this.moused_over_brick.unwrap()];
                 let intpath = brk.edges;
                 for (let i = 0; i < intpath.length; i++)
                 {
-                        let edge = data.edges[intpath[i]];
-                        ctx.draw_bez(
-                            edge, 
-                            this.draw_options.down_brick_color(),
-                            this.draw_options.brick_width(),
-                            false
-                        );
+                    let edge = data.edges[intpath[i]];
+                    ctx.draw_bez(
+                        edge, 
+                        this.draw_options.down_brick_color(),
+                        this.draw_options.brick_width(),
+                        false
+                    );
                 }
                 //now draw along the corners
-                let cornerarrows = [];
-                cornerarrows.push(brk.in_edges[0])
-                cornerarrows.push(brk.in_edges[1])
-                cornerarrows.push(brk.out_edges[0])
-                cornerarrows.push(brk.out_edges[1])
+                let cornerarrows = [
+                    brk.in_edges[0],
+                    brk.in_edges[1],
+                    brk.out_edges[0],
+                    brk.out_edges[1]
+                ];
                 for (let j=0; j < 4; j++)
                 {
-                    let in1 = data.edges[cornerarrows[j]];
-                    let P0 = in1.start_point;
-                    let P1 = in1.cp1;
-                    let P2 = in1.cp2;
-                    let P3 = in1.end_point;
-                    let Q0= P0.scale(0.5).add(P1.scale(0.5));
-                    let Q1=P1.scale(0.5).add(P2.scale(0.5));
-                    let Q2=P2.scale(0.5).add(P3.scale(0.5));
-                    let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-                    let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-                    let S0=R0.scale(0.5).add(R1.scale(0.5));
-                    let halfbez: Bezier = in1;
-                    if (j==2 || j==3)
-                    {
-                        halfbez = new Bezier(
-                            P0,
-                            Q0,
-                            R0,
-                            S0
-                        );
-                    }
-                    else
-                    {
-                        halfbez = new Bezier(
-                            S0,
-                            R1,
-                            Q2,
-                            P3
-                        );
-                    }
+                    let halfbez = data.edges[cornerarrows[j]]
+                        .half_bezier(j==2||j==3);
                     ctx.draw_bez(
-                            halfbez, 
-                            this.draw_options.down_brick_color(),
-                            this.draw_options.brick_width(),
-                            false
-                        );
-                }
+                        halfbez, 
+                        this.draw_options.down_brick_color(),
+                        this.draw_options.brick_width(),
+                        false
+                    );
                 }
             }
         }
@@ -1003,7 +895,6 @@ export class CliqueViewer implements IMode
 
     }
 
-    //JRB
     draw_bricks()
     {
 	    let ctx=this.brick_canvas.get_ctx();
@@ -1020,8 +911,8 @@ export class CliqueViewer implements IMode
             {
                 ctx.draw_line(
                     positions[i],
-		    positions[j],
-		    '#000000',
+                    positions[j],
+                    '#000000',
                     this.draw_options.hasse_edge_weight()
                 );
             }
@@ -1114,22 +1005,21 @@ export class CliqueViewer implements IMode
             }
             if (this.cliques.clique_from_bricks(real_expanded_array)!=-1)
             {
-                    ctx.draw_rounded_box(
-                        box.top_corner,
-                        box.bot_corner,
-                        10,
-                        this.draw_options.good_highlight_color()
-                    );
+                ctx.draw_rounded_box(
+                    box.top_corner,
+                    box.bot_corner,
+                    10,
+                    this.draw_options.good_highlight_color()
+                );
             }
             else
             {
-                    ctx.draw_rounded_box(
-                        box.top_corner,
-                        box.bot_corner,
-                        10,
-                        this.draw_options.bad_highlight_color()
-                    );
-
+                ctx.draw_rounded_box(
+                    box.top_corner,
+                    box.bot_corner,
+                    10,
+                    this.draw_options.bad_highlight_color()
+                );
             }
 	    }
 
@@ -1149,35 +1039,18 @@ export class CliqueViewer implements IMode
             );
         }
         //now draw along the corners
-        let cornerarrows = [];
-        cornerarrows.push(brk.in_edges[0]);
-        cornerarrows.push(brk.in_edges[1]);
-        cornerarrows.push(brk.out_edges[0]);
-        cornerarrows.push(brk.out_edges[1]);
+        let cornerarrows = [
+            brk.in_edges[0],
+            brk.in_edges[1],
+            brk.out_edges[0],
+            brk.out_edges[1]
+        ];
         for (let j=0; j < 4; j++)
         {
-            let in1 = data.edges[cornerarrows[j]];
-            let P0 = in1.start_point;
-            let P1 = in1.cp1;
-            let P2 = in1.cp2;
-            let P3 = in1.end_point;
-            let Q0=P0.scale(0.5).add(P1.scale(0.5));
-            let Q1=P1.scale(0.5).add(P2.scale(0.5));
-            let Q2=P2.scale(0.5).add(P3.scale(0.5));
-            let R0=Q0.scale(0.5).add(Q1.scale(0.5));
-            let R1=Q1.scale(0.5).add(Q2.scale(0.5));
-            let S0=R0.scale(0.5).add(R1.scale(0.5));
-            let halfbez: Bezier = in1;
-            if (j==2 || j==3)
-            {
-                halfbez = new Bezier( P0, Q0, R0, S0 )
-                    .transform((v) => v.scale(scale).add(center));
-            }
-            else
-            {
-                halfbez = new Bezier( S0, R1, Q2, P3 )
-                    .transform((v) => v.scale(scale).add(center));
-            }
+            let halfbez = data.edges[cornerarrows[j]]
+                .half_bezier(j==2||j==3)
+                .transform((v) => v.scale(scale).add(center))
+
             ctx.draw_bez(
                 halfbez, 
                 this.draw_options.down_brick_color(),
@@ -1194,7 +1067,6 @@ export class CliqueViewer implements IMode
             )
         }
     }
-    //ENDJRB
 
     /*
     Function for drawing the Hasse diagram to this.hasse_canvas

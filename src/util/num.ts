@@ -260,6 +260,28 @@ export class Bezier
 
 		return last_pos;
 	}
+
+	half_bezier(from_start: boolean): Bezier
+	{
+		let P0 = this.start_point;
+		let P1 = this.cp1;
+		let P2 = this.cp2;
+		let P3 = this.end_point;
+		let Q0=P0.scale(0.5).add(P1.scale(0.5));
+		let Q1=P1.scale(0.5).add(P2.scale(0.5));
+		let Q2=P2.scale(0.5).add(P3.scale(0.5));
+		let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+		let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+		let S0=R0.scale(0.5).add(R1.scale(0.5));
+		if (from_start)
+		{
+			return new Bezier( P0, Q0, R0, S0 );
+		}
+		else
+		{
+			return new Bezier( S0, R1, Q2, P3 )
+		}
+	}
 }
 
 //Bounding box.

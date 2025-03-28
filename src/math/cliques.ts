@@ -104,7 +104,6 @@ export type SharedSubroute =
 type SharedSubrouteCollection = SharedSubroute[];
 
 
-//JRB
 //The Brick type is similar to SharedSubroute
 //but differs in that in_edges and out_edges are always sorted lower below upper
 //so we don't need to keep track of in_order and out_order
@@ -126,7 +125,6 @@ export type Brick =
 	//the indices of the edges of the right corner, ordered by inc(in_vert)
 	out_edges: [number,number]
 };
-//ENDJRB
 
 export class DAGCliques
 {
