@@ -361,6 +361,16 @@ export class DrawOptions
 		this.f_draw_all_downbricks = b;
 		this.on_change();
 	}
+	set_brick_width(w: number)
+	{
+		this.f_brick_width = w;
+		this.on_change();
+	}
+	set_brick_draw_compat_edges(b: boolean)
+	{
+		this.f_brick_draw_compat_edges = b;
+		this.on_change();
+	}
 
 	/****************
 	* GETTERS       *
@@ -507,9 +517,6 @@ export class DrawOptions
 	{
 		return this.f_hasse_bad_edge_color;
 	}
-
-	//JRB
-	//BRICK STUFF
 	up_brick_color(): string
 	{
 		return this.f_up_brick_color;
@@ -554,6 +561,4 @@ export class DrawOptions
 	{
 		return this.f_draw_brick_of_highlighted_brick;
 	}
-
-	//ENDJRB
 }

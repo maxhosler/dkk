@@ -59,25 +59,31 @@ export class SettingsPopup extends Popup
 			"settings-labels-cb",
 			(val) => this.parent.draw_options.set_label_framing(val),
 			() => this.parent.draw_options.label_framing()
-		)
+		);
 		this.add_checkbox_row(
 			"Direction arrows",
 			"settings-arrows-cb",
 			(val) => this.parent.draw_options.set_arrows(val),
 			() => this.parent.draw_options.arrows()
-		)
+		);
 		this.add_checkbox_row(
 			"Show exceptional routes",
 			"settings-exceptional-cb",
 			(val) => this.parent.draw_options.set_show_exceptional(val),
 			() => this.parent.draw_options.show_exceptional()
-		)
+		);
 		this.add_checkbox_row(
 			"Show bricks",
 			"settings-show-bricks",
 			(val) => this.parent.draw_options.set_draw_all_downbricks(val),
 			() => this.parent.draw_options.draw_all_downbricks()
-		)
+		);
+		this.add_stepper_row(
+			"Brick weight",
+			"settings-brick-weight",
+			(val) => this.parent.draw_options.set_brick_width(val),
+			() => this.parent.draw_options.brick_width()
+		);
 
 		this.add_title("Hasse diagram");
 
@@ -154,6 +160,12 @@ export class SettingsPopup extends Popup
 		);
 
 		this.add_title("Brick diagram");
+		this.add_checkbox_row(
+			"Draw compat. edges",
+			"settings-compat-edge-brick",
+			(val) => this.parent.draw_options.set_brick_draw_compat_edges(val),
+			() => this.parent.draw_options.brick_draw_compat_edges()
+		)
 		//TODO:
 
 
