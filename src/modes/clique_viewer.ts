@@ -42,8 +42,8 @@ export class CliqueViewer implements IMode
 
     current_clique: number = 0;
     moused_over_route: Option<number> = Option.none();
-    moused_over_brick: Option<number> = Option.none(); //JRB
-
+    moused_over_brick: Option<number> = Option.none();
+    
     //Represents click-and-drag state for hasse diagram nodes
     h_drag: HasseDrag = {dragging: false, elem: 0, offset: Vector2.zero()};
 
@@ -617,8 +617,6 @@ export class CliqueViewer implements IMode
         //draw all downbricks of our chosen clique, in the color of the routes
         if (this.draw_options.draw_all_downbricks())
         {
-            //this.current_clique
-            //XXX
             let size: number = this.draw_options.brick_width()+10;
             for (let route_index=0; route_index < this.cliques.clique_size; route_index++)
             {
@@ -627,10 +625,12 @@ export class CliqueViewer implements IMode
                     size-=5
                     //draw downbrick
                     //color is darkening of route color with alpha added
-                        let color = lighten_css_str(
-                        this.draw_options.get_route_color(this.cliques.cliques[this.current_clique].routes[route_index]),
-                                -0.15
-                    ).replace(')',', 0.5').replace('rgb','rgba');
+                    let clq = this.cliques.cliques[this.current_clique];
+                    let route = clq.routes[route_index];
+                    let color = lighten_css_str(
+                        this.draw_options.get_route_color(route),
+                            -0.15
+                    ).replace(')',', 0.5)').replace('rgb','rgba');
 
 
                     let brk=this.cliques.bricks[
@@ -1282,8 +1282,7 @@ export class CliqueViewer implements IMode
         }
     }
 
-    //JRB
-    //CURSED I DONT UNDERSTAND ANY OF THIS
+    //TODO: Max update
     get_brick_positions(): Vector2[]
     {
         const PADDING: number = 50; //TODO: make parameter
@@ -1320,7 +1319,6 @@ export class CliqueViewer implements IMode
         let h_scale = v_height / hasse_ext.y;
         return brick_layout_rows.map(v => v.transform([[w_scale / this.draw_options.scale(),0],[0,h_scale / this.draw_options.scale()]]));
     }
-    //ENDJRB
 
     recomp_hasse_scale()
     {

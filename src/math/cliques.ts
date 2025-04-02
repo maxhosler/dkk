@@ -239,7 +239,7 @@ export class DAGCliques
 							in_edge_order: brk[1],
 							out_edge_order: j,
 							in_edges: [dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]],
-dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
+							dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
 							out_edges: [dag.get_out_edges(finalvertex).unwrap_or([0])[j], dag.get_out_edges(finalvertex).unwrap_or([0])[j+1]]
 
 						}
@@ -379,6 +379,7 @@ dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
 				//XXX TODO
 				//We have root1 in clique1 and root2 in clique2
 				
+				//TODO: undo code repetition
 				let shared_subr = this.inner_shared_subroutes(root1, root2);
 				for(let sub of shared_subr)
 				{
@@ -406,8 +407,8 @@ dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
 							let brk = this.bricks[j]
 							if (brk.edges[0]==sub.edges[0] &&
 							    brk.edges[1]==sub.edges[1] &&
-							   brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[1] &&
-							   brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[0])
+							   	brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[1] &&
+							   	brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[0])
 							{
 								//XXX
 								upbricks[clq1][i_r1]=j;
@@ -656,7 +657,6 @@ dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
 		return this.clique_leq_matrix[clq_idx_1][clq_idx_2];
 	}
 	
-	//JRB
 	brick_leq(clq_idx_1: number, clq_idx_2: number): boolean
 	{
 		return this.brick_leq_matrix[clq_idx_1][clq_idx_2];
