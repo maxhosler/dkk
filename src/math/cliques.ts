@@ -323,23 +323,60 @@ export class DAGCliques
 
 		//Computes the result of trying to 'swap' a given
 		//route
-		let clique_route_swaps: number[][] = [];
-		let downbricks: number[][] = []; //JRB
-		let upbricks: number[][] = []; //JRB
+		let mutations: number[][] = [];
 		for(let i = 0; i < this.cliques.length; i++)
 		{
-			clique_route_swaps.push([]);
-			downbricks.push([]); //JRB
-			upbricks.push([]); //JRB
+			mutations.push([]);
+			for(let j = 0; j < this.clique_size; j++)
+				mutations[i].push(i);
+		}
+
+		//Look for their shared subroutes and find the sign
+		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
+			for(let clq2 = clq1+1; clq2 < this.cliques.length; clq2++)
+			{
+				let c1 = this.cliques[clq1];
+				let c2 = this.cliques[clq2];
+
+				let intersection =  c1.routes.filter(value => c2.routes.includes(value));
+				if(intersection.length != c1.routes.length-1) continue;
+				
+				let i_r1 = -1;
+				for(let r1 of c1.routes)
+					if(!c2.routes.includes(r1))
+						i_r1 = c1.routes.indexOf(r1);
+
+				let i_r2 = -1;
+				for(let r2 of c2.routes)
+					if(!c1.routes.includes(r2))
+						i_r2 = c2.routes.indexOf(r2);
+				
+				mutations[clq1][i_r1] = clq2;
+				mutations[clq2][i_r2] = clq1;
+			}
+
+		}
+		this.mutations = mutations;
+
+		/*******************
+		 * BRICKS          *
+		********************/
+		let downbricks: number[][] = []; 
+		let upbricks: number[][] = [];
+		for(let i = 0; i < this.cliques.length; i++)
+		{
+			downbricks.push([]); 
+			upbricks.push([]); 
 
 			for(let j = 0; j < this.clique_size; j++)
 			{
-				clique_route_swaps[i].push(i);
-				downbricks[i].push(-1); //JRB
-				upbricks[i].push(-1); //JRB
+				downbricks[i].push(-1); 
+				upbricks[i].push(-1); 
 			}
 		}
-		for(let clq1 = 0; clq1 < this.cliques.length; clq1++){
+
+		for(let clq1 = 0; clq1 < this.cliques.length; clq1++)
+		{
 			for(let clq2 = clq1+1; clq2 < this.cliques.length; clq2++)
 			{
 				let c1 = this.cliques[clq1];
@@ -351,84 +388,70 @@ export class DAGCliques
 				let root1 = -1;
 				let root2 = -1;
 				let i_r1 = -1;
+				let i_r2 = -1;
 				for(let r1 of c1.routes)
 					if(!c2.routes.includes(r1))
-					//JRB
 					{
 						i_r1 = c1.routes.indexOf(r1);
-						root1=r1; //THIS IS WHAT I ADDED
+						root1=r1;
 					}
-					//ENDJRB
-				let i_r2 = -1;
 				for(let r2 of c2.routes)
 					if(!c1.routes.includes(r2))
-					//JRB
 					{
 						i_r2 = c2.routes.indexOf(r2);
 						root2=r2;
-					}
-					//ENDJRB
-				
-				clique_route_swaps[clq1][i_r1] = clq2;
-				clique_route_swaps[clq2][i_r2] = clq1;
+					}				
 
-				//JRB
-				//Here is where I can add downbricks
-				//Though I would need poset relation first
-				//Probably I can paste the Computes the poset relation right above this
-				//XXX TODO
+				//Compute bricks
 				//We have root1 in clique1 and root2 in clique2
 				
-				//TODO: undo code repetition
 				let shared_subr = this.inner_shared_subroutes(root1, root2);
 				for(let sub of shared_subr)
 				{
+					let in_idx: number;
+					let out_idx: number;
+
+					let brick_list1: number[][];
+					let brick_list2: number[][];
+
 					if (sub.in_order==-1 && sub.out_order==1)
 					{
-						for (let j=0; j < this.bricks.length; j++)
-						{
-							let brk = this.bricks[j]
-							if (brk.edges[0]==sub.edges[0] &&
-							    brk.edges[1]==sub.edges[1] &&
-							   brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[0] &&
-							   brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[1])
-							{
-								//XXX
-								upbricks[clq2][i_r2]=j;
-								downbricks[clq1][i_r1]=j;
-							}
-						}
+						in_idx = 0;
+						out_idx = 1;
+						brick_list1 = downbricks;
+						brick_list2 = upbricks;
 					}
-
-					if (sub.in_order==1 && sub.out_order==-1)
+					else if (sub.in_order==1 && sub.out_order==-1)
 					{
-						for (let j=0; j < this.bricks.length; j++)
-						{
-							let brk = this.bricks[j]
-							if (brk.edges[0]==sub.edges[0] &&
-							    brk.edges[1]==sub.edges[1] &&
-							   	brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[1] &&
-							   	brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[0])
-							{
-								//XXX
-								upbricks[clq1][i_r1]=j;
-								downbricks[clq2][i_r2]=j;
-							}
-						}
+						in_idx = 1;
+						out_idx = 0;
+						brick_list1 = upbricks;
+						brick_list2 = downbricks;
+					}
+					else
+					{
+						continue;
 					}
 
-
+					for (let j=0; j < this.bricks.length; j++)
+					{
+						let brk = this.bricks[j]
+						if (
+							brk.edges[0]==sub.edges[0] &&
+							brk.edges[1]==sub.edges[1] &&
+							brk.in_edges[0]==sub.in_edges.unwrap_or([-1,-1])[in_idx] &&
+							brk.out_edges[0]==sub.out_edges.unwrap_or([-1,-1])[out_idx]
+						)
+						{
+							brick_list1[clq1][i_r1]=j;
+							brick_list2[clq2][i_r2]=j;
+						}
+					}
 				}
-
-
 			}
-
 		}
-		this.mutations = clique_route_swaps;
 		this.downbricks=downbricks;
 		this.upbricks=upbricks;
-		//Look for their shared subroutes and find the sign
-		//ENDJRB
 		
 		//Computes the poset relation
 		let clique_leq_matrix: boolean[][] = [];
