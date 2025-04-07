@@ -229,8 +229,10 @@ export class DAGCliques
 				//if the incomplete brick ends at the sink, we will skip over this one
 				if (finalvertex != sink)
 				{
+					let final_out = dag.get_out_edges(finalvertex).unwrap_or([]);
+
 					//go through all possible right corners and add to bricks
-					for (let j=0; j < dag.get_out_edges(finalvertex).unwrap_or([]).length-1; j++)
+					for (let j=0; j < final_out.length-1; j++)
 					{
 						let newbrick: Brick = {
 							in_vert: brk[0],
@@ -240,13 +242,13 @@ export class DAGCliques
 							out_edge_order: j,
 							in_edges: [dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]],
 							dag.get_in_edges(brk[0]).unwrap_or([0])[brk[1]+1]],
-							out_edges: [dag.get_out_edges(finalvertex).unwrap_or([0])[j], dag.get_out_edges(finalvertex).unwrap_or([0])[j+1]]
+							out_edges: [final_out[j], final_out[j+1]]
 
 						}
 						bricks.push(newbrick);
 					}
 					//add to incomplete_bricks all ways of continuing on with another arrow
-					for(let next_edge of dag.get_out_edges(finalvertex).unwrap_or([]))
+					for(let next_edge of final_out)
 					{
 						new_bricks.push([...brk, next_edge]);
 					}
@@ -465,11 +467,9 @@ export class DAGCliques
 			}
 		}
 		this.clique_leq_matrix = clique_leq_matrix;
-		
 		this.hasse = new HasseDiagram(clique_leq_matrix, this.cliques);
 
 		let exceptional_routes: number[] = [];
-
 		for(let i = 0; i < this.routes.length; i++)
 		{
 			let in_all = true;
@@ -486,11 +486,6 @@ export class DAGCliques
 		}
 		this.exceptional_routes = exceptional_routes;
 
-
-
-
-
-		//JRB
 		//Compute the poset relation on bricks
 		//Rather than do this directly, I will cheat by using the poset relation on cliques
 		//Strategy: Given brk1 and brk2, find the cliques clk1 and clk2 whose downbricks are brk1 and brk2 and return clique_leq_array[clk1][clk2]
@@ -507,7 +502,6 @@ export class DAGCliques
 		}
 		this.brick_leq_matrix = brick_leq_matrix;
 		this.brick_hasse = new BrickHasseDiagram(brick_leq_matrix, this.bricks);
-		//ENDJRB
 	}
 
 	/*
