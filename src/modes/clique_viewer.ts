@@ -1201,30 +1201,15 @@ export class CliqueViewer implements IMode
         ctx: DAGCanvasContext
     )
     {
-        let rad = 1.0;
-        for(let p of data.verts)
-            rad = Math.max(p.norm(), rad);
-        
-        let scale = this.draw_options.hasse_mini_dag_size() / (rad * this.draw_options.scale());
-
-        let box = new BoundingBox([]);
-        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
-
-            let edge = data.edges[edge_idx].transform(
-                (v) => v.scale(scale).add(center) 
-            );
-            box.add_point(edge.start_point);
-            box.add_point(edge.cp1);
-            box.add_point(edge.cp2);
-            box.add_point(edge.end_point);
-        }
-        box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
+        let {bounding_box: box, scale} = this.get_mini_clique_bb(data, center);
         this.cur_draw_hasse_boxes[clique_idx] = box;
+
         ctx.draw_box(
             box.top_corner,
             box.bot_corner,
             this.draw_options.background_color()
         )
+
         if(clique_idx == this.current_clique)
         {
             ctx.draw_rounded_box(
@@ -1328,12 +1313,9 @@ export class CliqueViewer implements IMode
 
         if(this.draw_options.hasse_show_cliques())
         {
-            let box = this.cur_draw_hasse_boxes[0];
-            if(box)
-            {
-                padding_x = padding + box.width();
-                padding_y = padding + box.height();
-            }
+            let {bounding_box: box, scale: _} = this.get_mini_clique_bb(this.dag.bake(), Vector2.zero());
+            padding_x = padding + box.width();
+            padding_y = padding + box.height();
         }
 
         let v_width = Math.max(1,
@@ -1354,6 +1336,36 @@ export class CliqueViewer implements IMode
         
         this.hasse_canvas.set_scale(Math.min(w_scale, h_scale));
         this.draw_hasse();
+    }
+
+    get_mini_clique_bb(
+        data: BakedDAGEmbedding,
+        center: Vector2
+    ): {scale: number, bounding_box: BoundingBox}
+    {
+        let rad = 1.0;
+        for(let p of data.verts)
+            rad = Math.max(p.norm(), rad);
+        
+        let scale = this.draw_options.hasse_mini_dag_size() / (rad * this.draw_options.scale());
+
+        let box = new BoundingBox([]);
+        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
+
+            let edge = data.edges[edge_idx].transform(
+                (v) => v.scale(scale).add(center) 
+            );
+            box.add_point(edge.start_point);
+            box.add_point(edge.cp1);
+            box.add_point(edge.cp2);
+            box.add_point(edge.end_point);
+        }
+        box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
+
+        return {
+            scale,
+            bounding_box: box
+        }
     }
 
     //Get positions of hasse nodes
