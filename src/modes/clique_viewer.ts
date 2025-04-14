@@ -157,7 +157,7 @@ export class CliqueViewer implements IMode
         draw_options.add_change_listener(() => {
             let nc = this.cliques.cliques[this.current_clique];
             this.poly_canvas.set_clique(nc);
-            this.recomp_hasse_scale();
+            this.recomp_poset_scales();
             this.draw();
             this.update_swap_box();
         });
@@ -277,14 +277,14 @@ export class CliqueViewer implements IMode
 
                 //release drag
                 this.h_drag.dragging = false;
-                this.recomp_hasse_scale();
+                this.recomp_poset_scales();
             }
         );
         h_canvas_element.addEventListener("mouseleave",
             (ev) => {
                 //release drag
                 this.h_drag.dragging = false;
-                this.recomp_hasse_scale();
+                this.recomp_poset_scales();
             }
         );
         h_canvas_element.addEventListener("mousemove",
@@ -342,7 +342,7 @@ export class CliqueViewer implements IMode
             this.hasse_canvas.resize_canvas();
 	        this.poly_canvas.resize_canvas();
 		    this.brick_canvas.resize_canvas();
-            this.recomp_hasse_scale();
+            this.recomp_poset_scales();
 
             this.draw()
         };
@@ -358,7 +358,7 @@ export class CliqueViewer implements IMode
         this.change_left_corner_view("brick");
         
         window.dispatchEvent(new Event('resize'));
-        this.recomp_hasse_scale();
+        this.recomp_poset_scales();
     }
 
     change_left_corner_view(view: string)
@@ -1270,40 +1270,20 @@ export class CliqueViewer implements IMode
     //TODO: Max update
     get_brick_positions(): Vector2[]
     {
-        const PADDING: number = 50; //TODO: make parameter
-
-        let v_width = Math.max(1,
-            this.brick_canvas.width() - 2*PADDING
-        );
-        let v_height = Math.max(1,
-            this.brick_canvas.height() - 2*PADDING
-        );
-
-        //JRB: Let's make a bounding box for our lattice
-        //IDK how Max did his in the HasseDiagram class, but we are doing ours here?
-        //Strategy: make brick_layout_rows by stealing entries of hasse.layout_rows from join-irreducibles
-        //Then make a bounding box from it
-        let brick_layout_rows: Vector2[] = []
+        let out = [];
         for (let j=0; j < this.cliques.bricks.length; j++)
         {
-            brick_layout_rows.push(this.cliques.hasse.layout_rows[this.cliques.clique_from_bricks([j])]);
+            let clq_idx = this.cliques.clique_from_bricks([j]);
+            let pos = this.get_hasse_position(clq_idx);
+            out.push(pos)
         }
+        return out;
+    }
 
-        let bb = new BoundingBox(brick_layout_rows);
-        //this.cliques.hasse.layout_rows is centered at 0, but brick_layout_rows may not be!
-        //so let's center brick_layout_rows
-        let brick_mid = bb.top_corner.add(bb.bot_corner).scale(0.5);
-        for (let j=0; j < this.cliques.bricks.length; j++)
-        {
-            brick_layout_rows[j]=brick_layout_rows[j].add((brick_mid.scale(-1)));
-        }
-
-        let hasse_ext= new BoundingBox(brick_layout_rows).extent().scale(2);
-
-        let w_scale = v_width / hasse_ext.x ;
-        let h_scale = v_height / hasse_ext.y;
-        let scale = Math.min(w_scale, h_scale);
-        return brick_layout_rows.map(v => v.scale(scale/this.draw_options.scale()));
+    recomp_poset_scales()
+    {
+        this.recomp_hasse_scale();
+        this.recomp_brick_scale();
     }
 
     recomp_hasse_scale()
@@ -1341,6 +1321,40 @@ export class CliqueViewer implements IMode
         
         this.hasse_canvas.set_scale(Math.min(w_scale, h_scale));
         this.draw_hasse();
+    }
+
+    recomp_brick_scale()
+    {
+        let padding = this.draw_options.hasse_padding();
+
+        let v_width = Math.max(1,
+            this.brick_canvas.width() - 2*padding
+        );
+        let v_height = Math.max(1,
+            this.brick_canvas.height() - 2*padding
+        );
+
+        let bb = new BoundingBox([]);
+        let baked = this.dag.bake();
+        for (let j=0; j < this.cliques.bricks.length; j++)
+        {
+            let clq_idx = this.cliques.clique_from_bricks([j]);
+
+            let pos = this.get_hasse_position(clq_idx);
+            let {bounding_box: minibb, scale: _} = this.get_mini_clique_bb(
+                baked, 
+                pos
+            );
+            bb.add_bounding_box(minibb)
+        }
+
+        let hasse_ext = bb.extent().scale(2);
+
+        let w_scale = v_width / hasse_ext.x ;
+        let h_scale = v_height / hasse_ext.y;
+        
+        this.brick_canvas.set_scale(Math.min(w_scale, h_scale));
+        this.draw_bricks();
     }
 
     get_mini_clique_bb(
