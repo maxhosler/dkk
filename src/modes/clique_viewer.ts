@@ -1276,6 +1276,7 @@ export class CliqueViewer implements IMode
         }
         for(let pos of data.verts)
         {
+            //TODO fix node halo
             ctx.draw_circ(
                 pos.scale(scale).add(center),
                 halo_color,
