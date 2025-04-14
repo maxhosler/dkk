@@ -1302,33 +1302,38 @@ export class CliqueViewer implements IMode
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
-        return brick_layout_rows.map(v => v.transform([[w_scale / this.draw_options.scale(),0],[0,h_scale / this.draw_options.scale()]]));
+        let scale = Math.min(w_scale, h_scale);
+        return brick_layout_rows.map(v => v.scale(scale/this.draw_options.scale()));
     }
 
     recomp_hasse_scale()
     {
         let padding = this.draw_options.hasse_padding();
-        let padding_x = padding + this.draw_options.hasse_node_size();
-        let padding_y = padding + this.draw_options.hasse_node_size();
-
-        if(this.draw_options.hasse_show_cliques())
-        {
-            let {bounding_box: box, scale: _} = this.get_mini_clique_bb(this.dag.bake(), Vector2.zero());
-            padding_x = padding + box.width();
-            padding_y = padding + box.height();
-        }
 
         let v_width = Math.max(1,
-            this.hasse_canvas.width() - 2*padding_x
+            this.hasse_canvas.width() - 2*padding
         );
         let v_height = Math.max(1,
-            this.hasse_canvas.height() - 2*padding_y
+            this.hasse_canvas.height() - 2*padding
         );
 
         let hasse = this.cliques.hasse;
         let bb = hasse.bounding_box.clone();
         for(let override of Object.values(this.hasse_overrides))
             bb.add_point(override);
+        if(this.draw_options.hasse_show_cliques())
+        {
+            let baked = this.dag.bake();
+            for(let i=0; i < this.cliques.cliques.length; i++)
+            {
+                let pos = this.get_hasse_position(i);
+                let {bounding_box: minibb, scale: _} = this.get_mini_clique_bb(
+                    baked, 
+                    pos
+                );
+                bb.add_bounding_box(minibb)
+            }
+        }
         let hasse_ext = bb.extent().scale(2);
 
         let w_scale = v_width / hasse_ext.x ;

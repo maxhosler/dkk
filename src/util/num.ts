@@ -313,6 +313,12 @@ export class BoundingBox
 		}
 	}
 
+	add_bounding_box(bb: BoundingBox)
+	{
+		this.add_point(bb.bot_corner);
+		this.add_point(bb.top_corner);
+	}
+
 	//Check if {point} in box.
 	contains(point: Vector2): boolean
 	{
