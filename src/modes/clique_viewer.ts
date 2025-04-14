@@ -1201,6 +1201,8 @@ export class CliqueViewer implements IMode
         ctx: DAGCanvasContext
     )
     {
+        //TODO: oh damn forgot to make this scale-independent. oops!
+
         let {bounding_box: box, scale} = this.get_mini_clique_bb(data, center);
         this.cur_draw_hasse_boxes[clique_idx] = box;
 
