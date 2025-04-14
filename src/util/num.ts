@@ -337,6 +337,14 @@ export class BoundingBox
 		this.bot_corner = this.bot_corner.add(delta);
 	}
 
+	//Expand box by {w} units in all directions.
+	pad_y(w: number)
+	{
+		let delta = new Vector2(0,w);
+		this.top_corner = this.top_corner.sub(delta);
+		this.bot_corner = this.bot_corner.add(delta);
+	}
+
 	//Absolute size of vector furthest from zero in box.
 	extent(): Vector2
 	{

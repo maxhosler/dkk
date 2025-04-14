@@ -1204,21 +1204,7 @@ export class CliqueViewer implements IMode
         let {bounding_box: box, scale} = this.get_mini_clique_bb(data, center);
         this.cur_draw_hasse_boxes[clique_idx] = box;
 
-        ctx.draw_box(
-            box.top_corner,
-            box.bot_corner,
-            this.draw_options.background_color()
-        )
-
-        if(clique_idx == this.current_clique)
-        {
-            ctx.draw_rounded_box(
-                box.top_corner,
-                box.bot_corner,
-                10,
-                this.draw_options.hasse_current_color()
-            );
-        }
+        let edges: {bez: Bezier, color: string, width: number}[] = [];
 
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
 
@@ -1248,15 +1234,65 @@ export class CliqueViewer implements IMode
                     let percent = i / (routes.length - 1) - 0.5;
                     offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
                 }
-                ctx.draw_bez(
-                    edge.transform((v) => v.add(offset)),
-                    color,
-                    width,
-                    false
-                )
+                let edge_data = {
+                    
+                    bez: edge.transform((v) => v.add(offset)),
+                    color, width
+                };
+                edges.push(edge_data);
             }
         }
 
+        const HALO_SIZE: number = 15; //TODO: Parametrize
+
+        //COVER BACKGROUND
+        let bk_bb=new BoundingBox([]);
+        for(let pos of data.verts)
+        {
+            bk_bb.add_point(pos.scale(scale).add(center))
+        }
+        bk_bb.pad_y(box.height()*scale);
+        ctx.draw_rounded_box(
+            bk_bb.top_corner,
+            bk_bb.bot_corner,
+            10,
+            this.draw_options.background_color()
+        );
+
+        //DRAW HALO
+        let halo_color = this.draw_options.background_color();
+        if(clique_idx == this.current_clique)
+        {
+            halo_color = this.draw_options.hasse_current_color();
+        }
+        for(let edge of edges)
+        {
+            ctx.draw_bez(
+                edge.bez,
+                halo_color,
+                HALO_SIZE + edge.width/2,
+                false
+            )
+        }
+        for(let pos of data.verts)
+        {
+            ctx.draw_circ(
+                pos.scale(scale).add(center),
+                halo_color,
+                this.draw_options.hasse_mini_vert_rad() + HALO_SIZE/this.hasse_canvas.scale()
+            )
+        }
+
+        //DRAW ACTUAL GRAPH
+        for(let edge of edges)
+        {
+            ctx.draw_bez(
+                edge.bez,
+                edge.color,
+                edge.width,
+                false
+            )
+        }
         for(let pos of data.verts)
         {
             ctx.draw_circ(
@@ -1267,7 +1303,6 @@ export class CliqueViewer implements IMode
         }
     }
 
-    //TODO: Max update
     get_brick_positions(): Vector2[]
     {
         let out = [];
