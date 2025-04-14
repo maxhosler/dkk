@@ -345,6 +345,12 @@ export class BoundingBox
 		this.bot_corner = this.bot_corner.add(delta);
 	}
 
+	shift(vec: Vector2)
+	{
+		this.top_corner = this.top_corner.add(vec);
+		this.bot_corner = this.bot_corner.add(vec);
+	}
+
 	//Absolute size of vector furthest from zero in box.
 	extent(): Vector2
 	{

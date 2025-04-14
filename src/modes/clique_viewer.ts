@@ -1312,6 +1312,11 @@ export class CliqueViewer implements IMode
             let pos = this.get_hasse_position(clq_idx);
             out.push(pos)
         }
+        let center = Vector2.zero();
+        for(let c of out)
+            center = center.add(c.scale(1/this.cliques.bricks.length))
+        for (let j=0; j < this.cliques.bricks.length; j++)
+            out[j] = out[j].sub(center);
         return out;
     }
 
@@ -1360,7 +1365,8 @@ export class CliqueViewer implements IMode
 
     recomp_brick_scale()
     {
-        let padding = this.draw_options.hasse_padding();
+        let padding = 30; //TODO: Parametrize
+        let center = Vector2.zero();
 
         let v_width = Math.max(1,
             this.brick_canvas.width() - 2*padding
@@ -1381,9 +1387,14 @@ export class CliqueViewer implements IMode
                 pos
             );
             bb.add_bounding_box(minibb)
+            center = center.add(
+                pos.scale(1/this.cliques.bricks.length)
+            )
         }
-
+        
+        bb.shift(center.scale(-1));
         let hasse_ext = bb.extent().scale(2);
+
 
         let w_scale = v_width / hasse_ext.x ;
         let h_scale = v_height / hasse_ext.y;
