@@ -41,7 +41,7 @@ export class DrawOptions
 	private f_hasse_mini_dag_size: number = 300;
 	private f_hasse_mini_vert_rad: number = 8;
 	private f_hasse_mini_route_weight: number = 6;
-	private f_hasse_padding: number = 70;
+	private f_hasse_padding: number = 30;
 	private f_hasse_select_halo: number = 15;
 
 	//POLYTOPE
@@ -60,8 +60,9 @@ export class DrawOptions
 	private f_brick_compat_edge_color: string = '#ffff00';
 	private f_bad_highlight_color: string = '#ff0000';
 	private f_good_highlight_color: string = '#add8e6';
+	private f_brick_padding: number = 30;
 
-	private f_brick_width: number = 20;
+	private f_brick_width: number = 40;
 	private f_brick_draw_compat_edges: boolean = true;
 	private f_make_hasse_diagram_bricks: boolean = false; //TODO: make this functionality
 	private f_draw_all_downbricks: boolean = true;
@@ -74,7 +75,7 @@ export class DrawOptions
 	private f_polytope_color: string = "#de5ed4";
 	private f_simplex_color: string = "#c9e8f4";
 	private f_edge_color: string = "#222222"; 
-	private f_hasse_current_color: string = "#cdcdcd"; //Not in settings
+	private f_hasse_current_color: string = "#cdcdcd";
 	private f_hasse_node_color: string = "#000000";
 	
 	//Not settable
@@ -377,6 +378,11 @@ export class DrawOptions
 		this.f_hasse_select_halo = w;
 		this.on_change();
 	}
+	set_brick_padding(w: number)
+	{
+		this.f_brick_padding = w;
+		this.on_change()
+	}
 
 	/****************
 	* GETTERS       *
@@ -570,5 +576,9 @@ export class DrawOptions
 	draw_brick_of_highlighted_brick(): boolean
 	{
 		return this.f_draw_brick_of_highlighted_brick;
+	}
+	brick_padding(): number
+	{
+		return this.f_brick_padding;
 	}
 }

@@ -309,7 +309,6 @@ export class CliqueViewer implements IMode
         poly_canvas.resize_canvas();
         this.poly_canvas = poly_canvas;
 
-        //JRB
         //Brick Canvas
         let {canvas: brick_canvas, element: b_canvas_element} = DAGCanvas.create(draw_options);
         segments.poly.appendChild(b_canvas_element);
@@ -335,7 +334,6 @@ export class CliqueViewer implements IMode
             }
         )
         this.brick_canvas = brick_canvas;
-	    //ENDJRB
 
         //Draw and setup redraw
         this.resize_event = (event) => {
@@ -514,7 +512,6 @@ export class CliqueViewer implements IMode
                 this.swap_box.hide_box(r);
     }
 
-    //TODO: Is this working correctly? Friend?
     brick_canvas_click(friend: Vector2)
     {
 	    //If we are mousing over a brick we can add to our complex, then add it to our complex!
@@ -527,7 +524,6 @@ export class CliqueViewer implements IMode
 		    {
 			    if (this.moused_over_brick.unwrap()==this.cliques.downbricks[this.current_clique][j])
 			    {
-				    //XXX
 				    let new_downbricks: number[] = this.cliques.downbricks[this.current_clique].slice();
 				    new_downbricks.splice(j,1);
 				    this.current_clique=this.cliques.clique_from_bricks(new_downbricks);
@@ -947,9 +943,10 @@ export class CliqueViewer implements IMode
         box.pad(this.draw_options.hasse_mini_vert_rad() / this.hasse_canvas.scale())
         this.drawn_brick_boxes[brick_idx] = box;
 
-        ctx.draw_box(
+        ctx.draw_rounded_box(
             box.top_corner,
             box.bot_corner,
+            10,
             this.draw_options.background_color()
         )
 
@@ -1110,7 +1107,6 @@ export class CliqueViewer implements IMode
                 //Draw warning "!!!"
                 if(bad)
                 {
-                    //TODO: Parametrize
                     ctx.draw_text(
                         "!!!",
                         midpoint,
@@ -1256,7 +1252,6 @@ export class CliqueViewer implements IMode
         }
         for(let pos of data.verts)
         {
-            //TODO fix node halo
             ctx.draw_circ(
                 pos.scale(scale).add(center),
                 halo_color,
@@ -1349,7 +1344,7 @@ export class CliqueViewer implements IMode
 
     recomp_brick_scale()
     {
-        let padding = 30; //TODO: Parametrize
+        let padding = this.draw_options.brick_padding();
         let center = Vector2.zero();
 
         let v_width = Math.max(1,
@@ -1359,7 +1354,7 @@ export class CliqueViewer implements IMode
             this.brick_canvas.height() - 2*padding
         );
 
-        let bb = new BoundingBox([]); //TODO: Remove points, this is just temporary
+        let bb = new BoundingBox([]);
         let baked = this.dag.bake();
         let raw_bb = clique_bounding_box(baked); 
         let scalar = this.draw_options.hasse_mini_dag_size() / (raw_bb.radius() * this.hasse_canvas.width());  
