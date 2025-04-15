@@ -1234,7 +1234,7 @@ export class CliqueViewer implements IMode
                 if(routes.length > 1)
                 {
                     let percent = i / (routes.length - 1) - 0.5;
-                    offset = orthog.scale(percent * (full_width - width)/this.draw_options.scale());
+                    offset = orthog.scale(percent * (full_width - width)/this.hasse_canvas.scale());
                 }
                 let edge_data = {
                     
@@ -1253,7 +1253,7 @@ export class CliqueViewer implements IMode
         {
             bk_bb.add_point(pos.scale(scale).add(center))
         }
-        bk_bb.pad_y(box.height()*scale);
+        bk_bb.pad_y(box.height()/this.hasse_canvas.scale());
         ctx.draw_rounded_box(
             bk_bb.top_corner,
             bk_bb.bot_corner,
@@ -1342,8 +1342,12 @@ export class CliqueViewer implements IMode
 
         let hasse = this.cliques.hasse;
         let bb = hasse.bounding_box.clone();
+
         for(let override of Object.values(this.hasse_overrides))
             bb.add_point(override);
+
+        
+
         if(this.draw_options.hasse_show_cliques())
         {
             let baked = this.dag.bake();
@@ -1415,7 +1419,7 @@ export class CliqueViewer implements IMode
         for(let p of data.verts)
             rad = Math.max(p.norm(), rad);
         
-        let scale = this.draw_options.hasse_mini_dag_size() / (rad * this.draw_options.scale());
+        let scale = this.draw_options.hasse_mini_dag_size() / (rad);
 
         let box = new BoundingBox([]);
         for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
@@ -1428,7 +1432,7 @@ export class CliqueViewer implements IMode
             box.add_point(edge.cp2);
             box.add_point(edge.end_point);
         }
-        box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
+        box.pad(this.draw_options.hasse_mini_vert_rad());
 
         return {
             scale,

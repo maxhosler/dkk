@@ -351,6 +351,12 @@ export class BoundingBox
 		this.bot_corner = this.bot_corner.add(vec);
 	}
 
+	scale(factor: number)
+	{
+		this.top_corner = this.top_corner.scale(factor);
+		this.bot_corner = this.bot_corner.scale(factor);
+	}
+
 	//Absolute size of vector furthest from zero in box.
 	extent(): Vector2
 	{
