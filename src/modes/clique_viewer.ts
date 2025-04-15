@@ -10,7 +10,7 @@ import { PolytopeCanvas } from "../subelements/polytope_canvas";
 import { DrawOptions } from "../draw/draw_options";
 import { IMode, ModeName } from "./mode";
 import { Option, Result } from "../util/result";
-import { css_str_to_rgb, hsl_to_rgb, rgb_to_hsl } from "../draw/colors";
+import { css_str_to_rgb, hsl_to_rgb, interp_colors, rgb_to_hsl } from "../draw/colors";
 import { ActionBox } from "../subelements/action_box";
 
 type HasseDrag = {
@@ -610,10 +610,11 @@ export class CliqueViewer implements IMode
                     //color is darkening of route color with alpha added
                     let clq = this.cliques.cliques[this.current_clique];
                     let route = clq.routes[route_index];
-                    let color = lighten_css_str(
+                    let color = interp_colors(
                         this.draw_options.get_route_color(route),
-                            -0.15
-                    ).replace(')',', 0.5)').replace('rgb','rgba');
+                        this.draw_options.background_color(),
+                        0.65
+                    );
 
 
                     let brk=this.cliques.bricks[
@@ -621,13 +622,13 @@ export class CliqueViewer implements IMode
                     let intpath = brk.edges;
                     for (let i = 0; i < intpath.length; i++)
                     {
-                            let edge = data.edges[intpath[i]];
-                            ctx.draw_bez(
-                                edge, 
-                                color,
-                                size,
-                                false
-                            );
+                        let edge = data.edges[intpath[i]];
+                        ctx.draw_bez(
+                            edge, 
+                            color,
+                            size,
+                            false
+                        );
                     }
                     //now draw along the corners
                     let cornerarrows = [
@@ -652,6 +653,7 @@ export class CliqueViewer implements IMode
             }
             this.cliques.cliques[this.current_clique]
         }
+
         //draw the brick of highlighted route, if we want to
         if (this.draw_options.draw_brick_of_highlighted_route())
         {

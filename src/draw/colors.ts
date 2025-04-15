@@ -193,3 +193,15 @@ export function css_str_to_rgb(css_str: string): [number,number,number]
     console.warn("Unknown color string format! ", css_str);
     return [255,255,255];
 }
+
+export function interp_colors(color1: string, color2: string, t: number): string
+{
+	let c1 = css_str_to_rgb(color1);
+	let c2 = css_str_to_rgb(color2);
+
+	let r = Math.floor( (c1[0] * (1-t) + c2[0] * t) );
+	let g = Math.floor( (c1[1] * (1-t) + c2[1] * t) );
+	let b = Math.floor( (c1[2] * (1-t) + c2[2] * t) );
+
+	return `rgb(${r}, ${g}, ${b})`;
+}
