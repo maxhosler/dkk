@@ -357,6 +357,26 @@ export class BoundingBox
 		this.bot_corner = this.bot_corner.scale(factor);
 	}
 
+	radius(): number
+	{
+		let out = 0.0;
+
+		for(let i = 0; i < 4; i++)
+		{
+			let x = this.top_corner.x;
+			let y = this.top_corner.y;
+
+			if(i % 2 == 1)
+				x = this.bot_corner.x;
+			if(i >= 2)
+				y = this.bot_corner.y;
+
+			out = Math.max(out, x*x + y*y)
+		}
+
+		return Math.sqrt(out);
+	}
+
 	//Absolute size of vector furthest from zero in box.
 	extent(): Vector2
 	{

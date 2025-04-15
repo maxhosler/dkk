@@ -1201,9 +1201,12 @@ export class CliqueViewer implements IMode
         ctx: DAGCanvasContext
     )
     {
-        //TODO: oh damn forgot to make this scale-independent. oops!
-
-        let {bounding_box: box, scale} = this.get_mini_clique_bb(data, center);
+        let baked = this.dag.bake();
+        let box = clique_bounding_box(baked); 
+        let scale = this.draw_options.hasse_mini_dag_size() / (box.radius() * this.hasse_canvas.width());
+        box.scale(scale);
+        box.shift(center);
+        box.pad(this.draw_options.hasse_mini_vert_rad() / this.hasse_canvas.scale())
         this.cur_draw_hasse_boxes[clique_idx] = box;
 
         let edges: {bez: Bezier, color: string, width: number}[] = [];
@@ -1253,7 +1256,7 @@ export class CliqueViewer implements IMode
         {
             bk_bb.add_point(pos.scale(scale).add(center))
         }
-        bk_bb.pad_y(box.height()/this.hasse_canvas.scale());
+        bk_bb.pad_y(box.height()/3);
         ctx.draw_rounded_box(
             bk_bb.top_corner,
             bk_bb.bot_corner,
@@ -1346,19 +1349,19 @@ export class CliqueViewer implements IMode
         for(let override of Object.values(this.hasse_overrides))
             bb.add_point(override);
 
-        
-
         if(this.draw_options.hasse_show_cliques())
         {
+            let bb = new BoundingBox([]);
             let baked = this.dag.bake();
+            let raw_bb = clique_bounding_box(baked); 
+            let scalar = this.draw_options.hasse_mini_dag_size() / (raw_bb.radius() * this.hasse_canvas.width());  
+            raw_bb.scale(scalar);         
             for(let i=0; i < this.cliques.cliques.length; i++)
             {
                 let pos = this.get_hasse_position(i);
-                let {bounding_box: minibb, scale: _} = this.get_mini_clique_bb(
-                    baked, 
-                    pos
-                );
-                bb.add_bounding_box(minibb)
+                let this_bb = raw_bb.clone();
+                this_bb.shift(pos);
+                bb.add_bounding_box(this_bb);
             }
         }
         let hasse_ext = bb.extent().scale(2);
@@ -1382,18 +1385,14 @@ export class CliqueViewer implements IMode
             this.brick_canvas.height() - 2*padding
         );
 
-        let bb = new BoundingBox([]);
+        let bb = new BoundingBox([Vector2.right(), new Vector2(0,1)]); //TODO: Remove points, this is just temporary
         let baked = this.dag.bake();
         for (let j=0; j < this.cliques.bricks.length; j++)
         {
             let clq_idx = this.cliques.clique_from_bricks([j]);
 
             let pos = this.get_hasse_position(clq_idx);
-            let {bounding_box: minibb, scale: _} = this.get_mini_clique_bb(
-                baked, 
-                pos
-            );
-            bb.add_bounding_box(minibb)
+            
             center = center.add(
                 pos.scale(1/this.cliques.bricks.length)
             )
@@ -1408,36 +1407,6 @@ export class CliqueViewer implements IMode
         
         this.brick_canvas.set_scale(Math.min(w_scale, h_scale));
         this.draw_bricks();
-    }
-
-    get_mini_clique_bb(
-        data: BakedDAGEmbedding,
-        center: Vector2
-    ): {scale: number, bounding_box: BoundingBox}
-    {
-        let rad = 1.0;
-        for(let p of data.verts)
-            rad = Math.max(p.norm(), rad);
-        
-        let scale = this.draw_options.hasse_mini_dag_size() / (rad);
-
-        let box = new BoundingBox([]);
-        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
-
-            let edge = data.edges[edge_idx].transform(
-                (v) => v.scale(scale).add(center) 
-            );
-            box.add_point(edge.start_point);
-            box.add_point(edge.cp1);
-            box.add_point(edge.cp2);
-            box.add_point(edge.end_point);
-        }
-        box.pad(this.draw_options.hasse_mini_vert_rad());
-
-        return {
-            scale,
-            bounding_box: box
-        }
     }
 
     //Get positions of hasse nodes
@@ -1583,4 +1552,25 @@ function lighten_css_str(str: string, amount: number): string
     hsl[2] = Math.min(hsl[2] + amount, 1);
     let rgb2 = hsl_to_rgb(...hsl);
     return `rgb(${rgb2[0]}, ${rgb2[1]}, ${rgb2[2]})`;
+}
+
+function clique_bounding_box(
+    data: BakedDAGEmbedding,
+): BoundingBox
+{
+    let rad = 1.0;
+    for(let p of data.verts)
+        rad = Math.max(p.norm(), rad);
+    
+    let box = new BoundingBox([]);
+    for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
+
+        let edge = data.edges[edge_idx];
+        box.add_point(edge.start_point);
+        box.add_point(edge.cp1);
+        box.add_point(edge.cp2);
+        box.add_point(edge.end_point);
+    }
+
+    return box;
 }
