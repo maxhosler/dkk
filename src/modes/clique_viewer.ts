@@ -954,24 +954,13 @@ export class CliqueViewer implements IMode
         ctx: DAGCanvasContext
     )
     {
-        let rad = 1.0;
-        for(let p of data.verts)
-            rad = Math.max(p.norm(), rad);
-        
-        let scale = this.draw_options.hasse_mini_dag_size() / (rad * this.draw_options.scale());
+        let baked = this.dag.bake();
+        let box = clique_bounding_box(baked); 
+        let scale = this.draw_options.hasse_mini_dag_size() / (box.radius() * this.hasse_canvas.width());
+        box.scale(scale);
+        box.shift(center);
+        box.pad(this.draw_options.hasse_mini_vert_rad() / this.hasse_canvas.scale())
 
-        let box = new BoundingBox([]);
-        for(let edge_idx = 0; edge_idx < data.edges.length; edge_idx++) {
-
-            let edge = data.edges[edge_idx].transform(
-                (v) => v.scale(scale).add(center) 
-            );
-            box.add_point(edge.start_point);
-            box.add_point(edge.cp1);
-            box.add_point(edge.cp2);
-            box.add_point(edge.end_point);
-        }
-        box.pad(1.0 * this.draw_options.hasse_mini_vert_rad() / this.draw_options.scale());
         ctx.draw_box(
             box.top_corner,
             box.bot_corner,
@@ -1384,13 +1373,20 @@ export class CliqueViewer implements IMode
             this.brick_canvas.height() - 2*padding
         );
 
-        let bb = new BoundingBox([Vector2.right(), new Vector2(0,1)]); //TODO: Remove points, this is just temporary
+        let bb = new BoundingBox([]); //TODO: Remove points, this is just temporary
         let baked = this.dag.bake();
+        let raw_bb = clique_bounding_box(baked); 
+        let scalar = this.draw_options.hasse_mini_dag_size() / (raw_bb.radius() * this.hasse_canvas.width());  
+        raw_bb.scale(scalar);         
+
         for (let j=0; j < this.cliques.bricks.length; j++)
         {
             let clq_idx = this.cliques.clique_from_bricks([j]);
-
             let pos = this.get_hasse_position(clq_idx);
+
+            let this_bb = raw_bb.clone();
+            this_bb.shift(pos);
+            bb.add_bounding_box(this_bb);
             
             center = center.add(
                 pos.scale(1/this.cliques.bricks.length)
