@@ -54,8 +54,9 @@ export class CliqueViewer implements IMode
     These values are computed once per draw-call, to avoid 
     recomputing them.
     */
-    cur_draw_beziers: {bez: Bezier, route: number, width: number}[] = [];
-    cur_draw_hasse_boxes: {[clique: number]: BoundingBox } = {};
+    drawn_beziers: {bez: Bezier, route: number, width: number}[] = [];
+    drawn_hasse_boxes: {[clique: number]: BoundingBox } = {};
+    drawn_brick_boxes: {[clique: number]: BoundingBox } = {};
 
     //IMode implementations
     name(): ModeName {
@@ -217,7 +218,7 @@ export class CliqueViewer implements IMode
         )
         c_canvas_element.addEventListener("mousemove",
             (ev) => {
-                this.update_moused_over(new Vector2(ev.layerX, ev.layerY))
+                this.update_moused_over_route(new Vector2(ev.layerX, ev.layerY))
             }
         );
         c_canvas_element.addEventListener("mouseleave",
@@ -390,7 +391,7 @@ export class CliqueViewer implements IMode
             this.route_swap(r);
         }
         this.draw()
-        this.update_moused_over(position);
+        this.update_moused_over_route(position);
     }
 
     //Handle hasse clicks, currently just
@@ -513,7 +514,7 @@ export class CliqueViewer implements IMode
                 this.swap_box.hide_box(r);
     }
 
-    //JRB
+    //TODO: Is this working correctly? Friend?
     brick_canvas_click(friend: Vector2)
     {
 	    //If we are mousing over a brick we can add to our complex, then add it to our complex!
@@ -530,7 +531,7 @@ export class CliqueViewer implements IMode
 				    let new_downbricks: number[] = this.cliques.downbricks[this.current_clique].slice();
 				    new_downbricks.splice(j,1);
 				    this.current_clique=this.cliques.clique_from_bricks(new_downbricks);
-			            this.refresh_swapbox();
+			        this.refresh_swapbox();
 				    this.draw();
 				    return;
 			    }
@@ -550,31 +551,13 @@ export class CliqueViewer implements IMode
 
     update_moused_over_brick(position: Vector2)
     {
-        let canvas_pos = this.brick_canvas.local_trans_inv(position);
-        let positions = this.get_brick_positions();
-        let closest: Option<number> = Option.none();
-        let min_dist = Infinity;
-        for(let i = 0; i < positions.length; i++)
-        {
-            let dist = positions[i].sub(canvas_pos).norm();
-            if(dist <= min_dist)
-            {
-                closest = Option.some(i);
-                min_dist = dist;
-            }
-        }
-        if (min_dist <= 0.5)
-            this.moused_over_brick=closest;
-        else
-            this.moused_over_brick=Option.none();
-
+        this.moused_over_brick = this.get_hasse_brick_at(position);
 	    this.draw_bricks(); 
     }
-    //ENDJRB
 
     //Find route at (position) and record in (this.moused_over_route)
     //if it exists.
-    update_moused_over(position: Vector2)
+    update_moused_over_route(position: Vector2)
     {
         let route_at = this.get_route_at(position);
         let changed = (
@@ -609,7 +592,7 @@ export class CliqueViewer implements IMode
     {		
         let ctx = this.clique_canvas.get_ctx();
         let data = this.dag.bake();
-        this.cur_draw_beziers = [];
+        this.drawn_beziers = [];
 
         ctx.clear();
 
@@ -849,7 +832,7 @@ export class CliqueViewer implements IMode
                 }
 
                 let bez = edge.transform((v) => v.add(offset));
-                this.cur_draw_beziers.push({
+                this.drawn_beziers.push({
                     bez, route: r, width
                 });
                 ctx.draw_bez(
@@ -870,7 +853,7 @@ export class CliqueViewer implements IMode
                 this.draw_options.get_route_color(route),
                 0.15
             );
-            for(let cd of this.cur_draw_beziers)
+            for(let cd of this.drawn_beziers)
             {
                 if(cd.route != route) continue;
                 ctx.draw_bez(
@@ -960,6 +943,7 @@ export class CliqueViewer implements IMode
         box.scale(scale);
         box.shift(center);
         box.pad(this.draw_options.hasse_mini_vert_rad() / this.hasse_canvas.scale())
+        this.drawn_brick_boxes[brick_idx] = box;
 
         ctx.draw_box(
             box.top_corner,
@@ -1075,7 +1059,7 @@ export class CliqueViewer implements IMode
 
         let hasse = this.cliques.hasse;
         let positions = this.get_hasse_positions();
-        this.cur_draw_hasse_boxes = {};
+        this.drawn_hasse_boxes = {};
 
         //Draw the edges.
         for(let i = 0; i < hasse.covering_relation.length; i++)
@@ -1196,7 +1180,7 @@ export class CliqueViewer implements IMode
         box.scale(scale);
         box.shift(center);
         box.pad(this.draw_options.hasse_mini_vert_rad() / this.hasse_canvas.scale())
-        this.cur_draw_hasse_boxes[clique_idx] = box;
+        this.drawn_hasse_boxes[clique_idx] = box;
 
         let edges: {bez: Bezier, color: string, width: number}[] = [];
 
@@ -1441,7 +1425,7 @@ export class CliqueViewer implements IMode
             if(this.draw_options.hasse_show_cliques())
             {
                 //If drawn as mini cliques, only valid of in bounding box
-                let box = this.cur_draw_hasse_boxes[i];
+                let box = this.drawn_hasse_boxes[i];
                 if(!box || !box.contains(canvas_pos))
                     continue;
             }
@@ -1464,6 +1448,32 @@ export class CliqueViewer implements IMode
         return closest;
     }
 
+    get_hasse_brick_at(click_pos: Vector2): Option<number>
+    {
+        //Finds the node closest to click_pos which is on top of a node
+
+        let canvas_pos = this.brick_canvas.local_trans_inv(click_pos);
+        let positions = this.get_brick_positions();
+        let closest: Option<number> = Option.none();
+        let min_dist = Infinity;
+        for(let i = 0; i < positions.length; i++)
+        {
+            let node_pos = positions[i];
+            let box = this.drawn_brick_boxes[i];
+            if(!box || !box.contains(canvas_pos))
+                continue;
+
+            let dist = node_pos.sub(canvas_pos).norm();
+            if(dist <= min_dist)
+            {
+                closest = Option.some(i);
+                min_dist = dist;
+            }
+        }
+
+        return closest;
+    }
+
     //Used to find if pos is overlapping some route in dag_canvas.
     get_route_at(pos: Vector2): Option<number>
     {
@@ -1471,7 +1481,7 @@ export class CliqueViewer implements IMode
         let closest_dist = Infinity;
         let closest: Option<number> = Option.none();
         let scale = this.draw_options.scale();
-        for(let current of this.cur_draw_beziers)
+        for(let current of this.drawn_beziers)
         {
             let dist = current.bez.distance_to(position);
             if(dist < closest_dist && dist * scale < current.width / 2)
