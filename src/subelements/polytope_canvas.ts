@@ -385,7 +385,7 @@ export class PolytopeCanvas
 
     set_message()
     {
-        this.text_overlay.innerText = "Polytope dimension: " + this.poly_dim.toString();
+        //this.text_overlay.innerText = "Polytope dimension: " + this.poly_dim.toString();
     }
 
     new_float_buffer(arr: number[]): WebGLBuffer

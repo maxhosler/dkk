@@ -10,32 +10,8 @@ export class SettingsPopup extends Popup
 {
 	parent: DKKProgram;
 
-	//These are all the input objects.
-	vert_radius_spinner: HTMLInputElement;
-	edge_weight_spinner: HTMLInputElement;
-	route_weight_spinner: HTMLInputElement;
-	label_checkbox: HTMLInputElement;
-	arrow_checkbox: HTMLInputElement;
-	show_exceptional_cb: HTMLInputElement;
-
-	hasse_weight_spinner: HTMLInputElement;
-	hasse_node_size_spinner: HTMLInputElement;
-	hasse_show_clique_cb: HTMLInputElement;
-	hasse_clique_spinner: HTMLInputElement;
-	hasse_vert_spinner: HTMLInputElement;
-	hasse_route_spinner: HTMLInputElement;
-
-	simplrend_dropdown: HTMLSelectElement;
-	dot_on_top_cb: HTMLInputElement;
-	dot_shade_cb: HTMLInputElement;
-	dot_radius_spinner: HTMLInputElement;
-
-	vertex_color_selector: HTMLInputElement;
-	background_color_selector: HTMLInputElement;
-	polytope_color_selector: HTMLInputElement;
-	simplex_color_selector: HTMLInputElement;
-
 	reset_button: HTMLButtonElement;
+	column_holder: HTMLTableRowElement;
 
 	/*
 	This is the list of functions which read the
@@ -52,115 +28,106 @@ export class SettingsPopup extends Popup
 		//Create table
 		let base_table = document.createElement("table");
 		base_table.className = "settings-column-table";
-		let column_holder = document.createElement("tr");
+		this.column_holder = document.createElement("tr");
 		this.popup_body.appendChild(base_table);
-		base_table.appendChild(column_holder);
-
-		//Create the columns
-		let col1 = document.createElement("td");
-		let col2 = document.createElement("td");
-		column_holder.appendChild(col1);
-		column_holder.appendChild(col2);
+		base_table.appendChild(this.column_holder);
 
 		//FIRST COLUMN
-		let col1_table = document.createElement("table");
-		col1_table.className = "settings-table";
-		col1.appendChild(col1_table);
+		this.add_column();
+		this.add_title("DAG");
 
-		this.add_title(col1_table, "DAG");
-
-		this.vert_radius_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Vertex radius",
 			"settings-vert-radius",
 			(val) => this.parent.draw_options.set_vert_radius(val),
 			() => this.parent.draw_options.vert_radius()
 		);
-		this.edge_weight_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Edge weight",
 			"settings-edge-weight",
 			(val) => this.parent.draw_options.set_edge_weight(val),
 			() => this.parent.draw_options.edge_weight()
 		);
-		this.route_weight_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Route weight",
 			"settings-route-weight",
 			(val) => this.parent.draw_options.set_route_weight(val),
 			() => this.parent.draw_options.route_weight()
 		);
-		this.label_checkbox = this.add_checkbox_row(
-			col1_table,
+		this.add_checkbox_row(
 			"Framing labels",
 			"settings-labels-cb",
 			(val) => this.parent.draw_options.set_label_framing(val),
 			() => this.parent.draw_options.label_framing()
-		)
-		this.arrow_checkbox = this.add_checkbox_row(
-			col1_table,
+		);
+		this.add_checkbox_row(
 			"Direction arrows",
 			"settings-arrows-cb",
 			(val) => this.parent.draw_options.set_arrows(val),
 			() => this.parent.draw_options.arrows()
-		)
-		this.show_exceptional_cb = this.add_checkbox_row(
-			col1_table,
+		);
+		this.add_checkbox_row(
 			"Show exceptional routes",
 			"settings-exceptional-cb",
 			(val) => this.parent.draw_options.set_show_exceptional(val),
 			() => this.parent.draw_options.show_exceptional()
-		)
+		);
+		this.add_checkbox_row(
+			"Show bricks",
+			"settings-show-bricks",
+			(val) => this.parent.draw_options.set_draw_all_downbricks(val),
+			() => this.parent.draw_options.draw_all_downbricks()
+		);
+		this.add_stepper_row(
+			"Brick weight",
+			"settings-brick-weight",
+			(val) => this.parent.draw_options.set_brick_width(val),
+			() => this.parent.draw_options.brick_width()
+		);
 
-		this.add_title(col1_table, "Hasse diagram");
+		this.add_title("Hasse diagram");
 
-		this.hasse_weight_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Hasse edge weight",
 			"settings-hasse-weight",
 			(val) => this.parent.draw_options.set_hasse_edge_weight(val),
 			() => this.parent.draw_options.hasse_edge_weight()
 		);
-		this.hasse_node_size_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Hasse node size",
 			"settings-hasse-node-size",
 			(val) => this.parent.draw_options.set_hasse_node_size(val),
 			() => this.parent.draw_options.hasse_node_size()
 		)
-		this.hasse_show_clique_cb = this.add_checkbox_row(
-			col1_table,
+		this.add_checkbox_row(
 			"Show cliques as nodes",
 			"settings-hasse-cliques",
 			(b) => this.parent.draw_options.set_hasse_show_cliques(b),
 			() => this.parent.draw_options.hasse_show_cliques()
 		);
-		this.hasse_clique_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Clique size",
 			"settings-h-clique-size",
 			(val) => this.parent.draw_options.set_hasse_mini_dag_size(val),
 			() => this.parent.draw_options.hasse_mini_dag_size()
 		);
-		this.hasse_vert_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Vertex size",
 			"settings-h-vertex-size",
 			(val) => this.parent.draw_options.set_hasse_mini_vert_rad(val),
 			() => this.parent.draw_options.hasse_mini_vert_rad()
 		);
-		this.hasse_route_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Route weight",
 			"settings-h-route-weight",
 			(val) => this.parent.draw_options.set_hasse_mini_route_weight(val),
 			() => this.parent.draw_options.hasse_mini_route_weight()
 		);
-		
 
-		this.add_title(col1_table, "Polytope");
-		this.simplrend_dropdown = this.add_selector_row(
-			col1_table,
+		//SECOND COLUMN
+		this.add_column();
+		this.add_title("Polytope");
+		this.add_selector_row(
 			"Simplex mode",
 			"settings-simpl-mode",
 			[
@@ -173,37 +140,40 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.simplex_render_mode()
 		);
-		this.dot_on_top_cb = this.add_checkbox_row(
-			col1_table,
+		this.add_checkbox_row(
 			"Draw dots on top",
 			"settings-dots-on-top",
 			(b) => this.parent.draw_options.set_dot_on_top(b),
 			() => this.parent.draw_options.dot_on_top()
 		);
-		this.dot_shade_cb = this.add_checkbox_row(
-			col1_table,
+		this.add_checkbox_row(
 			"Shade dots",
 			"settings-dots-shade",
 			(b) => this.parent.draw_options.set_dot_shade(b),
 			() => this.parent.draw_options.dot_shade()
 		);
-		this.dot_radius_spinner = this.add_stepper_row(
-			col1_table,
+		this.add_stepper_row(
 			"Dot radius",
 			"settings-dot-radius",
 			(v) => this.parent.draw_options.set_dot_radius(v),
 			() => this.parent.draw_options.dot_radius()
+		);
+
+		this.add_title("Brick diagram");
+		this.add_checkbox_row(
+			"Draw compat. edges",
+			"settings-compat-edge-brick",
+			(val) => this.parent.draw_options.set_brick_draw_compat_edges(val),
+			() => this.parent.draw_options.brick_draw_compat_edges()
 		)
+		//TODO:
 
-		//SECOND COLUMN
-		let col2_table = document.createElement("table");
-		col2_table.className = "settings-table";
-		col2.appendChild(col2_table);
 
-		this.add_title(col2_table, "Colors");
+		//THIRD COLUMN
+		this.add_column();
+		this.add_title("Colors");
 
-		this.vertex_color_selector = this.add_color_row(
-			col2_table,
+		this.add_color_row(
 			"Vertex color",
 			"settings-vert-color",
 			(val) => {
@@ -211,8 +181,15 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.vertex_color()
 		);
-		this.background_color_selector = this.add_color_row(
-			col2_table,
+		this.add_color_row(
+			"Edge color",
+			"settings-edge-color",
+			(val) => {
+				this.parent.draw_options.set_edge_color(val);
+			},
+			() => this.parent.draw_options.edge_color()
+		);
+		this.add_color_row(
 			"Background color",
 			"settings-bg-color",
 			(val) => {
@@ -220,8 +197,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.background_color()
 		);
-		this.polytope_color_selector = this.add_color_row(
-			col2_table,
+		this.add_color_row(
 			"Polytope color",
 			"settings-polytope-color",
 			(val) => {
@@ -229,8 +205,7 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.polytope_color()
 		);
-		this.simplex_color_selector = this.add_color_row(
-			col2_table,
+		this.add_color_row(
 			"Simplex color",
 			"settings-simplex-color",
 			(val) => {
@@ -238,6 +213,31 @@ export class SettingsPopup extends Popup
 			},
 			() => this.parent.draw_options.simplex_color()
 		);
+		this.add_color_row(
+			"Up-brick color",
+			"settings-upbrick-color",
+			(val) => {
+				this.parent.draw_options.set_up_brick_color(val);
+			},
+			() => this.parent.draw_options.up_brick_color()
+		);
+		this.add_color_row(
+			"Down-brick color",
+			"settings-downbrick-color",
+			(val) => {
+				this.parent.draw_options.set_down_brick_color(val);
+			},
+			() => this.parent.draw_options.down_brick_color()
+		);
+		this.add_color_row(
+			"Brick compat. color",
+			"settings-brickcompat-color",
+			(val) => {
+				this.parent.draw_options.set_brick_compat_edge_color(val);
+			},
+			() => this.parent.draw_options.brick_compat_edge_color()
+		);
+
 
 		//RESET BUTTON
 		this.reset_button = document.createElement("button");
@@ -261,9 +261,26 @@ export class SettingsPopup extends Popup
 			f();
 	}
 
+	private add_column(): HTMLTableElement
+	{
+		let col = document.createElement("td");
+		this.column_holder.appendChild(col);
+		let table = document.createElement("table");
+		table.className = "settings-table";
+		col.appendChild(table)
+		return table;
+	}
+
+	private get_last_column(): HTMLTableElement
+	{
+		if(!this.column_holder.lastChild || !this.column_holder.lastChild.lastChild)
+			return this.add_column();
+		return this.column_holder.lastChild.lastChild as HTMLTableElement;
+	}
+
 	/*
 	Each of these add_something_row methods follow a common pattern:
-	add to the "table" element (the current column) an input element
+	add to the current last column of this.column_holder an input element
 	of the relevant type, with a label given by "name" and the input element
 	having id "id". the "onchange" method is to take the current value
 	and put it into the DrawOptions object; the "getter" method does the opposite,
@@ -274,7 +291,6 @@ export class SettingsPopup extends Popup
 
 	//This is for number inputs.
 	private add_stepper_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		onchange: (val: number) => void,
@@ -303,7 +319,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(spinner);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => spinner.value = getter().toString()
@@ -314,7 +330,6 @@ export class SettingsPopup extends Popup
 
 	//This is for selectors (dropdown menus)
 	private add_selector_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		name_val_pairs: [string, string][],
@@ -348,7 +363,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(selector);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => selector.value = getter()
@@ -359,7 +374,6 @@ export class SettingsPopup extends Popup
 
 	//This is for color selectors
 	private add_color_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		onchange: (val: string) => void,
@@ -386,7 +400,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(colorsel);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => colorsel.value = getter()
@@ -397,7 +411,6 @@ export class SettingsPopup extends Popup
 
 	//And this is for checkboxes!
 	private add_checkbox_row(
-		table: HTMLTableElement,
 		name: string,
 		id: string,
 		onchange: (val: boolean) => void,
@@ -424,7 +437,7 @@ export class SettingsPopup extends Popup
 		d1.appendChild(label);
 		d2.appendChild(tickbox);
 
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		this.get_funcs.push(
 			() => tickbox.checked = getter()
@@ -436,7 +449,6 @@ export class SettingsPopup extends Popup
 	//This adds a title for different sections in the column.
 	//Similar idea as above, although it isn't an input element.
 	private add_title(
-		table: HTMLTableElement,
 		name: string
 	)
 	{
@@ -445,7 +457,7 @@ export class SettingsPopup extends Popup
 		let d2 = document.createElement("td");
 		row.appendChild(d1);
 		row.appendChild(d2);
-		table.appendChild(row);
+		this.get_last_column().appendChild(row);
 
 		let title = document.createElement("div");
 		title.className = "settings-head";

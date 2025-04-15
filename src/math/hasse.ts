@@ -1,11 +1,10 @@
 import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Result } from "../util/result";
-import { Clique } from "./cliques";
+import { Brick, Clique } from "./cliques";
 
 /*
 Structure containing information for the Hasse diagram.
 */
-
 export class HasseDiagram
 {
     readonly poset_size: number;
@@ -401,3 +400,48 @@ function hasse_empty(): HasseDiagram
     let poset_relation = [[true]];
     return new HasseDiagram(poset_relation, cliques);
 }
+
+//JRB
+export class BrickHasseDiagram
+{
+    readonly poset_size: number;
+    readonly covering_relation: boolean[][];
+    
+    //JRB: I probably should mimic these, but I won't
+    //readonly layout_rows: Vector2[];
+    //readonly bounding_box: BoundingBox;
+
+    constructor(poset_relation: boolean[][], bricks: Brick[]) //JRB: Not sure about cliques
+    {
+        //Extracts the covering relation from the poset relation.
+        let covering_relation: boolean[][] = structuredClone(poset_relation);
+        this.poset_size = covering_relation.length;
+        for(let brk1 = 0; brk1 < this.poset_size; brk1++){
+            for(let brk2 = 0; brk2 < this.poset_size; brk2++)
+            {
+                if(brk1 == brk2)
+                {
+                    covering_relation[brk1][brk2] = false;
+                    continue;
+                }
+                if(!poset_relation[brk1][brk2]) continue;
+                for(let brk_mid = 0; brk_mid < this.poset_size; brk_mid++)
+                {
+                    if(brk_mid == brk1 || brk_mid == brk2) continue;
+                    if(poset_relation[brk1][brk_mid] && poset_relation[brk_mid][brk2])
+                    {
+                        covering_relation[brk1][brk2] = false;
+                        break;
+                    }
+                }
+            }
+        }
+        this.covering_relation = covering_relation;
+    }
+
+}
+//ENDJRB
+
+
+
+

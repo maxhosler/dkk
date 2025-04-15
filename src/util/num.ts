@@ -260,6 +260,28 @@ export class Bezier
 
 		return last_pos;
 	}
+
+	half_bezier(from_start: boolean): Bezier
+	{
+		let P0 = this.start_point;
+		let P1 = this.cp1;
+		let P2 = this.cp2;
+		let P3 = this.end_point;
+		let Q0=P0.scale(0.5).add(P1.scale(0.5));
+		let Q1=P1.scale(0.5).add(P2.scale(0.5));
+		let Q2=P2.scale(0.5).add(P3.scale(0.5));
+		let R0=Q0.scale(0.5).add(Q1.scale(0.5));
+		let R1=Q1.scale(0.5).add(Q2.scale(0.5));
+		let S0=R0.scale(0.5).add(R1.scale(0.5));
+		if (from_start)
+		{
+			return new Bezier( P0, Q0, R0, S0 );
+		}
+		else
+		{
+			return new Bezier( S0, R1, Q2, P3 )
+		}
+	}
 }
 
 //Bounding box.
@@ -291,6 +313,12 @@ export class BoundingBox
 		}
 	}
 
+	add_bounding_box(bb: BoundingBox)
+	{
+		this.add_point(bb.bot_corner);
+		this.add_point(bb.top_corner);
+	}
+
 	//Check if {point} in box.
 	contains(point: Vector2): boolean
 	{
@@ -307,6 +335,46 @@ export class BoundingBox
 		let delta = new Vector2(w,w);
 		this.top_corner = this.top_corner.sub(delta);
 		this.bot_corner = this.bot_corner.add(delta);
+	}
+
+	//Expand box by {w} units in all directions.
+	pad_y(w: number)
+	{
+		let delta = new Vector2(0,w);
+		this.top_corner = this.top_corner.sub(delta);
+		this.bot_corner = this.bot_corner.add(delta);
+	}
+
+	shift(vec: Vector2)
+	{
+		this.top_corner = this.top_corner.add(vec);
+		this.bot_corner = this.bot_corner.add(vec);
+	}
+
+	scale(factor: number)
+	{
+		this.top_corner = this.top_corner.scale(factor);
+		this.bot_corner = this.bot_corner.scale(factor);
+	}
+
+	radius(): number
+	{
+		let out = 0.0;
+
+		for(let i = 0; i < 4; i++)
+		{
+			let x = this.top_corner.x;
+			let y = this.top_corner.y;
+
+			if(i % 2 == 1)
+				x = this.bot_corner.x;
+			if(i >= 2)
+				y = this.bot_corner.y;
+
+			out = Math.max(out, x*x + y*y)
+		}
+
+		return Math.sqrt(out);
 	}
 
 	//Absolute size of vector furthest from zero in box.

@@ -38,10 +38,11 @@ export class DrawOptions
 	private f_hasse_edge_weight: number = 10;
 	private f_hasse_show_cliques: boolean = true;
 	private f_hasse_node_size: number = 10;
-	private f_hasse_mini_dag_size: number = 80;
+	private f_hasse_mini_dag_size: number = 300;
 	private f_hasse_mini_vert_rad: number = 8;
 	private f_hasse_mini_route_weight: number = 6;
-	private f_hasse_padding: number = 70;
+	private f_hasse_padding: number = 30;
+	private f_hasse_select_halo: number = 15;
 
 	//POLYTOPE
 	private f_simplex_render_mode: SimplexRenderMode = "dots";
@@ -53,16 +54,33 @@ export class DrawOptions
 	private f_tangent_handle_size: number = 8;
 	private f_tangent_arm_weight: number = 5;
 
+	//BRICK
+	private f_up_brick_color: string = '#00ff00';
+	private f_down_brick_color: string = '#ffff00';
+	private f_brick_compat_edge_color: string = '#ffff00';
+	private f_bad_highlight_color: string = '#ff0000';
+	private f_good_highlight_color: string = '#add8e6';
+	private f_brick_padding: number = 30;
+
+	private f_brick_width: number = 40;
+	private f_brick_draw_compat_edges: boolean = true;
+	private f_make_hasse_diagram_bricks: boolean = false; //TODO: make this functionality
+	private f_draw_all_downbricks: boolean = true;
+	private f_draw_brick_of_highlighted_route: boolean = false;
+	private f_draw_brick_of_highlighted_brick: boolean = true;
+
 	//COLORS
 	private f_background_color: string = "#b0b0b0";
 	private f_vertex_color: string = "#000000";
 	private f_polytope_color: string = "#de5ed4";
 	private f_simplex_color: string = "#c9e8f4";
-	private f_handle_color: string = "#9a50d3";
-	private f_selection_color: string = "#2160c487"; //Not in settings box
-	private f_edge_color: string = "#222222"; //Not in settings box
-	private f_hasse_current_color: string = "#cdcdcd"; //Not in settings
+	private f_edge_color: string = "#222222"; 
+	private f_hasse_current_color: string = "#cdcdcd";
 	private f_hasse_node_color: string = "#000000";
+	
+	//Not settable
+	private f_handle_color: string = "#9a50d3";
+	private f_selection_color: string = "#2160c487";
 	private f_hasse_bad_edge_color: string = "#ff0000";
 
 	//AUXILIARY
@@ -195,6 +213,11 @@ export class DrawOptions
 		this.f_edge_weight = weight;
 		this.on_change();
 	}
+	set_edge_color(col: string)
+	{
+		this.f_edge_color = col;
+		this.on_change();
+	}
 	set_label_framing(b: boolean)
 	{
 		this.f_label_framing = b;
@@ -244,6 +267,16 @@ export class DrawOptions
 	{
 		this.f_hasse_mini_dag_size = r;
 		this.on_change()
+	}
+	set_hasse_node_color(col: string)
+	{
+		this.f_hasse_node_color = col;
+		this.on_change();
+	}
+	set_hasse_current_color(col: string)
+	{
+		this.f_hasse_current_color = col;
+		this.on_change();
 	}
 	set_scale(scale: number)
 	{
@@ -310,6 +343,46 @@ export class DrawOptions
 		this.f_hasse_bad_edge_color = col;
 		this.on_change();
 	}
+	set_up_brick_color(col: string)
+	{
+		this.f_up_brick_color = col;
+		this.on_change();
+	}
+	set_down_brick_color(col: string)
+	{
+		this.f_down_brick_color = col;
+		this.on_change();
+	}
+	set_brick_compat_edge_color(col: string)
+	{
+		this.f_brick_compat_edge_color = col;
+		this.on_change();
+	}
+	set_draw_all_downbricks(b: boolean)
+	{
+		this.f_draw_all_downbricks = b;
+		this.on_change();
+	}
+	set_brick_width(w: number)
+	{
+		this.f_brick_width = w;
+		this.on_change();
+	}
+	set_brick_draw_compat_edges(b: boolean)
+	{
+		this.f_brick_draw_compat_edges = b;
+		this.on_change();
+	}
+	set_hasse_select_halo(w: number)
+	{
+		this.f_hasse_select_halo = w;
+		this.on_change();
+	}
+	set_brick_padding(w: number)
+	{
+		this.f_brick_padding = w;
+		this.on_change()
+	}
 
 	/****************
 	* GETTERS       *
@@ -331,6 +404,10 @@ export class DrawOptions
 	scale(): number
 	{
 		return this.f_scale;
+	}
+	hasse_select_halo(): number
+	{
+		return this.f_hasse_select_halo;
 	}
 	vert_radius(): number
 	{
@@ -455,5 +532,53 @@ export class DrawOptions
 	hasse_bad_edge_color(): string
 	{
 		return this.f_hasse_bad_edge_color;
+	}
+	up_brick_color(): string
+	{
+		return this.f_up_brick_color;
+	}
+	down_brick_color(): string
+	{
+		return this.f_down_brick_color;
+	}
+	brick_compat_edge_color(): string
+	{
+		return this.f_brick_compat_edge_color;
+	}
+	brick_draw_compat_edges(): boolean
+	{
+		return this.f_brick_draw_compat_edges;
+	}
+	bad_highlight_color(): string
+	{
+		return this.f_bad_highlight_color;
+	}
+	good_highlight_color(): string
+	{
+		return this.f_good_highlight_color;
+	}
+	make_hasse_diagram_bricks(): boolean
+	{
+		return this.f_make_hasse_diagram_bricks;
+	}
+	brick_width(): number
+	{
+		return this.f_brick_width;
+	}
+	draw_all_downbricks(): boolean
+	{
+		return this.f_draw_all_downbricks;
+	}
+	draw_brick_of_highlighted_route(): boolean
+	{
+		return this.f_draw_brick_of_highlighted_route;
+	}
+	draw_brick_of_highlighted_brick(): boolean
+	{
+		return this.f_draw_brick_of_highlighted_brick;
+	}
+	brick_padding(): number
+	{
+		return this.f_brick_padding;
 	}
 }
