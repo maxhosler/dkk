@@ -1221,7 +1221,7 @@ export class CliqueViewer implements IMode
             }
         }
 
-        const HALO_SIZE: number = 15; //TODO: Parametrize
+        let halo_size: number = this.draw_options.hasse_select_halo();
 
         //COVER BACKGROUND
         let bk_bb=new BoundingBox([]);
@@ -1248,7 +1248,7 @@ export class CliqueViewer implements IMode
             ctx.draw_bez(
                 edge.bez,
                 halo_color,
-                HALO_SIZE + edge.width/2,
+                halo_size + edge.width/2,
                 false
             )
         }
@@ -1258,7 +1258,7 @@ export class CliqueViewer implements IMode
             ctx.draw_circ(
                 pos.scale(scale).add(center),
                 halo_color,
-                this.draw_options.hasse_mini_vert_rad() + HALO_SIZE/this.hasse_canvas.scale()
+                this.draw_options.hasse_mini_vert_rad() + halo_size/2
             )
         }
 

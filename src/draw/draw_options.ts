@@ -38,10 +38,11 @@ export class DrawOptions
 	private f_hasse_edge_weight: number = 10;
 	private f_hasse_show_cliques: boolean = true;
 	private f_hasse_node_size: number = 10;
-	private f_hasse_mini_dag_size: number = 80;
+	private f_hasse_mini_dag_size: number = 300;
 	private f_hasse_mini_vert_rad: number = 8;
 	private f_hasse_mini_route_weight: number = 6;
 	private f_hasse_padding: number = 70;
+	private f_hasse_select_halo: number = 15;
 
 	//POLYTOPE
 	private f_simplex_render_mode: SimplexRenderMode = "dots";
@@ -371,6 +372,11 @@ export class DrawOptions
 		this.f_brick_draw_compat_edges = b;
 		this.on_change();
 	}
+	set_hasse_select_halo(w: number)
+	{
+		this.f_hasse_select_halo = w;
+		this.on_change();
+	}
 
 	/****************
 	* GETTERS       *
@@ -392,6 +398,10 @@ export class DrawOptions
 	scale(): number
 	{
 		return this.f_scale;
+	}
+	hasse_select_halo(): number
+	{
+		return this.f_hasse_select_halo;
 	}
 	vert_radius(): number
 	{
