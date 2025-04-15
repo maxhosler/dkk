@@ -1351,7 +1351,6 @@ export class CliqueViewer implements IMode
 
         if(this.draw_options.hasse_show_cliques())
         {
-            let bb = new BoundingBox([]);
             let baked = this.dag.bake();
             let raw_bb = clique_bounding_box(baked); 
             let scalar = this.draw_options.hasse_mini_dag_size() / (raw_bb.radius() * this.hasse_canvas.width());  
