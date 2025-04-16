@@ -86,6 +86,7 @@ export class CliqueViewer implements IMode
 
         let cliques = new DAGCliques(dag.dag);
         let polytope = FlowPolytope.from_cliques(cliques);
+        let quot_poly = polytope.quotient(cliques);
 
         return new CliqueViewer
         (

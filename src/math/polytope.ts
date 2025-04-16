@@ -133,28 +133,42 @@ export class FlowPolytope
         );
     }
 
-    private quotient(dag_cliques: DAGCliques): FlowPolytope
+    quotient(dag_cliques: DAGCliques): FlowPolytope
     {
-        let exceptional_span: NVector[] = [];
+        let exceptional_simplex: NVector[] = [];
         for(let i of dag_cliques.exceptional_routes)
-            exceptional_span.push(this.vertices[i])
-        if(exceptional_span.length <= 1)
+            exceptional_simplex.push(this.vertices[i])
+        if(exceptional_simplex.length <= 1)
             return this;
 
-        let qdim = this.dim - exceptional_span.length + 1;
+        let qdim = this.dim - exceptional_simplex.length + 1;
         
-
-        let center = exceptional_span[0];
-        let e_basis: NVector[] = [];
-        for(let i = 1; i < exceptional_span.length; i++)
+        let center = exceptional_simplex[0];
+        let exceptional_basis: NVector[] = [];
+        for(let i = 1; i < exceptional_simplex.length; i++)
         {
-            e_basis.push(
-                exceptional_span[i].sub(exceptional_span[0])
+            exceptional_basis.push(
+                exceptional_simplex[i].sub(center)
             );
         }
-        let on_e_basis = orthonorm_basis(e_basis);
+        exceptional_basis = orthonorm_basis(exceptional_basis);
 
+        let projection: NVector[] = [];
+        for(let i = 0; i < this.dim; i++)
+        {
+            let ei = NVector.basis(this.dim, i);
+            let projected = NVector.zero(this.dim);
+            for(let b of exceptional_basis)
+            {
+                projected = projected.add(ei.proj_onto(b))
+            }
+            projection.push(projected);
+        }
+        
+        let M = Matrix.from_columns(projection);
+        let m_rref = compute_rref(M);
 
+        //TODO: compute basis of kernel, orthonormalize, project onto.
 
         throw new Error("Not yet implemented!");
     }
@@ -220,6 +234,13 @@ class NVector
     static one(dim: number): NVector
     {
         return new NVector(new Array<number>(dim).fill(1));
+    }
+
+    static basis(dim: number, i: number)
+    {
+        let v = new Array<number>(dim).fill(0);
+        v[i] = 1;
+        return new NVector(v);
     }
 
     norm()
@@ -380,6 +401,15 @@ class Matrix
         for(let i = 0; i < vec.dim(); i++)
             mat.inner[i][i] = vec.coordinates[i];
         return mat;
+    }
+
+    clone(): Matrix
+    {
+        return new Matrix(
+            this.width,
+            this.height,
+            structuredClone(this.inner)
+        )
     }
 
     swap_rows(i: number, j: number)
@@ -681,9 +711,44 @@ function cholesky_decomposition(A: Matrix): Matrix
     return new Matrix(n,n,L);
 }
 
-function empty_clique(): DAGCliques
+function compute_rref(mat: Matrix): Matrix
 {
-    return new DAGCliques(preset_dag_embedding("cube").dag)
+    let newmat = mat.clone();
+
+    let pivot_row = 0;
+    let pivot_col = 0;
+
+    for(let c = 0; c < mat.width; c++)
+    {
+        if(newmat.get_entry(pivot_row,pivot_col) == 0)
+        {
+            for(let r = pivot_row+1; r < newmat.height; r++) {
+                if(newmat.get_entry(r, pivot_col) != 0) {
+                    newmat.swap_rows(r, pivot_row);
+                    break;
+                }
+            }
+        }
+
+        if(newmat.get_entry(pivot_row,pivot_col) == 0)
+        {
+            pivot_col += 1;
+            continue;
+        }
+
+        newmat.scale_row(c,1/newmat.get_entry(pivot_row,pivot_col));
+        
+        for(let i = 0; i < newmat.height; i++)
+        {
+            if(pivot_row == i) continue;
+            newmat.add_scaled_row(
+                i, c,
+                -newmat.get_entry(i,pivot_col)
+            );
+        }
+    }
+
+    return newmat
 }
 
 function compute_basis_projection(basis: NVector[]): Matrix
@@ -761,6 +826,7 @@ function orthonorm_basis(basis: NVector[]): NVector[]
         {
             u = u.sub( v.proj_onto(ui) )
         }
+        on_basis.push(u);
     }
 
     for(let i = 0; i < on_basis.length; i++)
