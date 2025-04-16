@@ -24,10 +24,21 @@ export class FlowPolytope
     */
     readonly external_simplices: number[][];
 
-    constructor(dag_cliques: DAGCliques)
+    private constructor(
+        dim: number,
+        vertices: NVector[],
+        external_simplices: number[][]
+    )
+    {
+        this.dim = dim;
+        this.vertices = vertices;
+        this.external_simplices = external_simplices;
+    }
+
+    static from_cliques(dag_cliques: DAGCliques): FlowPolytope
     {
         let unreduced_dim = dag_cliques.dag.num_edges();
-        this.dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
+        let dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
 
         //Convert routes to vertices
         let unred_vertices: NVector[] = [];
@@ -53,13 +64,13 @@ export class FlowPolytope
         let centered_vertices = unred_vertices
             .map((v: NVector) => v.sub(center));
 
-
+        //Project onto basis
         let E = compute_basis_projection(basis);
-
         let projected_vertices = centered_vertices
             .map((v) => E.apply_to(v));
         
-        if(this.dim == 3 || this.dim == 2)
+        let vertices: NVector[];
+        if(dim == 3 || dim == 2)
         {
             /*
             This procedure tries to find an affine transformation that will make the 
@@ -76,12 +87,12 @@ export class FlowPolytope
             //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
             //(x-c)^TA(x-c)=1 to the unit sphere.
 
-            this.vertices = projected_vertices
+            vertices = projected_vertices
                 .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
         }
         else
         {
-            this.vertices = projected_vertices;
+            vertices = projected_vertices;
         }
 
         //computing the external simplices
@@ -89,7 +100,7 @@ export class FlowPolytope
         for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
         {
             //If 2-dimensional, *all* simplicies are external.
-            if (this.dim == 2)
+            if (dim == 2)
             {
                 external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
                 continue;
@@ -117,7 +128,9 @@ export class FlowPolytope
             }
             
         }
-        this.external_simplices = external_simplices;
+        return new FlowPolytope(
+            dim, vertices, external_simplices
+        );
     }
 
     private quotient(dag_cliques: DAGCliques): FlowPolytope
@@ -180,15 +193,7 @@ export class FlowPolytope
         let vertices: NVector[] = ob.vertices.map(
             (x) => new NVector(x)
         );
-        let just_fields = {
-            dim: ob.dim,
-            vertices,
-            external_simplices: structuredClone(ob.external_simplices)
-        };
-        let base = new FlowPolytope(empty_clique());
-        for(let field in just_fields)
-            //@ts-ignore
-            base[field] = just_fields[field]
+        let base = new FlowPolytope(ob.dim, vertices, structuredClone(ob.external_simplices));
         return Result.ok(base);
     }
 }

@@ -85,7 +85,7 @@ export class CliqueViewer implements IMode
         RIGHT_AREA.innerHTML = "";
 
         let cliques = new DAGCliques(dag.dag);
-        let polytope = new FlowPolytope(cliques);
+        let polytope = FlowPolytope.from_cliques(cliques);
 
         return new CliqueViewer
         (
