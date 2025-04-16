@@ -1,4 +1,5 @@
 import { preset_dag_embedding } from "../preset";
+import { Vector2 } from "../util/num";
 import { Result } from "../util/result";
 import { DAGCliques } from "./cliques";
 
@@ -53,61 +54,10 @@ export class FlowPolytope
             .map((v: NVector) => v.sub(center));
 
 
-        /*
-        The following is Gauss-Jordan elimination,
-        with the end of reducing the dimensionality
-        of the vertices to the 'true' dimension of the polytope.
-
-        Projects onto a new set of basis vectors, given by N-1 of
-        the vertices of the maximal clique, minus the remaining one.
-
-        The final matrix E is the necessary projection.
-        */    
-        let A = Matrix.from_columns(basis);
-        let E = Matrix.id(unreduced_dim);
-
-        let swap_both = (i: number, j: number) => 
-        {
-            A.swap_rows(i,j);
-            E.swap_rows(i,j);
-        }
-        let scale_both = (i: number, scalar: number) =>
-        {
-            A.scale_row(i,scalar);
-            E.scale_row(i,scalar);
-        }
-        let add_scaled_both = (add_to: number, add_from: number, scalar: number) => 
-        {
-            A.add_scaled_row(add_to, add_from, scalar);
-            E.add_scaled_row(add_to, add_from, scalar);
-        }
-
-        for(let c = 0; c < A.width; c++)
-        {
-            if(A.get_entry(c,c) == 0)
-            {
-                for(let r = c+1; r < A.height; r++) {
-                    if(A.get_entry(r, c) != 0) {
-                        swap_both(c,r);
-                        break;
-                    }
-                }
-            }
-
-            scale_both(c,1/A.get_entry(c,c));
-            
-            for(let i = 0; i < A.height; i++)
-            {
-                if(c == i) continue;
-                add_scaled_both(
-                    i, c,
-                    -A.get_entry(i,c)
-                );
-            }
-        }
+        let E = compute_basis_projection(basis);
 
         let projected_vertices = centered_vertices
-            .map((v) => E.apply_to(v).trunc(this.dim));
+            .map((v) => E.apply_to(v));
         
         if(this.dim == 3 || this.dim == 2)
         {
@@ -168,6 +118,32 @@ export class FlowPolytope
             
         }
         this.external_simplices = external_simplices;
+    }
+
+    private quotient(dag_cliques: DAGCliques): FlowPolytope
+    {
+        let exceptional_span: NVector[] = [];
+        for(let i of dag_cliques.exceptional_routes)
+            exceptional_span.push(this.vertices[i])
+        if(exceptional_span.length <= 1)
+            return this;
+
+        let qdim = this.dim - exceptional_span.length + 1;
+        
+
+        let center = exceptional_span[0];
+        let e_basis: NVector[] = [];
+        for(let i = 1; i < exceptional_span.length; i++)
+        {
+            e_basis.push(
+                exceptional_span[i].sub(exceptional_span[0])
+            );
+        }
+        let on_e_basis = orthonorm_basis(e_basis);
+
+
+
+        throw new Error("Not yet implemented!");
     }
 
     to_json_ob(): JSONFlowPolytope
@@ -305,6 +281,16 @@ class NVector
             out += this.coordinates[i] * vec.coordinates[i];
 
         return out;
+    }
+
+    proj_onto(onto: NVector): NVector
+    {
+        if(Math.abs(onto.norm()) <= 0.00001)
+            return NVector.zero(this.dim())
+
+        return onto.scale(
+            this.dot(onto) / onto.dot(onto)
+        )
     }
 
     as_row_matrix(): Matrix
@@ -693,4 +679,89 @@ function cholesky_decomposition(A: Matrix): Matrix
 function empty_clique(): DAGCliques
 {
     return new DAGCliques(preset_dag_embedding("cube").dag)
+}
+
+function compute_basis_projection(basis: NVector[]): Matrix
+{
+    /*
+    The following is Gauss-Jordan elimination,
+    with the end of reducing the dimensionality
+    of the vertices to the 'true' dimension of the polytope.
+
+    Projects onto a new set of basis vectors, given by N-1 of
+    the vertices of the maximal clique, minus the remaining one.
+
+    The final matrix E is the necessary projection.
+    */    
+    let unred_dim = basis[0].dim();
+    let dim = basis.length;
+
+    let A = Matrix.from_columns(basis);
+    let E = Matrix.id(unred_dim);
+
+    let swap_both = (i: number, j: number) => 
+    {
+        A.swap_rows(i,j);
+        E.swap_rows(i,j);
+    }
+    let scale_both = (i: number, scalar: number) =>
+    {
+        A.scale_row(i,scalar);
+        E.scale_row(i,scalar);
+    }
+    let add_scaled_both = (add_to: number, add_from: number, scalar: number) => 
+    {
+        A.add_scaled_row(add_to, add_from, scalar);
+        E.add_scaled_row(add_to, add_from, scalar);
+    }
+
+    for(let c = 0; c < A.width; c++)
+    {
+        if(A.get_entry(c,c) == 0)
+        {
+            for(let r = c+1; r < A.height; r++) {
+                if(A.get_entry(r, c) != 0) {
+                    swap_both(c,r);
+                    break;
+                }
+            }
+        }
+
+        scale_both(c,1/A.get_entry(c,c));
+        
+        for(let i = 0; i < A.height; i++)
+        {
+            if(c == i) continue;
+            add_scaled_both(
+                i, c,
+                -A.get_entry(i,c)
+            );
+        }
+    }
+
+    let trunc = Matrix.zero_rect(unred_dim, dim);
+    for(let i = 0; i < dim; i++)
+        trunc.inner[i][i] = 1;
+
+    return trunc.mul(E);
+}
+
+function orthonorm_basis(basis: NVector[]): NVector[]
+{
+    let on_basis: NVector[] = [];
+    for(let v of basis)
+    {
+        let u = v;
+        for(let ui of on_basis)
+        {
+            u = u.sub( v.proj_onto(ui) )
+        }
+    }
+
+    for(let i = 0; i < on_basis.length; i++)
+    {
+        on_basis[i] = on_basis[i].scale(1/on_basis[i].norm())
+    }
+
+    return on_basis;
 }
