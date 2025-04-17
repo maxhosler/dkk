@@ -1,7 +1,7 @@
 import { preset_dag_embedding } from "../preset";
 import { Vector2 } from "../util/num";
 import { Result } from "../util/result";
-import { DAGCliques } from "./cliques";
+import { Clique, DAGCliques } from "./cliques";
 
 /*
 This class contains the geometric data about the polytope, 
@@ -203,6 +203,8 @@ export class FlowPolytope
             }
             ker_basis.push(vec)
         }
+        console.log(ker_basis);
+        console.log(m_rref);
         let on_ker_basis = orthonorm_basis(ker_basis);
         
         let to_onk_basis = (vec: NVector) => {
@@ -219,7 +221,6 @@ export class FlowPolytope
         }
 
         let external_simplices: number[][] = [];
-
         if(qdim == 2)
         {
             for(let clq of dag_cliques.cliques)
@@ -229,20 +230,84 @@ export class FlowPolytope
         }
         if(qdim == 3)
         {
-            for(let clq of dag_cliques.cliques)
+            const reduced_clq = (clq: Clique) =>
             {
-                let routes: number[] = [];
+                let has_quot_pt = false;
+                let out: number[] = [];
                 for(let r of clq.routes)
                 {
-                    if(vertices[r].norm() >= 0.001)
-                        routes.push(r);
+                    if(vertices[r].norm() <= 0.001)
+                    {
+                        if(has_quot_pt) continue;
+                        has_quot_pt = true;
+                    }
+                    out.push(r)
                 }
-                external_simplices.push(routes);
+                return out;
+            };
+            const all_but = (routes: number[], idx: number) =>
+            {
+                let out: number[] = [];
+                for(let i = 0; i < 4; i++)
+                    if(i!=idx)
+                        out.push(routes[i])
+                return out;
+            }
+            const cross = (v1: NVector, v2: NVector) =>
+            {
+                if (v1.dim() != 3 || v2.dim() != 3)
+                    throw new Error("Can't cross non-dimension 3!")
+                
+                let a = v1.coordinates;
+                let b = v2.coordinates;
+
+                let crs = [
+                    a[1]*b[2] - a[2]*b[1],
+                    a[0]*b[2] - a[2]*b[0],
+                    a[0]*b[1] - a[1]*b[0],
+                ]
+                return new NVector(crs);
+            }
+            for(let clq of dag_cliques.cliques)
+            {
+                let reduced = reduced_clq(clq);
+                for(let i = 0; i < 4; i++)
+                {
+                    let face = all_but(reduced, i);
+                    let center = vertices[face[0]];
+                    let normal = cross(
+                        vertices[face[1]].sub(center),
+                        vertices[face[2]].sub(center)
+                    );
+
+                    let external = true;
+                    let orentation = 0;
+                    for(let v of vertices)
+                    {
+                        let o = v.sub(center).dot(normal);
+                        if(Math.abs(orentation) <= 0.0001)
+                        {
+                            orentation = o;
+                        }
+                        else
+                        {
+                            if(o*orentation < -0.0001)
+                            {  
+                                external = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(external)
+                        external_simplices.push(face);
+                }
             }
         }
 
         if(qdim == 3 || qdim == 2)
         {
+            try{
             /*
             This procedure tries to find an affine transformation that will make the 
             polytope look 'nice' (i.e. not squashed), for visualization purposes. It
@@ -260,6 +325,11 @@ export class FlowPolytope
 
             vertices = vertices
                 .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
+            }
+            catch
+            {
+                console.warn("Ellipsoid matrix noninvertible?")
+            }
         }
 
         return new FlowPolytope(
@@ -816,7 +886,7 @@ function compute_rref(mat: Matrix): {M: Matrix, free_columns: number[]}
 
     let free_columns: number[] = [];
 
-    for(let c = 0; c < mat.width; c++)
+    while(pivot_col < mat.width)
     {
         if(newmat.get_entry(pivot_row,pivot_col) == 0)
         {
@@ -835,16 +905,17 @@ function compute_rref(mat: Matrix): {M: Matrix, free_columns: number[]}
             continue;
         }
 
-        newmat.scale_row(c,1/newmat.get_entry(pivot_row,pivot_col));
+        newmat.scale_row(pivot_row,1/newmat.get_entry(pivot_row,pivot_col));
         
         for(let i = 0; i < newmat.height; i++)
         {
             if(pivot_row == i) continue;
             newmat.add_scaled_row(
-                i, c,
+                i, pivot_row,
                 -newmat.get_entry(i,pivot_col)
             );
         }
+        pivot_col += 1;
     }
 
     return {M:newmat, free_columns}
