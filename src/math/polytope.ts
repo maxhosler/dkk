@@ -203,8 +203,6 @@ export class FlowPolytope
             }
             ker_basis.push(vec)
         }
-        console.log(ker_basis);
-        console.log(m_rref);
         let on_ker_basis = orthonorm_basis(ker_basis);
         
         let to_onk_basis = (vec: NVector) => {
