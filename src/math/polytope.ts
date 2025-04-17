@@ -218,31 +218,31 @@ export class FlowPolytope
             vertices.push(to_onk_basis(vec.sub(center)))
         }
 
+        const reduced_clq = (clq: Clique) =>
+        {
+            let has_quot_pt = false;
+            let out: number[] = [];
+            for(let r of clq.routes)
+            {
+                if(vertices[r].norm() <= 0.001)
+                {
+                    if(has_quot_pt) continue;
+                    has_quot_pt = true;
+                }
+                out.push(r)
+            }
+            return out;
+        };
         let external_simplices: number[][] = [];
         if(qdim == 2)
         {
             for(let clq of dag_cliques.cliques)
             {
-                external_simplices.push(structuredClone(clq.routes))
+                external_simplices.push(reduced_clq(clq))
             }
         }
         if(qdim == 3)
         {
-            const reduced_clq = (clq: Clique) =>
-            {
-                let has_quot_pt = false;
-                let out: number[] = [];
-                for(let r of clq.routes)
-                {
-                    if(vertices[r].norm() <= 0.001)
-                    {
-                        if(has_quot_pt) continue;
-                        has_quot_pt = true;
-                    }
-                    out.push(r)
-                }
-                return out;
-            };
             const all_but = (routes: number[], idx: number) =>
             {
                 let out: number[] = [];

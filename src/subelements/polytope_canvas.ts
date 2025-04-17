@@ -189,9 +189,13 @@ export class PolytopeCanvas
                 ex_indices.push(ex_indices.length);
             }
 
-            let get_ex_vert = (i: number) => {
+            const get_ex_vert = (i: number) => {
                 return structuredClone(this.vertex_positions[external_tri[i]]) as Triple;
             };
+
+            let center = [0,0,0];
+            if(poly.dim == 2)
+                center = [0,0,1];
 
             //COMPUTE NORMALS
             let normal = get_normal(
