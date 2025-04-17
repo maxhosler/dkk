@@ -35,7 +35,7 @@ export class FlowPolytope
         this.external_simplices = external_simplices;
     }
 
-    static from_cliques(dag_cliques: DAGCliques): FlowPolytope
+    static from_cliques(dag_cliques: DAGCliques): {normal: FlowPolytope, quotient: FlowPolytope}
     {
         let unreduced_dim = dag_cliques.dag.num_edges();
         let dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
@@ -128,12 +128,17 @@ export class FlowPolytope
             }
             
         }
-        return new FlowPolytope(
+        let normal = new FlowPolytope(
             dim, vertices, external_simplices
         );
+
+        return {
+            normal,
+            quotient: normal.quotient(dag_cliques)
+        }
     }
 
-    quotient(dag_cliques: DAGCliques): FlowPolytope
+    private quotient(dag_cliques: DAGCliques): FlowPolytope
     {
         let exceptional_simplex: NVector[] = [];
         for(let i of dag_cliques.exceptional_routes)
@@ -207,17 +212,40 @@ export class FlowPolytope
             return new NVector(coords);
         };
 
-        let projected: NVector[] = [];
+        let vertices: NVector[] = [];
         for(let vec of this.vertices)
         {
-            projected.push(to_onk_basis(vec.sub(center)))
+            vertices.push(to_onk_basis(vec.sub(center)))
         }
 
-        console.log(projected)
+        let external_simplices: number[][] = [];
 
-        //TODO: compute basis of kernel, orthonormalize, project onto.
+        if(qdim == 2)
+        {
+            for(let clq of dag_cliques.cliques)
+            {
+                external_simplices.push(structuredClone(clq.routes))
+            }
+        }
+        if(qdim == 3)
+        {
+            for(let clq of dag_cliques.cliques)
+            {
+                let routes: number[] = [];
+                for(let r of clq.routes)
+                {
+                    if(vertices[r].norm() >= 0.001)
+                        routes.push(r);
+                }
+                external_simplices.push(routes);
+            }
+        }
 
-        throw new Error("Not yet implemented!");
+        return new FlowPolytope(
+            qdim,
+            vertices,
+            external_simplices
+        )
     }
 
     to_json_ob(): JSONFlowPolytope
