@@ -241,6 +241,27 @@ export class FlowPolytope
             }
         }
 
+        if(qdim == 3 || qdim == 2)
+        {
+            /*
+            This procedure tries to find an affine transformation that will make the 
+            polytope look 'nice' (i.e. not squashed), for visualization purposes. It
+            does this by finding the minimum bounding ellipsoid, and computing a 
+            transformation which will turn that ellipsoid into a sphere.
+            */
+
+            let {matrix: A, center} = min_bounding_ellipsoid(vertices);
+
+            let B = cholesky_decomposition(A.inv());
+
+            //This has the property that B^T A B = I
+            //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
+            //(x-c)^TA(x-c)=1 to the unit sphere.
+
+            vertices = vertices
+                .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
+        }
+
         return new FlowPolytope(
             qdim,
             vertices,

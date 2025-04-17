@@ -55,7 +55,6 @@ export class PolytopeCanvas
 {
     readonly root: HTMLDivElement;
     readonly canvas: HTMLCanvasElement;
-    readonly text_overlay: HTMLDivElement;
     readonly draw_options: DrawOptions;
 
     readonly ctx: WebGLRenderingContext;
@@ -87,15 +86,11 @@ export class PolytopeCanvas
     private constructor(root: HTMLDivElement, draw_options: DrawOptions)
     {
         this.root = root;
-        this.root.id = "poly-root";
+        this.root.className = "poly-root";
         this.draw_options = draw_options;
 
         this.canvas = document.createElement("canvas")
         this.root.appendChild(this.canvas);
-
-        this.text_overlay = document.createElement("div");
-        this.text_overlay.id = "poly-canvas-overlay";
-        this.root.appendChild(this.text_overlay);
 
         this.ctx = this.canvas.getContext("webgl") as WebGLRenderingContext;
         this.external_buffers = new FaceBuffers(
@@ -171,7 +166,6 @@ export class PolytopeCanvas
     set_polytope(poly: FlowPolytope, current_clique: Clique)
     {
         this.poly_dim = poly.dim;
-        this.set_message();
         if(!this.do_render()) {return;}
 
 
@@ -381,11 +375,6 @@ export class PolytopeCanvas
 
             dot_indices.length
         );
-    }
-
-    set_message()
-    {
-        //this.text_overlay.innerText = "Polytope dimension: " + this.poly_dim.toString();
     }
 
     new_float_buffer(arr: number[]): WebGLBuffer
