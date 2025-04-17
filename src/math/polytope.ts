@@ -166,7 +166,54 @@ export class FlowPolytope
         }
         
         let M = Matrix.from_columns(projection);
-        let m_rref = compute_rref(M);
+        let {M: m_rref, free_columns} = compute_rref(M);
+
+        let ker_basis: NVector[] = [];
+        for(let free of free_columns)
+        {
+            let vec = NVector.basis( m_rref.width, free );
+            for(let row = 0; row < m_rref.height; row++)
+            {
+                let x = m_rref.get_entry(row, free);
+                if(Math.abs(x) >= 0.0001)
+                {
+                    let full_row = m_rref.get_row_vec(row);
+                    let leading_pos: number | undefined = undefined;
+                    for(let i = 0; i < full_row.coordinates.length; i++)
+                    {
+                        if(Math.abs(full_row.coordinates[i]) >= 0.0001)
+                        {
+                            leading_pos = i;
+                            break;
+                        }
+                    }
+
+                    if(typeof leading_pos != "number")
+                        throw new Error("No leading 0?")
+
+                    vec = vec.add(
+                        NVector.basis(m_rref.width, leading_pos).scale(-x)
+                    )
+                }
+            }
+            ker_basis.push(vec)
+        }
+        let on_ker_basis = orthonorm_basis(ker_basis);
+        
+        let to_onk_basis = (vec: NVector) => {
+            let coords: number[] = [];
+            for(let b of on_ker_basis)
+                coords.push(vec.dot(b))
+            return new NVector(coords);
+        };
+
+        let projected: NVector[] = [];
+        for(let vec of this.vertices)
+        {
+            projected.push(to_onk_basis(vec.sub(center)))
+        }
+
+        console.log(projected)
 
         //TODO: compute basis of kernel, orthonormalize, project onto.
 
@@ -711,12 +758,14 @@ function cholesky_decomposition(A: Matrix): Matrix
     return new Matrix(n,n,L);
 }
 
-function compute_rref(mat: Matrix): Matrix
+function compute_rref(mat: Matrix): {M: Matrix, free_columns: number[]}
 {
     let newmat = mat.clone();
 
     let pivot_row = 0;
     let pivot_col = 0;
+
+    let free_columns: number[] = [];
 
     for(let c = 0; c < mat.width; c++)
     {
@@ -732,6 +781,7 @@ function compute_rref(mat: Matrix): Matrix
 
         if(newmat.get_entry(pivot_row,pivot_col) == 0)
         {
+            free_columns.push(pivot_col);
             pivot_col += 1;
             continue;
         }
@@ -748,7 +798,7 @@ function compute_rref(mat: Matrix): Matrix
         }
     }
 
-    return newmat
+    return {M:newmat, free_columns}
 }
 
 function compute_basis_projection(basis: NVector[]): Matrix
