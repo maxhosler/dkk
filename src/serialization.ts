@@ -1,4 +1,5 @@
 import { Schema } from "zod";
+import { Result } from "./util/result";
 
 export abstract class JSONable
 {
@@ -7,9 +8,10 @@ export abstract class JSONable
         throw new Error('Method not implemented! Use derived class');
     }
 
-    abstract to_json_object(): Object
-    to_json(): string
+    abstract to_json_object(): Object;
+
+    static parse_json(ob: Object): Result<any>
     {
-        return JSON.stringify(this.to_json_object())
+        throw new Error('Method not implemented! Use derived class');
     }
 }

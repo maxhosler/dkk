@@ -769,14 +769,14 @@ export class DAGCliques
 			mutations: structuredClone(this.mutations),
 			clique_leq_matrix: structuredClone(this.clique_leq_matrix),
 			shared_subroutes_arr: structuredClone(this.shared_subroutes_arr),
-			hasse: this.hasse.to_json_ob()
+			hasse: this.hasse.to_json_object()
 		}
 	}
 
 	static from_json_ob(ob: JSONDAGCliques): Result<DAGCliques>
 	{
 		let fd = FramedDAG.from_json_ob(ob.dag);
-		let hd = HasseDiagram.from_json_ob(ob.hasse);
+		let hd = HasseDiagram.parse_json(ob.hasse);
 		let ssr = verify_ssr(ob.shared_subroutes_arr);
 		if(fd.is_err())
 			return fd.err_to_err();

@@ -1,11 +1,13 @@
+import { JSONable } from "../serialization";
 import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Result } from "../util/result";
 import { Brick, Clique } from "./cliques";
+import { z, ZodType } from 'zod';
 
 /*
 Structure containing information for the Hasse diagram.
 */
-export class HasseDiagram
+export class HasseDiagram implements JSONable
 {
     readonly poset_size: number;
     //this.covering_relation[i][j] (is true) => C_i is covered by C_j
@@ -345,22 +347,38 @@ export class HasseDiagram
         return badness;
     }
 
-    to_json_ob(): JSONHasseDiagram
+    static json_schema(): ZodType<JSONHasseDiagram> {
+        return z.object({
+            poset_size: z.number(),
+            covering_relation: z.boolean().array().array(),
+            layout_rows: Vector2.json_schema().array(),
+            bounding_box: BoundingBox.json_schema(),
+            minimal_elt: z.number(),
+            maximal_elt: z.number(),
+            cover_routes: z.tuple([z.number(),z.number()]).array().array()
+        })
+    }
+    to_json_object(): JSONHasseDiagram
     {
         return {
             poset_size: this.poset_size,
             covering_relation: structuredClone(this.covering_relation),
-            layout_rows: this.layout_rows.map(x => x.to_json_ob()),
-            bounding_box: this.bounding_box.to_json_ob(),
+            layout_rows: this.layout_rows.map(x => x.to_json_object()),
+            bounding_box: this.bounding_box.to_json_object(),
             minimal_elt: this.minimal_elt,
             maximal_elt: this.maximal_elt,
             cover_routes: structuredClone(this.cover_routes)
         }
     }
 
-    static from_json_ob(ob: JSONHasseDiagram): Result<HasseDiagram>
+
+    static parse_json(raw_ob: Object): Result<HasseDiagram>
     {
-        //TODO: Validate
+        let res = HasseDiagram.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("ParseErr", res.error.toString());
+
+        let ob = res.data;
         let layout_rows: Vector2[] = ob.layout_rows.map(
             (x) => new Vector2(x[0], x[1])
         )
