@@ -193,7 +193,7 @@ export class PolytopeCanvas
                 return structuredClone(this.vertex_positions[external_tri[i]]) as Triple;
             };
 
-            let center = [0,0,0];
+            let center: Triple = [0,0,0];
             if(poly.dim == 2)
                 center = [0,0,1];
 
@@ -202,7 +202,7 @@ export class PolytopeCanvas
                 get_ex_vert(0),
                 get_ex_vert(1),
                 get_ex_vert(2),
-                [0,0,0]
+                center
             )
 
             for(let i = 0; i < 3; i++) {
