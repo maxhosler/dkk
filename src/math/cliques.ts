@@ -1,6 +1,7 @@
 import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option, Result } from "../util/result";
 import { BrickHasseDiagram, HasseDiagram, JSONHasseDiagram } from "./hasse";
+import { ZodType } from "zod";
 
 //Just a wrapper around a list of numbers, each representing an edge
 class Route
@@ -747,81 +748,21 @@ export class DAGCliques
 		return this.mutations[clique_idx][idx_in_clique];
 	}
 
-	to_json_ob(): JSONDAGCliques
+	static json_schema(): ZodType<JSONDAGCliques>
 	{
-		let routes: number[][] = [];
-		let cliques: number[][] = [];
-		for(let r of this.routes)
-		{
-			routes.push(structuredClone(r.edges))
-		}
-		for(let c of this.cliques)
-		{
-			cliques.push(structuredClone(c.routes))
-		}
-		return {
-			dag: this.dag.to_json_ob(),
-			routes,
-			cliques,
-			clique_size: this.clique_size,
-
-			exceptional_routes: structuredClone(this.exceptional_routes),
-			mutations: structuredClone(this.mutations),
-			clique_leq_matrix: structuredClone(this.clique_leq_matrix),
-			shared_subroutes_arr: structuredClone(this.shared_subroutes_arr),
-			hasse: this.hasse.to_json_object()
-		}
+		//TODO: IMPL
+		throw new Error("Not yet implemented!")
+	}
+	to_json_object(): JSONDAGCliques
+	{
+		//TODO: IMPL
+		throw new Error("Not yet implemented!")
 	}
 
-	static from_json_ob(ob: JSONDAGCliques): Result<DAGCliques>
+	static parse_json(raw_ob: Object): Result<DAGCliques>
 	{
-		let fd = FramedDAG.from_json_ob(ob.dag);
-		let hd = HasseDiagram.parse_json(ob.hasse);
-		let ssr = verify_ssr(ob.shared_subroutes_arr);
-		if(fd.is_err())
-			return fd.err_to_err();
-		if(hd.is_err())
-			return hd.err_to_err();
-		if(ssr.is_err())
-			return ssr.err_to_err();
-
-		if(!is_list_of_lists(ob.routes, "number"))
-			return Result.err("InvalidField", `DAGCliques field 'routes' is not an array of arrays of numbers.`);
-		if(!is_list_of_lists(ob.cliques, "number"))
-			return Result.err("InvalidField", `DAGCliques field 'cliques' is not an array of arrays of numbers.`);
-		if(typeof ob.clique_size != "number")
-			return Result.err("InvalidField", `DAGCliques field 'clique_size' is not a number.`);
-		if(!is_list_of_numbers(ob.exceptional_routes))
-			return Result.err("InvalidField", `DAGCliques field 'exceptional_routes' is not an array of numbers.`);
-		if(!is_list_of_lists(ob.mutations, "number"))
-			return Result.err("InvalidField", `DAGCliques field 'mutations' is not an array of arrays of numbers.`);
-		if(!is_list_of_lists(ob.clique_leq_matrix, "boolean"))
-			return Result.err("InvalidField", `DAGCliques field 'route_swaps' is not an array of arrays of booleans.`);		
-
-		let just_fields = {
-			dag: fd.unwrap(),
-			routes: ob.routes.map(x => new Route(x)),
-			cliques: ob.cliques.map(x => new Clique(x)),
-			clique_size: ob.clique_size,
-
-			exceptional_routes: structuredClone(ob.exceptional_routes),
-			mutations: structuredClone(ob.mutations),
-			clique_leq_matrix: structuredClone(ob.clique_leq_matrix),
-			shared_subroutes_arr: ssr.unwrap(),
-			hasse: hd.unwrap()
-		}
-
-		//This is a bit of a janky hack to get the DAGCliques object to have its methods;
-		//Create an object with a small, basically empty DAG, and then just copy in the 
-		//actual values.
-		let base = new DAGCliques(empty_fd());
-		for(let field in just_fields)
-		{
-			// @ts-ignore
-			base[field] = just_fields[field];
-		}
-
-		return Result.ok(base);
+		//TODO: IMPL
+		throw new Error("Not yet implemented!")
 	}
 }
 export type JSONDAGCliques = {
@@ -842,108 +783,4 @@ function empty_fd(): FramedDAG
 	let dag = new FramedDAG(2);
 	dag.add_edge(0,1);
 	return dag;
-}
-
-function is_list_of_lists(x: any, type: string): boolean
-{
-	if(typeof x.length != "number")
-		return false;
-	let y = (x as any[]);
-	for(let i of y)
-	{
-		if(typeof i.length != "number")
-			return false;
-		let z = (i as any[])
-		for(let j of z)
-			if(typeof j != type)
-				return false;
-	}
-	return true;
-}
-
-function is_list_of_numbers(x: any): boolean
-{
-	if(typeof x.length != "number")
-		return false;
-	for(let y of (x as any[]))
-		if(typeof y != "number")
-			return false;
-	return true;
-}
-
-/*
-This verifies x is a SharedSubrouteCollection[][]. The reason this returns a Result,
-rather than just returning true or false, is that the Option<[number,number]>s in 
-the SharedSubroute struct need to be actually converted into Options, since JSON 
-objects don't remember their methods.
-*/
-function verify_ssr(x: any): Result<SharedSubrouteCollection[][]>
-{
-	let out: SharedSubrouteCollection[][] = [];
-
-	if(!x.length)
-		return Result.err("MissingField", "SharedSubroutes not array.");
-	let y = x as any[];
-	for(let y of x)
-	{
-		if(!y.length)
-			return Result.err("MissingField", "SharedSubroutes not array of arrays.");
-		let z = y as any[];
-		out.push([])
-		for(let w of z)
-		{
-			if(!w.length)
-				return Result.err("MissingField", "SharedSubroutes not array of arrays of arrays.");
-			let s = w as any[];
-			out[out.length-1].push([]);
-			for(let ssr of s)
-			{
-				if(typeof ssr.in_vert != "number")
-					return Result.err("InvalidField", "SharedSubroute.in_vert not a number.");
-				if(typeof ssr.out_vert != "number")
-				{
-					return Result.err("InvalidField", "SharedSubroute.out_vert not a number.");
-				}
-				for(let field of ["in_edges", "out_edges"])
-				{
-					let data = ssr[field];
-					if( typeof data.valid != "boolean" )
-						return Result.err("InvalidField", `SharedSubroute.${field} not an Option.`);
-					if( typeof data.value != "undefined" && !is_list_of_numbers(data.value) )
-						return Result.err("InvalidField", `SharedSubroute.${field} not an Option.`);
-				}
-				if(!is_list_of_numbers(ssr.edges))
-					return Result.err("InvalidField", "SharedSubroute.edges not a list of numbers. " + ssr.edges.toString());
-				if(!([-1,0,1].includes(ssr.in_order)))
-					return Result.err("InvalidField", "SharedSubroute.in_order not an orientation.");
-				if(!([-1,0,1].includes(ssr.out_order)))
-					return Result.err("InvalidField", "SharedSubroute.out_order not an orientation.");
-
-				let in_edges: Option<[number, number]> = Option.none();
-				let out_edges: Option<[number, number]> = Option.none();
-				(in_edges as any).valid = ssr.in_edges.valid;
-				(in_edges as any).value = ssr.in_edges.value;
-				(out_edges as any).valid = ssr.out_edges.valid;
-				(out_edges as any).value = ssr.out_edges.value;
-
-				let true_ssr: SharedSubroute = {
-					in_vert: ssr.in_vert,
-					out_vert: ssr.out_vert,
-
-					edges: ssr.edges,
-					in_order: ssr.in_order,
-					out_order: ssr.out_order,
-					in_edges,
-					out_edges
-				};
-
-				out[out.length-1][out[out.length-1].length-1].push(true_ssr);
-
-
-			}
-		}
-
-	}
-
-	return Result.ok(out);
 }

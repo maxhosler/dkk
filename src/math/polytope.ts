@@ -1,4 +1,6 @@
+import { z, ZodType } from "zod";
 import { preset_dag_embedding } from "../preset";
+import { JSONable } from "../serialization";
 import { Vector2 } from "../util/num";
 import { Result } from "../util/result";
 import { Clique, DAGCliques } from "./cliques";
@@ -8,7 +10,7 @@ This class contains the geometric data about the polytope,
 precomputed when it is passed a copy of the DAGCliques object.
 */
 
-export class FlowPolytope
+export class FlowPolytope implements JSONable
 {
     
     readonly dim: number;
@@ -337,42 +339,26 @@ export class FlowPolytope
         )
     }
 
-    to_json_ob(): JSONFlowPolytope
-	{
-        let vertices: number[][] = [];
-        for(let vec of this.vertices)
-        {
-            vertices.push(structuredClone(vec.coordinates))
-        }
-		return {
-            dim: this.dim,
-            vertices,
-            external_simplices: structuredClone(this.external_simplices)
-        }
-	}
-
-    static from_json_ob(ob: JSONFlowPolytope): Result<FlowPolytope>
+    static json_schema(): ZodType<JSONFlowPolytope> {
+        return z.object({
+            dim: z.number(),
+            vertices: z.number().array().array(),
+            external_simplices: z.number().array().array()
+        })
+    }
+    to_json_object(): JSONFlowPolytope
     {
-        for(let field of ["dim", "vertices", "external_simplices"])
-			if(!(field in ob))
-				return Result.err("MissingField", "FlowPolytope is missing field: "+field);
-        if(typeof ob.dim != "number")
-            return Result.err("InvalidField", "FlowPolytope field 'num' is not a number.");
-        for(let field of ["vertices", "external_simplices"]) {
-            let data = (ob as any)[field];
-            if(typeof data.length != "number")
-                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array.`);
-            if(data.length > 0 && typeof data[0].length != "number")
-                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays.`);
-            if(data[0].length > 0 && typeof data[0][0]!= "number")
-                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays of numbers.`);
+        return {
+            dim: this.dim,
+            vertices: this.vertices.map((x) => structuredClone(x.coordinates)),
+            external_simplices: structuredClone(this.external_simplices),
         }
+    }
 
-        let vertices: NVector[] = ob.vertices.map(
-            (x) => new NVector(x)
-        );
-        let base = new FlowPolytope(ob.dim, vertices, structuredClone(ob.external_simplices));
-        return Result.ok(base);
+    static parse_json(raw_ob: Object): Result<FlowPolytope>
+    {
+        //TODO: IMPL
+        throw new Error("Not yet implemented!")
     }
 }
 export type JSONFlowPolytope = {
