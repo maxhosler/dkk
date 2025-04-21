@@ -126,7 +126,7 @@ export class Vector2 implements JSONable
 		let ob2 = this.json_schema().safeParse(ob);
 		if(ob2.success)
 			return Result.ok(new Vector2(ob2.data[0], ob2.data[1]));
-		return Result.err("ParseErr", ob2.error.toString())
+		return Result.err("MalformedData", ob2.error.toString())
 		
 	}
 
@@ -439,7 +439,7 @@ export class BoundingBox implements JSONable
 			return Result.ok(bb);
 		}
 			
-		return Result.err("ParseErr", res.error.toString())
+		return Result.err("MalformedData", res.error.toString())
 		
 	}
 	to_json_object(): JSONBoundingBox

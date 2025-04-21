@@ -357,8 +357,16 @@ export class FlowPolytope implements JSONable
 
     static parse_json(raw_ob: Object): Result<FlowPolytope>
     {
-        //TODO: IMPL
-        throw new Error("Not yet implemented!")
+        let res = FlowPolytope.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", res.error.toString())
+
+        let vertices = res.data.vertices.map(
+            (x) => new NVector(x)
+        );
+        return Result.ok(
+            new FlowPolytope(res.data.dim, vertices, res.data.external_simplices)
+        );
     }
 }
 export type JSONFlowPolytope = {

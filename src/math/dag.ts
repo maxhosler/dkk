@@ -1,4 +1,4 @@
-import { ZodType } from "zod";
+import { z, ZodType } from "zod";
 import { JSONable } from "../serialization";
 import { Result, Option } from "../util/result";
 
@@ -284,20 +284,88 @@ export class FramedDAG implements JSONable
     }
 
     static json_schema(): ZodType<JSONFramedDag> {
-        //TODO: IMPL
-        throw new Error("Not yet implemented!")
+        return z.object({
+            num_verts: z.number(),
+            out_edges: z.number().array().array(),
+            in_edges: z.number().array().array()
+        })
     }
     to_json_object(): JSONFramedDag
     {
-        //TODO: IMPL
-        throw new Error("Not yet implemented!")
+        return {
+            num_verts: this.num_verts(),
+            out_edges: structuredClone(this.out_edges),
+            in_edges: structuredClone(this.in_edges)
+        }
     }
 
     static parse_json(raw_ob: Object): Result<FramedDAG>
     {
-        //TODO: IMPL
-        //TODO: VERIFY GRAPH PROPS
-        throw new Error("Not yet implemented!")
+        let res = FramedDAG.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", res.error.toString())
+        
+        let data = res.data;
+
+        let edges: {[e: number]: [number, number]} = {};
+        let max_edge = -1;
+        for(let v = 0; v < data.num_verts; v++)
+        {
+            for(let e of data.out_edges[v])
+            {
+                if(!(e in edges))
+                    edges[e] = [-1,-1]
+                if(edges[e][0] != -1) return Result.err("InvalidData", `Edge ${e} has multiple start points.`)
+                edges[e][0] = v;
+                max_edge = Math.max(e, max_edge);
+            }
+            for(let e of data.in_edges[v])
+            {
+                if(!(e in edges))
+                    edges[e] = [-1,-1]
+                if(edges[e][1] != -1) return Result.err("InvalidData", `Edge ${e} has multiple end points.`)
+                edges[e][1] = v;
+                max_edge = Math.max(e, max_edge);
+            }
+        }
+        let num_edges = max_edge + 1;
+
+        let out = new FramedDAG(data.num_verts);
+
+        for(let e = 0; e < num_edges; e++)
+        {
+            if(!(e in edges))
+                return Result.err("InvalidData", "Edge list not saturated.")
+
+            let edge = edges[e];
+
+            if(edge[0] == -1)
+                return Result.err("InvalidData", `Edge ${e} has no start point.`);
+            if(edge[1] == -1)
+                return Result.err("InvalidData", `Edge ${e} has no end point.`)
+
+            let succ = out.add_edge(edge[0], edge[1])
+
+            if(!succ.is_ok())
+                return succ.err_to_err()
+        }
+
+        for(let v = 0; v < data.num_verts; v++)
+        {
+            let in_framing = data.in_edges[v];
+            let out_framing = data.out_edges[v];
+
+            let in_succ = out.reorder_in_edges(v, in_framing);
+            let out_succ = out.reorder_out_edges(v, out_framing);
+
+            //Is this possible, given how the rest of the function works?
+            if(!in_succ)
+                return Result.err("InvalidData", `In-ordering on vertex ${v} invalid.`);
+            if(!out_succ)
+                return Result.err("InvalidData", `Out-ordering on vertex ${v} invalid.`)
+        }
+
+        return Result.ok(out);
     }
 
     static from_json_string(str: string): Result<FramedDAG>

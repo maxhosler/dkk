@@ -376,7 +376,7 @@ export class HasseDiagram implements JSONable
     {
         let res = HasseDiagram.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("ParseErr", res.error.toString());
+            return Result.err("MalformedData", res.error.toString());
 
         let ob = res.data;
         let layout_rows: Vector2[] = ob.layout_rows.map(
