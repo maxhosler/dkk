@@ -382,9 +382,6 @@ export class FramedDAG implements JSONable
                 "JSON file was malformed."
             );
         }
-        for(let field of ["num_verts", "out_edges", "in_edges"])
-            if(!(field in obj))
-                return Result.err("MissingField", "JSON missing field '"+field+"'.")
         
         let data = obj as JSONFramedDag;
 

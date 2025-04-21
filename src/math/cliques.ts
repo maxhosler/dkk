@@ -1,7 +1,7 @@
 import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option, Result } from "../util/result";
 import { BrickHasseDiagram, HasseDiagram, JSONHasseDiagram } from "./hasse";
-import { ZodType } from "zod";
+import { z, ZodType } from "zod";
 
 //Just a wrapper around a list of numbers, each representing an edge
 class Route
@@ -750,8 +750,19 @@ export class DAGCliques
 
 	static json_schema(): ZodType<JSONDAGCliques>
 	{
-		//TODO: IMPL
-		throw new Error("Not yet implemented!")
+		return z.object({
+			dag: FramedDAG.json_schema(),
+			routes: z.number().array().array(),
+			cliques: z.number().array().array(),
+			clique_size: z.number(),
+
+			exceptional_routes: z.number().array(),
+			mutations: z.number().array().array(),
+			clique_leq_matrix: z.boolean().array().array(),
+
+			shared_subroutes_arr: shared_subroute_schema().array().array().array(),
+			hasse: HasseDiagram.json_schema()
+		})
 	}
 	to_json_object(): JSONDAGCliques
 	{
@@ -765,6 +776,8 @@ export class DAGCliques
 		throw new Error("Not yet implemented!")
 	}
 }
+
+//TODO: Bricks
 export type JSONDAGCliques = {
 	dag: JSONFramedDag,
 	routes: number[][],
@@ -774,9 +787,36 @@ export type JSONDAGCliques = {
 	exceptional_routes: number[],
 	mutations: number[][],
 	clique_leq_matrix: boolean[][],
-	shared_subroutes_arr: SharedSubrouteCollection[][],
+	shared_subroutes_arr: JSONSharedSubroute[][][],
 	hasse: JSONHasseDiagram;
 };
+export type JSONSharedSubroute = {
+	in_vert: number,
+	out_vert: number,
+
+	in_edges?: [number, number],
+	out_edges?: [number, number],
+
+	edges: number[],
+
+	in_order: 1 | 0 | -1,
+	out_order: 1 | 0 | -1
+}
+function shared_subroute_schema(): ZodType<JSONSharedSubroute>
+{
+	return z.object({
+		in_vert: z.number(),
+		out_vert: z.number(),
+
+		in_edges: z.tuple([z.number(), z.number()]).or(z.undefined()),
+		out_edges: z.tuple([z.number(), z.number()]).or(z.undefined()),
+
+		edges: z.number().array(),
+
+		in_order: z.literal(1).or(z.literal(0)).or(z.literal(-1)),
+		out_order: z.literal(1).or(z.literal(0)).or(z.literal(-1))
+	})
+}
 
 function empty_fd(): FramedDAG
 {
