@@ -1,6 +1,8 @@
 import { Edge, FramedDAG, JSONFramedDag } from "../math/dag";
 import { Result } from "../util/result";
 import { Bezier, Vector2 } from "../util/num";
+import { JSONable } from "../serialization";
+import { z, ZodType } from "zod";
 
 
 /*
@@ -13,7 +15,7 @@ how edges are angled at their start and end.
 "vec-abs" just directly sets the normal vector at the start of the bezier curve
 */
 export type AngleOverrideType = "none" | "absolute" | "relative" | "vec-abs";
-export class AngleOverride
+export class AngleOverride implements JSONable
 {
 	readonly type: AngleOverrideType;
 	//Actual associated value, depends on the type
@@ -68,30 +70,43 @@ export class AngleOverride
 		return new AngleOverride("vec-abs", vec);
 	}
 
-	//This exists for things loaded from JSON.
-	static from_json_ob(obj: Object): Result<AngleOverride>
+	static json_schema(): ZodType<JSONAngleOverride> {
+		return z.object({
+			type: (
+				z.literal("none").or(
+				z.literal("absolute").or(
+				z.literal("relative").or(
+				z.literal("vec-abs")
+				)))
+			),
+			inner: z.number().or(z.tuple([z.number(), z.number()]))
+		})
+	}
+	to_json_object(): JSONAngleOverride
 	{
-		for(let field of ["inner", "type"])
-			if(!(field in obj))
-				return Result.err("MissingField", "AngleOverride missing field '" + field + "'.")
-		let x = obj as AngleOverride;
-		if(!(["none", "absolute", "relative", "vec-abs"].includes(x.type)))
-			return Result.err("InvalidData", "AngleOverride type invalid.")
-
-		let inner = x.inner;
-		if(typeof inner != "number")
-		{
-			if(!("x" in inner) || !("y" in inner))
-				return Result.err("InvalidData", "AngleOverride inner value invalid.")
-			if(typeof inner.x != "number" || typeof inner.y != "number")
-				return Result.err("InvalidData", "AngleOverride inner value invalid.")
-			inner = new Vector2(inner.x, inner.y);
+		let inner: number | [number, number];
+		if(typeof this.inner == "number")
+			inner = this.inner
+		else
+			inner = [this.inner.x, this.inner.y]
+		return {
+			type: structuredClone(this.type),
+			inner
 		}
-			
-		return Result.ok(new AngleOverride(
-			x.type,
-			x.inner
-		));
+	}
+	static parse_json(raw_ob: Object): Result<AngleOverride>
+	{
+		let res = AngleOverride.json_schema().safeParse(raw_ob);
+		if(!res.success)
+			return Result.err("MalformedData", res.error.toString());
+
+		let ob = res.data;
+		let inner: number | Vector2
+		if(typeof ob.inner == "number")
+			inner = ob.inner;
+		else
+			inner = new Vector2(ob.inner[0], ob.inner[1])
+		return Result.ok(new AngleOverride(ob.type, inner));
 	}
 }
 
@@ -119,14 +134,35 @@ export type VertData = {
 	spread_in: number
 }
 
+export type JSONAngleOverride = {
+	type: AngleOverrideType,
+	inner: [number, number] | number
+}
+export type JSONEdgeData =
+{
+	start_list_pos: [pos: number, out_of: number], 
+	//Same but for end
+	end_list_pos:   [pos: number, out_of: number],
+
+	//Overrides at start and end
+	start_ang_override: JSONAngleOverride,
+	end_ang_override:   JSONAngleOverride,
+}
+
+export type JSONVertData = {
+	position: [number, number],
+	spread_out: number,
+	spread_in: number
+}
+
 export type JSONFramedDagEmbedding =
 {
 	dag: JSONFramedDag,
-	vert_data: VertData[],
-	edge_data: EdgeData[]
+	vert_data: JSONVertData[],
+	edge_data: JSONEdgeData[]
 }
 
-export class FramedDAGEmbedding
+export class FramedDAGEmbedding implements JSONable
 {
 	readonly dag: FramedDAG;
 	
@@ -392,10 +428,17 @@ export class FramedDAGEmbedding
 		return res;
 	}
 
-	to_json_ob(): JSONFramedDagEmbedding
+	
+	static json_schema(): ZodType<JSONFramedDagEmbedding> {
+		return z.object({
+			dag: FramedDAG.json_schema(),
+			vert_data
+		})
+	}
+	to_json_object(): JSONFramedDagEmbedding
 	{
 		return {
-			dag: this.dag.to_json_ob(),
+			dag: this.dag.to_json_object(),
 			vert_data: structuredClone(this.vert_data),
 			edge_data: structuredClone(this.edge_data)
 		};
@@ -403,7 +446,7 @@ export class FramedDAGEmbedding
 
 	to_json(): string
 	{
-		return JSON.stringify(this.to_json_ob())
+		return JSON.stringify(this.to_json_object())
 	}
 
 	static from_json_ob(obj: JSONFramedDagEmbedding): Result<FramedDAGEmbedding>

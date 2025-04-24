@@ -109,10 +109,10 @@ export class CliqueViewer implements IMode
         let dag = FramedDAGEmbedding.from_json_ob(data.dag);
         if(dag.is_err())
             return dag.err_to_err();
-        let polytope = FlowPolytope.from_json_ob(data.polytope);
+        let polytope = FlowPolytope.parse_json(data.polytope);
         if(polytope.is_err())
             return polytope.err_to_err();
-        let cliques = DAGCliques.from_json_ob(data.cliques);
+        let cliques = DAGCliques.parse_json(data.cliques);
         if(cliques.is_err())
             return cliques.err_to_err();
         let hasse_overrides: {[key: number]: Vector2} = {};
@@ -1534,8 +1534,8 @@ export class CliqueViewer implements IMode
 
         return {
             dag: this.dag.to_json_ob(),
-            polytope: this.polytope.to_json_ob(),
-            cliques: this.cliques.to_json_ob(),
+            polytope: this.polytope.to_json_object(),
+            cliques: this.cliques.to_json_object(),
             hasse_overrides
         }
     }
