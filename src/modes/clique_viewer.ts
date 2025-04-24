@@ -106,7 +106,7 @@ export class CliqueViewer implements IMode
     ): Result<CliqueViewer>
     {
 
-        let dag = FramedDAGEmbedding.from_json_ob(data.dag);
+        let dag = FramedDAGEmbedding.parse_json(data.dag);
         if(dag.is_err())
             return dag.err_to_err();
         let polytope = FlowPolytope.parse_json(data.polytope);
@@ -1533,7 +1533,7 @@ export class CliqueViewer implements IMode
         }
 
         return {
-            dag: this.dag.to_json_ob(),
+            dag: this.dag.to_json_object(),
             polytope: this.polytope.to_json_object(),
             cliques: this.cliques.to_json_object(),
             hasse_overrides

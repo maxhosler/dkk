@@ -452,7 +452,7 @@ export class FramedDAGEmbedding implements JSONable
 		return JSON.stringify(this.to_json_object())
 	}
 
-	static from_json_object(raw_ob: Object): Result<FramedDAGEmbedding>
+	static parse_json(raw_ob: Object): Result<FramedDAGEmbedding>
 	{
         let res = FramedDAGEmbedding.json_schema().safeParse(raw_ob);
         if(!res.success)
@@ -504,7 +504,7 @@ export class FramedDAGEmbedding implements JSONable
             );
         }
 
-        return FramedDAGEmbedding.from_json_object(obj);
+        return FramedDAGEmbedding.parse_json(obj);
 	}
 }
 
