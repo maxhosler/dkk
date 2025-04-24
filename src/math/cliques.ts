@@ -766,8 +766,50 @@ export class DAGCliques
 	}
 	to_json_object(): JSONDAGCliques
 	{
-		//TODO: IMPL
-		throw new Error("Not yet implemented!")
+		let dag = this.dag.to_json_object();
+		let routes = this.routes.map(
+			(route) => structuredClone(route.edges)
+		);
+		let cliques = this.cliques.map(
+			(route) => structuredClone(route.routes)
+		);
+		let clique_size = this.clique_size;
+		let exceptional_routes = structuredClone(this.exceptional_routes);
+		let mutations = structuredClone(this.mutations);
+		let clique_leq_matrix = structuredClone(this.clique_leq_matrix);
+
+		let shared_subroutes_arr = this.shared_subroutes_arr.map(
+			(r1) => r1.map(
+				(r2) => r2.map(
+					(subroute) => {
+						let in_edges = undefined;
+						let out_edges = undefined;
+						if(subroute.in_edges.is_some())
+							in_edges = subroute.in_edges.unwrap();
+						if(subroute.out_edges.is_some())
+							out_edges = subroute.out_edges.unwrap();
+						let x: JSONSharedSubroute = {
+							in_vert: subroute.in_vert,
+							out_vert: subroute.out_vert,
+							in_edges,
+							out_edges,
+							edges: structuredClone(subroute.edges),
+							in_order: subroute.in_order,
+							out_order: subroute.out_order
+						}
+						return x;
+					}
+				)
+			)
+		);
+
+		let hasse = this.hasse.to_json_object();
+
+		return {
+			dag, routes, cliques, clique_size, exceptional_routes,
+			mutations, clique_leq_matrix, shared_subroutes_arr,
+			hasse
+		}
 	}
 
 	static parse_json(raw_ob: Object): Result<DAGCliques>
@@ -788,7 +830,7 @@ export type JSONDAGCliques = {
 	mutations: number[][],
 	clique_leq_matrix: boolean[][],
 	shared_subroutes_arr: JSONSharedSubroute[][][],
-	hasse: JSONHasseDiagram;
+	hasse: JSONHasseDiagram
 };
 export type JSONSharedSubroute = {
 	in_vert: number,
