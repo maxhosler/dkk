@@ -2,6 +2,7 @@ import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option, Result } from "../util/result";
 import { BrickHasseDiagram, HasseDiagram, JSONBrickHasseDiagram, JSONHasseDiagram } from "./hasse";
 import { z, ZodType } from "zod";
+import { zod_err_to_string } from "../util/zod";
 
 //Just a wrapper around a list of numbers, each representing an edge
 class Route
@@ -828,7 +829,7 @@ export class DAGCliques
 	{
 		let res = DAGCliques.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("MalformedData", res.error.toString())
+            return Result.err("MalformedData", zod_err_to_string(res.error))
 
 		let data = res.data;
 		let tiny_dag = new FramedDAG(2);

@@ -1,6 +1,7 @@
 import { JSONable } from "../serialization";
 import { Result } from "./result";
 import { output, Schema, z, ZodType } from "zod";
+import { zod_err_to_string } from "./zod";
 
 /*
 Various classes and methods for numerical and geometric stuff.
@@ -439,7 +440,7 @@ export class BoundingBox implements JSONable
 			return Result.ok(bb);
 		}
 			
-		return Result.err("MalformedData", res.error.toString())
+		return Result.err("MalformedData", zod_err_to_string(res.error))
 		
 	}
 	to_json_object(): JSONBoundingBox

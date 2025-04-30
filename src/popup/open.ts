@@ -3,6 +3,7 @@ import { DKKProgram } from "../program";
 import { preset_dag_embedding, PRESETS } from "../preset";
 import { Popup } from "./popup";
 import { JSONCliqueData } from "../modes/clique_viewer";
+import { load_from_string } from "../load";
 
 /*
 Popup for opening saved data.
@@ -62,14 +63,16 @@ export class OpenPopup extends Popup
 				//when successfully read, parse JSON.
 				//If malformed, show error. Otherwise, close and load.
 				reader.onload = () => {
-					let fe = FramedDAGEmbedding.from_json(reader.result as string);
+
+					let fe = load_from_string(reader.result as string);
+
 					if(fe.is_err())
 					{
 						this.show_err(fe.error().err_message);
 						return;
 					}
 
-					this.parent.set_dag(fe.unwrap());
+					this.parent.load_save_data(fe.unwrap());
 					this.close();
 
 				};
@@ -128,56 +131,5 @@ export class OpenPopup extends Popup
 	show_err(err: string)
 	{
 		this.error_div.innerText = err;
-	}
-}
-
-export class EEOpenPopup extends OpenPopup
-{
-	constructor(base: HTMLElement, parent: DKKProgram)
-	{
-		super(base, parent)
-	}
-}
-
-//This adds the additional option to load DAG with precomputed data.
-export class CVOpenPopup extends OpenPopup
-{
-	constructor(base: HTMLElement, parent: DKKProgram)
-	{
-		super(base, parent);
-
-		//This is the precompted file opener
-		let file_open = document.createElement("input");
-		file_open.type = "file";
-		file_open.accept = "json";
-		file_open.addEventListener("change", async () => {
-			//Functions exactly the same as above, 
-			//Just with a different parsing function.
-			if (file_open.files && file_open.files.length == 1) {
-				let file = file_open.files[0];
-				let reader = new FileReader();
-				reader.onload = () => {
-					let res: Object;
-					try{
-						res = JSON.parse(reader.result as string);
-					}
-					catch
-					{
-						this.show_err("Invalid JSON.");
-						return;
-					}
-
-					this.parent.set_dag_precomp(res as JSONCliqueData);
-					this.close();
-
-				};
-				reader.onerror = () =>
-				{
-					this.show_err(reader.error?.message as string)
-				};
-				reader.readAsText(file);
-			}
-		});
-		this.add_row("From file (precomputed)", file_open, null);
 	}
 }

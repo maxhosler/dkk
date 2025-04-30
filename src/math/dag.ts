@@ -1,6 +1,7 @@
 import { z, ZodType } from "zod";
 import { JSONable } from "../serialization";
 import { Result, Option } from "../util/result";
+import { zod_err_to_string } from "../util/zod";
 
 /*
 This is the object used for the DAG and its framing.
@@ -303,7 +304,7 @@ export class FramedDAG implements JSONable
     {
         let res = FramedDAG.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("MalformedData", res.error.toString())
+            return Result.err("MalformedData", zod_err_to_string(res.error))
         
         let data = res.data;
 

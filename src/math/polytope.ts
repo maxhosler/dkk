@@ -4,6 +4,7 @@ import { JSONable } from "../serialization";
 import { Vector2 } from "../util/num";
 import { Result } from "../util/result";
 import { Clique, DAGCliques } from "./cliques";
+import { zod_err_to_string } from "../util/zod";
 
 /*
 This class contains the geometric data about the polytope, 
@@ -359,7 +360,7 @@ export class FlowPolytope implements JSONable
     {
         let res = FlowPolytope.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("MalformedData", res.error.toString())
+            return Result.err("MalformedData", zod_err_to_string(res.error))
 
         let vertices = res.data.vertices.map(
             (x) => new NVector(x)

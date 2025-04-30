@@ -1,6 +1,7 @@
 import { JSONable } from "../serialization";
 import { BoundingBox, JSONBoundingBox, Vector2 } from "../util/num";
 import { Result } from "../util/result";
+import { zod_err_to_string } from "../util/zod";
 import { Brick, Clique } from "./cliques";
 import { z, ZodType } from 'zod';
 
@@ -376,7 +377,7 @@ export class HasseDiagram implements JSONable
     {
         let res = HasseDiagram.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("MalformedData", res.error.toString());
+            return Result.err("MalformedData", zod_err_to_string(res.error));
 
         let ob = res.data;
         let layout_rows: Vector2[] = ob.layout_rows.map(
@@ -477,7 +478,7 @@ export class BrickHasseDiagram implements JSONable
     {
         let res = BrickHasseDiagram.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("MalformedData", res.error.toString())
+            return Result.err("MalformedData", zod_err_to_string(res.error))
 
         return Result.ok(
             new BrickHasseDiagram(res.data.poset_size, res.data.covering_relation)

@@ -3,6 +3,7 @@ import { Result } from "../util/result";
 import { Bezier, Vector2 } from "../util/num";
 import { JSONable } from "../serialization";
 import { z, ZodType } from "zod";
+import { zod_err_to_string } from "../util/zod";
 
 
 /*
@@ -98,7 +99,7 @@ export class AngleOverride implements JSONable
 	{
 		let res = AngleOverride.json_schema().safeParse(raw_ob);
 		if(!res.success)
-			return Result.err("MalformedData", res.error.toString());
+			return Result.err("MalformedData", zod_err_to_string(res.error));
 
 		let ob = res.data;
 		let inner: number | Vector2
@@ -456,7 +457,7 @@ export class FramedDAGEmbedding implements JSONable
 	{
         let res = FramedDAGEmbedding.json_schema().safeParse(raw_ob);
         if(!res.success)
-            return Result.err("MalformedData", res.error.toString());
+            return Result.err("MalformedData", zod_err_to_string(res.error));
 		let jsonob = res.data;
 		let dag = FramedDAG.parse_json(jsonob.dag).unwrap();
 
