@@ -826,8 +826,36 @@ export class DAGCliques
 
 	static parse_json(raw_ob: Object): Result<DAGCliques>
 	{
-		//TODO: IMPL
-		throw new Error("Not yet implemented!")
+		let res = DAGCliques.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", res.error.toString())
+
+		let data = res.data;
+		let tiny_dag = new FramedDAG(2);
+		tiny_dag.add_edge(0,1);
+		let out = new DAGCliques(tiny_dag) as any;
+
+		for(let f in data)
+		{
+			if(f == "dag")
+			{
+				out.dag = FramedDAG.parse_json(data.dag).unwrap()
+			}
+			else if(f == "hasse")
+			{
+				out.hasse = HasseDiagram.parse_json(data.hasse).unwrap()
+			}
+			else if(f == "brick_hasse")
+			{
+				out.brick_hasse = HasseDiagram.parse_json(data.brick_hasse).unwrap()
+			}
+			else
+			{
+				out[f] = (data as any)[f]
+			}
+		}
+
+		return Result.ok(out as DAGCliques)
 	}
 }
 
