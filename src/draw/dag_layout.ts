@@ -1,6 +1,9 @@
 import { Edge, FramedDAG, JSONFramedDag } from "../math/dag";
 import { Result } from "../util/result";
 import { Bezier, Vector2 } from "../util/num";
+import { JSONable } from "../serialization";
+import { z, ZodType } from "zod";
+import { zod_err_to_string } from "../util/zod";
 
 
 /*
@@ -13,7 +16,7 @@ how edges are angled at their start and end.
 "vec-abs" just directly sets the normal vector at the start of the bezier curve
 */
 export type AngleOverrideType = "none" | "absolute" | "relative" | "vec-abs";
-export class AngleOverride
+export class AngleOverride implements JSONable
 {
 	readonly type: AngleOverrideType;
 	//Actual associated value, depends on the type
@@ -68,30 +71,43 @@ export class AngleOverride
 		return new AngleOverride("vec-abs", vec);
 	}
 
-	//This exists for things loaded from JSON.
-	static from_json_ob(obj: Object): Result<AngleOverride>
+	static json_schema(): ZodType<JSONAngleOverride> {
+		return z.object({
+			type: (
+				z.literal("none").or(
+				z.literal("absolute").or(
+				z.literal("relative").or(
+				z.literal("vec-abs")
+				)))
+			),
+			inner: z.number().or(z.tuple([z.number(), z.number()]))
+		})
+	}
+	to_json_object(): JSONAngleOverride
 	{
-		for(let field of ["inner", "type"])
-			if(!(field in obj))
-				return Result.err("MissingField", "AngleOverride missing field '" + field + "'.")
-		let x = obj as AngleOverride;
-		if(!(["none", "absolute", "relative", "vec-abs"].includes(x.type)))
-			return Result.err("InvalidData", "AngleOverride type invalid.")
-
-		let inner = x.inner;
-		if(typeof inner != "number")
-		{
-			if(!("x" in inner) || !("y" in inner))
-				return Result.err("InvalidData", "AngleOverride inner value invalid.")
-			if(typeof inner.x != "number" || typeof inner.y != "number")
-				return Result.err("InvalidData", "AngleOverride inner value invalid.")
-			inner = new Vector2(inner.x, inner.y);
+		let inner: number | [number, number];
+		if(typeof this.inner == "number")
+			inner = this.inner
+		else
+			inner = [this.inner.x, this.inner.y]
+		return {
+			type: structuredClone(this.type),
+			inner
 		}
-			
-		return Result.ok(new AngleOverride(
-			x.type,
-			x.inner
-		));
+	}
+	static parse_json(raw_ob: Object): Result<AngleOverride>
+	{
+		let res = AngleOverride.json_schema().safeParse(raw_ob);
+		if(!res.success)
+			return Result.err("MalformedData", zod_err_to_string(res.error));
+
+		let ob = res.data;
+		let inner: number | Vector2
+		if(typeof ob.inner == "number")
+			inner = ob.inner;
+		else
+			inner = new Vector2(ob.inner[0], ob.inner[1])
+		return Result.ok(new AngleOverride(ob.type, inner));
 	}
 }
 
@@ -119,14 +135,7 @@ export type VertData = {
 	spread_in: number
 }
 
-export type JSONFramedDagEmbedding =
-{
-	dag: JSONFramedDag,
-	vert_data: VertData[],
-	edge_data: EdgeData[]
-}
-
-export class FramedDAGEmbedding
+export class FramedDAGEmbedding implements JSONable
 {
 	readonly dag: FramedDAG;
 	
@@ -392,63 +401,92 @@ export class FramedDAGEmbedding
 		return res;
 	}
 
-	to_json_ob(): JSONFramedDagEmbedding
+	
+	static json_schema(): ZodType<JSONFramedDagEmbedding> {
+		return z.object({
+			dag: FramedDAG.json_schema(),
+			vert_data: z.object({
+				position: z.tuple([z.number(), z.number()]),
+				spread_in: z.number(),
+				spread_out: z.number()
+			}).array(),
+			edge_data: z.object({
+				start_list_pos: z.tuple([z.number(), z.number()]),
+				end_list_pos: z.tuple([z.number(), z.number()]),
+				start_ang_override: AngleOverride.json_schema(),
+				end_ang_override: AngleOverride.json_schema()
+			}).array()
+		})
+	}
+	to_json_object(): JSONFramedDagEmbedding
 	{
+		let vd: JSONVertData[] = [];
+		let ed: JSONEdgeData[] = [];
+
+		for(let v of this.vert_data)
+		{
+			vd.push({
+				position: v.position.to_json_object(),
+				spread_in: v.spread_in,
+				spread_out: v.spread_out
+			})
+		}
+		for(let e of this.edge_data)
+		{
+			ed.push({
+				start_list_pos: structuredClone(e.start_list_pos),
+				end_list_pos: structuredClone(e.end_list_pos),
+				end_ang_override: e.end_ang_override.to_json_object(),
+				start_ang_override: e.start_ang_override.to_json_object()
+			})
+		}
+
 		return {
-			dag: this.dag.to_json_ob(),
-			vert_data: structuredClone(this.vert_data),
-			edge_data: structuredClone(this.edge_data)
+			dag: this.dag.to_json_object(),
+			vert_data: vd,
+			edge_data: ed
 		};
 	}
 
 	to_json(): string
 	{
-		return JSON.stringify(this.to_json_ob())
+		return JSON.stringify(this.to_json_object())
 	}
 
-	static from_json_ob(obj: JSONFramedDagEmbedding): Result<FramedDAGEmbedding>
+	static parse_json(raw_ob: Object): Result<FramedDAGEmbedding>
 	{
-		for(let field of ["dag", "vert_data", "edge_data"])
-            if(!(field in obj))
-                return Result.err("MissingField", "JSON missing field '"+field+"'.")
+        let res = FramedDAGEmbedding.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", zod_err_to_string(res.error));
+		let jsonob = res.data;
+		let dag = FramedDAG.parse_json(jsonob.dag).unwrap();
+
+		if(dag.num_verts() != jsonob.vert_data.length)
+			return Result.err("InvalidData", "Vertex embedding data not the same lenth as number of vertices.")
+		if(dag.num_edges() != jsonob.edge_data.length)
+			return Result.err("InvalidData", "Edge embedding data not the same lenth as number of edges.")
+
+		let vert_data: VertData[] = jsonob.vert_data.map(
+			(jsn) => { return {
+				position: new Vector2(jsn.position[0], jsn.position[1]),
+				spread_in: jsn.spread_in,
+				spread_out: jsn.spread_out
+			}}
+		);
+		let edge_data: EdgeData[] = jsonob.edge_data.map(
+			(jsn) => {return {
+				start_list_pos: jsn.start_list_pos,
+				end_list_pos: jsn.end_list_pos,
+				end_ang_override: AngleOverride.parse_json(jsn.end_ang_override).unwrap(),
+				start_ang_override: AngleOverride.parse_json(jsn.start_ang_override).unwrap(),
+			}}
+		);
 		
-		let data = obj as JSONFramedDagEmbedding;
-
-		let dag = FramedDAG.from_json_ob(data.dag);
-		if(dag.is_err())
-			return dag.err_to_err();
-		let emb = new FramedDAGEmbedding(dag.unwrap());
-		emb.vert_data = data.vert_data;
-		emb.edge_data = data.edge_data;
-
-		//So they get their prototypes
-		for(let vd of emb.vert_data)
-		{
-			if(!("x" in vd.position) || !("y" in vd.position) ||
-			    typeof vd.position.x != "number" || typeof vd.position.y != "number")
-				return Result.err("InvalidData", "Vertex position not a valid vector.")
-
-			vd.position = new Vector2(
-				vd.position.x,
-				vd.position.y
-			)
-		}
-
-		for(let ed of emb.edge_data)
-		{
-			let end_override = AngleOverride.from_json_ob(ed.end_ang_override);
-			let start_override = AngleOverride.from_json_ob(ed.start_ang_override);
-
-			if(end_override.is_err())
-				return end_override.err_to_err();
-			if(start_override.is_err())
-				return start_override.err_to_err();
-
-			ed.end_ang_override = end_override.unwrap();
-			ed.start_ang_override = start_override.unwrap();
-		}
-
-		return Result.ok(emb);
+		let out = new FramedDAGEmbedding(dag);
+		out.edge_data = edge_data;
+		out.vert_data = vert_data;
+		
+		return Result.ok(out);
 	}
 
 
@@ -467,7 +505,7 @@ export class FramedDAGEmbedding
             );
         }
 
-        return FramedDAGEmbedding.from_json_ob(obj as JSONFramedDagEmbedding);
+        return FramedDAGEmbedding.parse_json(obj);
 	}
 }
 
@@ -491,3 +529,27 @@ export type BakedDAGEmbedding =
 	edges: Bezier[]
 };
 
+export type JSONAngleOverride = {
+	type: AngleOverrideType,
+	inner: [number, number] | number
+}
+export type JSONEdgeData =
+{
+	start_list_pos: [pos: number, out_of: number], 
+	end_list_pos:   [pos: number, out_of: number],
+	start_ang_override: JSONAngleOverride,
+	end_ang_override:   JSONAngleOverride,
+}
+
+export type JSONVertData = {
+	position: [number, number],
+	spread_out: number,
+	spread_in: number
+}
+
+export type JSONFramedDagEmbedding =
+{
+	dag: JSONFramedDag,
+	vert_data: JSONVertData[],
+	edge_data: JSONEdgeData[]
+}

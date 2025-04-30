@@ -1,4 +1,7 @@
+import { JSONable } from "../serialization";
 import { Result } from "./result";
+import { output, Schema, z, ZodType } from "zod";
+import { zod_err_to_string } from "./zod";
 
 /*
 Various classes and methods for numerical and geometric stuff.
@@ -6,7 +9,7 @@ Includes 2x2 matrices, 2-dimensional vectors, bounding boxes, etc.
 */
 
 export type Matrix2x2 = [[number,number], [number, number]];
-export class Vector2
+export class Vector2 implements JSONable
 {
 	readonly x: number;
 	readonly y: number;
@@ -116,9 +119,23 @@ export class Vector2
 		)
 	}
 
-	to_json_ob(): [number, number]
+	static json_schema(): ZodType<[number, number]>
 	{
-		return [this.x, this.y];
+		return z.tuple([z.number(), z.number()])
+	}
+	static parse_json(ob: Object): Result<Vector2> {
+		let ob2 = this.json_schema().safeParse(ob);
+		if(ob2.success)
+			return Result.ok(new Vector2(ob2.data[0], ob2.data[1]));
+		return Result.err("MalformedData", ob2.error.toString())
+		
+	}
+
+	to_json_object(): [number, number] {
+		return [this.x, this.y]
+	}
+	to_json(): string {
+		return JSON.stringify(this.to_json_object())
 	}
 }
 
@@ -127,7 +144,7 @@ export class Vector2
 Bezier curve with two control points. Is a parametric function with
 B(0) = {start_point} and B(1) = {end_point}.
 */
-export class Bezier 
+export class Bezier
 {
 	readonly start_point: Vector2;
 	readonly end_point: Vector2;
@@ -285,7 +302,7 @@ export class Bezier
 }
 
 //Bounding box.
-export class BoundingBox
+export class BoundingBox implements JSONable
 {
 	empty: boolean = true;
 	top_corner: Vector2 = Vector2.zero();
@@ -402,12 +419,36 @@ export class BoundingBox
 		return this.bot_corner.y - this.top_corner.y
 	}
 
-	to_json_ob(): JSONBoundingBox
+	static json_schema(): ZodType<JSONBoundingBox>
+	{
+		return z.object({
+			empty: z.boolean(),
+			top_corner: Vector2.json_schema(),
+			bot_corner: Vector2.json_schema()
+		})
+	}
+	static parse_json(ob: Object): Result<BoundingBox> {
+		let res = this.json_schema().safeParse(ob);
+		if(res.success)
+		{
+			let bb = new BoundingBox([]);
+			if(!res.data.empty)
+			{
+				bb.add_point(Vector2.parse_json(res.data.top_corner).unwrap());
+				bb.add_point(Vector2.parse_json(res.data.bot_corner).unwrap());
+			}
+			return Result.ok(bb);
+		}
+			
+		return Result.err("MalformedData", zod_err_to_string(res.error))
+		
+	}
+	to_json_object(): JSONBoundingBox
 	{
 		return {
 			empty: this.empty,
-			top_corner: this.top_corner.to_json_ob(),
-			bot_corner: this.bot_corner.to_json_ob()
+			top_corner: this.top_corner.to_json_object(),
+			bot_corner: this.bot_corner.to_json_object()
 		}
 	}
 

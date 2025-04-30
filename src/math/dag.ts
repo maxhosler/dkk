@@ -1,4 +1,7 @@
+import { z, ZodType } from "zod";
+import { JSONable } from "../serialization";
 import { Result, Option } from "../util/result";
+import { zod_err_to_string } from "../util/zod";
 
 /*
 This is the object used for the DAG and its framing.
@@ -19,7 +22,8 @@ export const dag_error_types = {
 };
 export type Edge = { start: number, end: number };
 export type JSONFramedDag = {num_verts: number, out_edges: number[][], in_edges: number[][]};
-export class FramedDAG {
+export class FramedDAG implements JSONable
+{
     private f_num_edges: number;
     private f_num_verts: number;
     private out_edges: number[][]; // out_edges[i] is the list of edges going out
@@ -280,23 +284,30 @@ export class FramedDAG {
         return onesink && onesource;
     }
 
-    to_json_ob(): JSONFramedDag
+    static json_schema(): ZodType<JSONFramedDag> {
+        return z.object({
+            num_verts: z.number(),
+            out_edges: z.number().array().array(),
+            in_edges: z.number().array().array()
+        })
+    }
+    to_json_object(): JSONFramedDag
     {
-        let obj = {
+        return {
             num_verts: this.num_verts(),
             out_edges: structuredClone(this.out_edges),
             in_edges: structuredClone(this.in_edges)
-        };
-        return obj;
+        }
     }
 
-    to_json(): string
+    static parse_json(raw_ob: Object): Result<FramedDAG>
     {
-        return JSON.stringify(this.to_json_ob())
-    }
+        let res = FramedDAG.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", zod_err_to_string(res.error))
+        
+        let data = res.data;
 
-    static from_json_ob(data: JSONFramedDag): Result<FramedDAG>
-    {
         let edges: {[e: number]: [number, number]} = {};
         let max_edge = -1;
         for(let v = 0; v < data.num_verts; v++)
@@ -358,7 +369,7 @@ export class FramedDAG {
         return Result.ok(out);
     }
 
-    static from_json(str: string): Result<FramedDAG>
+    static from_json_string(str: string): Result<FramedDAG>
     {
         let obj: Object;
         try
@@ -372,13 +383,10 @@ export class FramedDAG {
                 "JSON file was malformed."
             );
         }
-        for(let field of ["num_verts", "out_edges", "in_edges"])
-            if(!(field in obj))
-                return Result.err("MissingField", "JSON missing field '"+field+"'.")
         
         let data = obj as JSONFramedDag;
 
-        return FramedDAG.from_json_ob(data);
+        return FramedDAG.parse_json(data);
     }
 }
 

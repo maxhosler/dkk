@@ -1,13 +1,17 @@
+import { z, ZodType } from "zod";
 import { preset_dag_embedding } from "../preset";
+import { JSONable } from "../serialization";
+import { Vector2 } from "../util/num";
 import { Result } from "../util/result";
-import { DAGCliques } from "./cliques";
+import { Clique, DAGCliques } from "./cliques";
+import { zod_err_to_string } from "../util/zod";
 
 /*
 This class contains the geometric data about the polytope, 
 precomputed when it is passed a copy of the DAGCliques object.
 */
 
-export class FlowPolytope
+export class FlowPolytope implements JSONable
 {
     
     readonly dim: number;
@@ -23,10 +27,21 @@ export class FlowPolytope
     */
     readonly external_simplices: number[][];
 
-    constructor(dag_cliques: DAGCliques)
+    private constructor(
+        dim: number,
+        vertices: NVector[],
+        external_simplices: number[][]
+    )
+    {
+        this.dim = dim;
+        this.vertices = vertices;
+        this.external_simplices = external_simplices;
+    }
+
+    static from_cliques(dag_cliques: DAGCliques): {normal: FlowPolytope, quotient: FlowPolytope}
     {
         let unreduced_dim = dag_cliques.dag.num_edges();
-        this.dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
+        let dim = dag_cliques.dag.num_edges() - dag_cliques.dag.num_verts() + 1;
 
         //Convert routes to vertices
         let unred_vertices: NVector[] = [];
@@ -52,64 +67,13 @@ export class FlowPolytope
         let centered_vertices = unred_vertices
             .map((v: NVector) => v.sub(center));
 
-
-        /*
-        The following is Gauss-Jordan elimination,
-        with the end of reducing the dimensionality
-        of the vertices to the 'true' dimension of the polytope.
-
-        Projects onto a new set of basis vectors, given by N-1 of
-        the vertices of the maximal clique, minus the remaining one.
-
-        The final matrix E is the necessary projection.
-        */    
-        let A = Matrix.from_columns(basis);
-        let E = Matrix.id(unreduced_dim);
-
-        let swap_both = (i: number, j: number) => 
-        {
-            A.swap_rows(i,j);
-            E.swap_rows(i,j);
-        }
-        let scale_both = (i: number, scalar: number) =>
-        {
-            A.scale_row(i,scalar);
-            E.scale_row(i,scalar);
-        }
-        let add_scaled_both = (add_to: number, add_from: number, scalar: number) => 
-        {
-            A.add_scaled_row(add_to, add_from, scalar);
-            E.add_scaled_row(add_to, add_from, scalar);
-        }
-
-        for(let c = 0; c < A.width; c++)
-        {
-            if(A.get_entry(c,c) == 0)
-            {
-                for(let r = c+1; r < A.height; r++) {
-                    if(A.get_entry(r, c) != 0) {
-                        swap_both(c,r);
-                        break;
-                    }
-                }
-            }
-
-            scale_both(c,1/A.get_entry(c,c));
-            
-            for(let i = 0; i < A.height; i++)
-            {
-                if(c == i) continue;
-                add_scaled_both(
-                    i, c,
-                    -A.get_entry(i,c)
-                );
-            }
-        }
-
+        //Project onto basis
+        let E = compute_basis_projection(basis);
         let projected_vertices = centered_vertices
-            .map((v) => E.apply_to(v).trunc(this.dim));
+            .map((v) => E.apply_to(v));
         
-        if(this.dim == 3 || this.dim == 2)
+        let vertices: NVector[];
+        if(dim == 3 || dim == 2)
         {
             /*
             This procedure tries to find an affine transformation that will make the 
@@ -126,12 +90,12 @@ export class FlowPolytope
             //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
             //(x-c)^TA(x-c)=1 to the unit sphere.
 
-            this.vertices = projected_vertices
+            vertices = projected_vertices
                 .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
         }
         else
         {
-            this.vertices = projected_vertices;
+            vertices = projected_vertices;
         }
 
         //computing the external simplices
@@ -139,7 +103,7 @@ export class FlowPolytope
         for(let clq_idx = 0; clq_idx < dag_cliques.cliques.length; clq_idx++)
         {
             //If 2-dimensional, *all* simplicies are external.
-            if (this.dim == 2)
+            if (dim == 2)
             {
                 external_simplices.push(structuredClone(dag_cliques.cliques[clq_idx].routes));
                 continue;
@@ -167,53 +131,243 @@ export class FlowPolytope
             }
             
         }
-        this.external_simplices = external_simplices;
+        let normal = new FlowPolytope(
+            dim, vertices, external_simplices
+        );
+
+        return {
+            normal,
+            quotient: normal.quotient(dag_cliques)
+        }
     }
 
-    to_json_ob(): JSONFlowPolytope
-	{
-        let vertices: number[][] = [];
+    private quotient(dag_cliques: DAGCliques): FlowPolytope
+    {
+        let exceptional_simplex: NVector[] = [];
+        for(let i of dag_cliques.exceptional_routes)
+            exceptional_simplex.push(this.vertices[i])
+        if(exceptional_simplex.length <= 1)
+            return this;
+
+        let qdim = this.dim - exceptional_simplex.length + 1;
+        
+        let center = exceptional_simplex[0];
+        let exceptional_basis: NVector[] = [];
+        for(let i = 1; i < exceptional_simplex.length; i++)
+        {
+            exceptional_basis.push(
+                exceptional_simplex[i].sub(center)
+            );
+        }
+        exceptional_basis = orthonorm_basis(exceptional_basis);
+
+        let projection: NVector[] = [];
+        for(let i = 0; i < this.dim; i++)
+        {
+            let ei = NVector.basis(this.dim, i);
+            let projected = NVector.zero(this.dim);
+            for(let b of exceptional_basis)
+            {
+                projected = projected.add(ei.proj_onto(b))
+            }
+            projection.push(projected);
+        }
+        
+        let M = Matrix.from_columns(projection);
+        let {M: m_rref, free_columns} = compute_rref(M);
+
+        let ker_basis: NVector[] = [];
+        for(let free of free_columns)
+        {
+            let vec = NVector.basis( m_rref.width, free );
+            for(let row = 0; row < m_rref.height; row++)
+            {
+                let x = m_rref.get_entry(row, free);
+                if(Math.abs(x) >= 0.0001)
+                {
+                    let full_row = m_rref.get_row_vec(row);
+                    let leading_pos: number | undefined = undefined;
+                    for(let i = 0; i < full_row.coordinates.length; i++)
+                    {
+                        if(Math.abs(full_row.coordinates[i]) >= 0.0001)
+                        {
+                            leading_pos = i;
+                            break;
+                        }
+                    }
+
+                    if(typeof leading_pos != "number")
+                        throw new Error("No leading 0?")
+
+                    vec = vec.add(
+                        NVector.basis(m_rref.width, leading_pos).scale(-x)
+                    )
+                }
+            }
+            ker_basis.push(vec)
+        }
+        let on_ker_basis = orthonorm_basis(ker_basis);
+        
+        let to_onk_basis = (vec: NVector) => {
+            let coords: number[] = [];
+            for(let b of on_ker_basis)
+                coords.push(vec.dot(b))
+            return new NVector(coords);
+        };
+
+        let vertices: NVector[] = [];
         for(let vec of this.vertices)
         {
-            vertices.push(structuredClone(vec.coordinates))
+            vertices.push(to_onk_basis(vec.sub(center)))
         }
-		return {
-            dim: this.dim,
+
+        const reduced_clq = (clq: Clique) =>
+        {
+            let has_quot_pt = false;
+            let out: number[] = [];
+            for(let r of clq.routes)
+            {
+                if(vertices[r].norm() <= 0.001)
+                {
+                    if(has_quot_pt) continue;
+                    has_quot_pt = true;
+                }
+                out.push(r)
+            }
+            return out;
+        };
+        let external_simplices: number[][] = [];
+        if(qdim == 2)
+        {
+            for(let clq of dag_cliques.cliques)
+            {
+                external_simplices.push(reduced_clq(clq))
+            }
+        }
+        if(qdim == 3)
+        {
+            const all_but = (routes: number[], idx: number) =>
+            {
+                let out: number[] = [];
+                for(let i = 0; i < 4; i++)
+                    if(i!=idx)
+                        out.push(routes[i])
+                return out;
+            }
+            const cross = (v1: NVector, v2: NVector) =>
+            {
+                if (v1.dim() != 3 || v2.dim() != 3)
+                    throw new Error("Can't cross non-dimension 3!")
+                
+                let a = v1.coordinates;
+                let b = v2.coordinates;
+
+                let crs = [
+                    a[1]*b[2] - a[2]*b[1],
+                    a[0]*b[2] - a[2]*b[0],
+                    a[0]*b[1] - a[1]*b[0],
+                ]
+                return new NVector(crs);
+            }
+            for(let clq of dag_cliques.cliques)
+            {
+                let reduced = reduced_clq(clq);
+                for(let i = 0; i < 4; i++)
+                {
+                    let face = all_but(reduced, i);
+                    let center = vertices[face[0]];
+                    let normal = cross(
+                        vertices[face[1]].sub(center),
+                        vertices[face[2]].sub(center)
+                    );
+
+                    let external = true;
+                    let orentation = 0;
+                    for(let v of vertices)
+                    {
+                        let o = v.sub(center).dot(normal);
+                        if(Math.abs(orentation) <= 0.0001)
+                        {
+                            orentation = o;
+                        }
+                        else
+                        {
+                            if(o*orentation < -0.0001)
+                            {  
+                                external = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(external)
+                        external_simplices.push(face);
+                }
+            }
+        }
+
+        if(qdim == 3 || qdim == 2)
+        {
+            try{
+            /*
+            This procedure tries to find an affine transformation that will make the 
+            polytope look 'nice' (i.e. not squashed), for visualization purposes. It
+            does this by finding the minimum bounding ellipsoid, and computing a 
+            transformation which will turn that ellipsoid into a sphere.
+            */
+
+            let {matrix: A, center} = min_bounding_ellipsoid(vertices);
+
+            let B = cholesky_decomposition(A.inv());
+
+            //This has the property that B^T A B = I
+            //So, the map x -> B^(-1)(x-c) takes the ellipsoid given by
+            //(x-c)^TA(x-c)=1 to the unit sphere.
+
+            vertices = vertices
+                .map((v) => B.inv().apply_to( v.sub(center) ).scale(0.95));
+            }
+            catch
+            {
+                console.warn("Ellipsoid matrix noninvertible?")
+            }
+        }
+
+        return new FlowPolytope(
+            qdim,
             vertices,
-            external_simplices: structuredClone(this.external_simplices)
-        }
-	}
+            external_simplices
+        )
+    }
 
-    static from_json_ob(ob: JSONFlowPolytope): Result<FlowPolytope>
+    static json_schema(): ZodType<JSONFlowPolytope> {
+        return z.object({
+            dim: z.number(),
+            vertices: z.number().array().array(),
+            external_simplices: z.number().array().array()
+        })
+    }
+    to_json_object(): JSONFlowPolytope
     {
-        for(let field of ["dim", "vertices", "external_simplices"])
-			if(!(field in ob))
-				return Result.err("MissingField", "FlowPolytope is missing field: "+field);
-        if(typeof ob.dim != "number")
-            return Result.err("InvalidField", "FlowPolytope field 'num' is not a number.");
-        for(let field of ["vertices", "external_simplices"]) {
-            let data = (ob as any)[field];
-            if(typeof data.length != "number")
-                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array.`);
-            if(data.length > 0 && typeof data[0].length != "number")
-                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays.`);
-            if(data[0].length > 0 && typeof data[0][0]!= "number")
-                return Result.err("InvalidField", `FlowPolytope field '${data}' is not an array of arrays of numbers.`);
+        return {
+            dim: this.dim,
+            vertices: this.vertices.map((x) => structuredClone(x.coordinates)),
+            external_simplices: structuredClone(this.external_simplices),
         }
+    }
 
-        let vertices: NVector[] = ob.vertices.map(
+    static parse_json(raw_ob: Object): Result<FlowPolytope>
+    {
+        let res = FlowPolytope.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", zod_err_to_string(res.error))
+
+        let vertices = res.data.vertices.map(
             (x) => new NVector(x)
         );
-        let just_fields = {
-            dim: ob.dim,
-            vertices,
-            external_simplices: structuredClone(ob.external_simplices)
-        };
-        let base = new FlowPolytope(empty_clique());
-        for(let field in just_fields)
-            //@ts-ignore
-            base[field] = just_fields[field]
-        return Result.ok(base);
+        return Result.ok(
+            new FlowPolytope(res.data.dim, vertices, res.data.external_simplices)
+        );
     }
 }
 export type JSONFlowPolytope = {
@@ -239,6 +393,13 @@ class NVector
     static one(dim: number): NVector
     {
         return new NVector(new Array<number>(dim).fill(1));
+    }
+
+    static basis(dim: number, i: number)
+    {
+        let v = new Array<number>(dim).fill(0);
+        v[i] = 1;
+        return new NVector(v);
     }
 
     norm()
@@ -305,6 +466,16 @@ class NVector
             out += this.coordinates[i] * vec.coordinates[i];
 
         return out;
+    }
+
+    proj_onto(onto: NVector): NVector
+    {
+        if(Math.abs(onto.norm()) <= 0.00001)
+            return NVector.zero(this.dim())
+
+        return onto.scale(
+            this.dot(onto) / onto.dot(onto)
+        )
     }
 
     as_row_matrix(): Matrix
@@ -389,6 +560,15 @@ class Matrix
         for(let i = 0; i < vec.dim(); i++)
             mat.inner[i][i] = vec.coordinates[i];
         return mat;
+    }
+
+    clone(): Matrix
+    {
+        return new Matrix(
+            this.width,
+            this.height,
+            structuredClone(this.inner)
+        )
     }
 
     swap_rows(i: number, j: number)
@@ -690,7 +870,132 @@ function cholesky_decomposition(A: Matrix): Matrix
     return new Matrix(n,n,L);
 }
 
-function empty_clique(): DAGCliques
+function compute_rref(mat: Matrix): {M: Matrix, free_columns: number[]}
 {
-    return new DAGCliques(preset_dag_embedding("cube").dag)
+    let newmat = mat.clone();
+
+    let pivot_row = 0;
+    let pivot_col = 0;
+
+    let free_columns: number[] = [];
+
+    while(pivot_col < mat.width)
+    {
+        if(newmat.get_entry(pivot_row,pivot_col) == 0)
+        {
+            for(let r = pivot_row+1; r < newmat.height; r++) {
+                if(newmat.get_entry(r, pivot_col) != 0) {
+                    newmat.swap_rows(r, pivot_row);
+                    break;
+                }
+            }
+        }
+
+        if(newmat.get_entry(pivot_row,pivot_col) == 0)
+        {
+            free_columns.push(pivot_col);
+            pivot_col += 1;
+            continue;
+        }
+
+        newmat.scale_row(pivot_row,1/newmat.get_entry(pivot_row,pivot_col));
+        
+        for(let i = 0; i < newmat.height; i++)
+        {
+            if(pivot_row == i) continue;
+            newmat.add_scaled_row(
+                i, pivot_row,
+                -newmat.get_entry(i,pivot_col)
+            );
+        }
+        pivot_col += 1;
+    }
+
+    return {M:newmat, free_columns}
+}
+
+function compute_basis_projection(basis: NVector[]): Matrix
+{
+    /*
+    The following is Gauss-Jordan elimination,
+    with the end of reducing the dimensionality
+    of the vertices to the 'true' dimension of the polytope.
+
+    Projects onto a new set of basis vectors, given by N-1 of
+    the vertices of the maximal clique, minus the remaining one.
+
+    The final matrix E is the necessary projection.
+    */    
+    let unred_dim = basis[0].dim();
+    let dim = basis.length;
+
+    let A = Matrix.from_columns(basis);
+    let E = Matrix.id(unred_dim);
+
+    let swap_both = (i: number, j: number) => 
+    {
+        A.swap_rows(i,j);
+        E.swap_rows(i,j);
+    }
+    let scale_both = (i: number, scalar: number) =>
+    {
+        A.scale_row(i,scalar);
+        E.scale_row(i,scalar);
+    }
+    let add_scaled_both = (add_to: number, add_from: number, scalar: number) => 
+    {
+        A.add_scaled_row(add_to, add_from, scalar);
+        E.add_scaled_row(add_to, add_from, scalar);
+    }
+
+    for(let c = 0; c < A.width; c++)
+    {
+        if(A.get_entry(c,c) == 0)
+        {
+            for(let r = c+1; r < A.height; r++) {
+                if(A.get_entry(r, c) != 0) {
+                    swap_both(c,r);
+                    break;
+                }
+            }
+        }
+
+        scale_both(c,1/A.get_entry(c,c));
+        
+        for(let i = 0; i < A.height; i++)
+        {
+            if(c == i) continue;
+            add_scaled_both(
+                i, c,
+                -A.get_entry(i,c)
+            );
+        }
+    }
+
+    let trunc = Matrix.zero_rect(unred_dim, dim);
+    for(let i = 0; i < dim; i++)
+        trunc.inner[i][i] = 1;
+
+    return trunc.mul(E);
+}
+
+function orthonorm_basis(basis: NVector[]): NVector[]
+{
+    let on_basis: NVector[] = [];
+    for(let v of basis)
+    {
+        let u = v;
+        for(let ui of on_basis)
+        {
+            u = u.sub( v.proj_onto(ui) )
+        }
+        on_basis.push(u);
+    }
+
+    for(let i = 0; i < on_basis.length; i++)
+    {
+        on_basis[i] = on_basis[i].scale(1/on_basis[i].norm())
+    }
+
+    return on_basis;
 }

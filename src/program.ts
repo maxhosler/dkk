@@ -4,10 +4,11 @@ import { FramedDAG } from "./math/dag";
 import { CliqueViewer, JSONCliqueData } from "./modes/clique_viewer";
 import { EmbeddingEditor } from "./modes/embedding_editor";
 import { IMode } from "./modes/mode";
-import { CVOpenPopup, EEOpenPopup } from "./popup/open";
 import { NewPopup } from "./popup/new";
 import { SettingsPopup } from "./popup/settings";
 import { preset_dag_embedding } from "./preset";
+import { SaveData } from "./load";
+import { OpenPopup } from "./popup/open";
 
 /*
 This class handles the top-bar, swapping between modes, and most popups.
@@ -107,20 +108,10 @@ export class DKKProgram
 
         //Opens a popup menu, different one based on state.
         this.popup_open = true;
-        if(this.mode.name() == "clique-viewer")
-        {
-            new CVOpenPopup(
-                this.body,
-                this
-            );
-        }
-        else if(this.mode.name() == "embedding-editor")
-        {
-            new EEOpenPopup(
-                this.body,
-                this
-            );
-        }
+        new OpenPopup(
+            this.body,
+            this
+        );
         
     }
 
@@ -155,24 +146,20 @@ export class DKKProgram
             return;
         }
 
-        //Delete any mode-specific events that are tied to the document, rather than
-        //an element created and controlled by that mode.
-        this.mode.clear_global_events();
-
         //Swap to the other mode.
         if(this.mode.name() == "embedding-editor")
         {
-            this.mode = CliqueViewer.destructive_new(
+            this.set_mode(CliqueViewer.destructive_new(
                 embedding,
                 this.draw_options
-            );
+            ));
         }
         else
         {
-            this.mode = EmbeddingEditor.destructive_new(
+            this.set_mode(EmbeddingEditor.destructive_new(
                 embedding,
                 this.draw_options
-            )
+            ));
         }
         this.show_hide_items();
     }
@@ -187,6 +174,26 @@ export class DKKProgram
             this.body,
             this
         );
+    }
+
+    load_save_data(data: SaveData)
+    {
+        if(data.datatype == "emb_dag")
+        {
+            let d = data.data;
+            this.set_dag(d);
+        }
+        else if(data.datatype == "precomp")
+        {
+            let d = data.data;
+            console.log(d);
+            this.set_dag_precomp(d);
+        }
+        else if(data.datatype == "dag")
+        {
+            let d = data.data;
+            this.set_dag(new FramedDAGEmbedding(d));
+        }
     }
 
     save_button_click()
@@ -219,8 +226,12 @@ export class DKKProgram
         if(this.mode.name() == "clique-viewer")
         {
             let mode = this.mode as CliqueViewer;
+            let json = {
+                datatype: "precomp",
+                data: mode.to_data_json_ob()
+            }
             save_json_string(
-                JSON.stringify(mode.to_data_json_ob()), "dag_and_data"
+                JSON.stringify(json), "dag_and_data"
             )
         }
     }
@@ -228,8 +239,12 @@ export class DKKProgram
     //Save DAG to json file.
     save_current_data()
     {
-        let json = this.mode.current_embedding().to_json();
-        save_json_string(json, "dag");
+        let data = this.mode.current_embedding().to_json_object();
+        let json = {
+            datatype: "emb_dag",
+            data
+        };
+        save_json_string(JSON.stringify(json), "dag");
     }
 
     /*
@@ -260,28 +275,30 @@ export class DKKProgram
 	set_dag(emb: FramedDAGEmbedding)
 	{
 		if(this.mode.name() == "clique-viewer")
-		    this.mode = CliqueViewer.destructive_new(emb, this.draw_options);
+		    this.set_mode(CliqueViewer.destructive_new(emb, this.draw_options));
         else if(this.mode.name() == "embedding-editor")
-            this.mode = EmbeddingEditor.destructive_new(emb, this.draw_options);
+            this.set_mode(EmbeddingEditor.destructive_new(emb, this.draw_options));
 	}
 
     /*
     Loads the provided DAG, as well as any precomputed data, into the 
-    clique viewer. Since this is not intended to be called outside the clique
-    viewer, does nothing when not.
+    clique viewer.
 
     If the loaded data is found to be invalid, does nothing and shows alert.
     */
     set_dag_precomp(emb: JSONCliqueData)
     {
-        if(this.mode.name() == "clique-viewer")
-        {
-            let attempt = CliqueViewer.precomp_destructive_new(emb, this.draw_options);
-            if(attempt.is_ok())
-                this.mode = attempt.unwrap();
-            else
-                alert("Invalid DAG data! "+attempt.error().err_message);
-        }
+        let attempt = CliqueViewer.precomp_destructive_new(emb, this.draw_options);
+        if(attempt.is_ok())
+            this.set_mode(attempt.unwrap())
+        else
+            alert("Invalid DAG data! "+attempt.error().err_message);
+    }
+
+    set_mode(mode: IMode)
+    {
+        this.mode.clear_global_events();
+        this.mode = mode;
     }
 }
 

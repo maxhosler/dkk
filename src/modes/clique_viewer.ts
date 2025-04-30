@@ -29,12 +29,14 @@ export class CliqueViewer implements IMode
     //Precomputed DAG/framing/polytope data
     readonly dag: FramedDAGEmbedding;
     readonly polytope: FlowPolytope;
+    readonly q_polytope: FlowPolytope;
     readonly cliques: DAGCliques;
 
     //Canvases
     readonly clique_canvas: DAGCanvas;
     readonly hasse_canvas: DAGCanvas;
     readonly poly_canvas: PolytopeCanvas;
+    readonly q_poly_canvas: PolytopeCanvas;
     readonly brick_canvas: DAGCanvas;
 
     //This is stored so the event can be deleted with clear_global_events
@@ -85,11 +87,11 @@ export class CliqueViewer implements IMode
         RIGHT_AREA.innerHTML = "";
 
         let cliques = new DAGCliques(dag.dag);
-        let polytope = new FlowPolytope(cliques);
+        let {normal: polytope, quotient} = FlowPolytope.from_cliques(cliques);
 
         return new CliqueViewer
         (
-            dag, polytope, cliques, draw_options,
+            dag, polytope, quotient, cliques, draw_options,
             SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
         );
     }
@@ -104,13 +106,13 @@ export class CliqueViewer implements IMode
     ): Result<CliqueViewer>
     {
 
-        let dag = FramedDAGEmbedding.from_json_ob(data.dag);
+        let dag = FramedDAGEmbedding.parse_json(data.dag);
         if(dag.is_err())
             return dag.err_to_err();
-        let polytope = FlowPolytope.from_json_ob(data.polytope);
+        let polytope = FlowPolytope.parse_json(data.polytope);
         if(polytope.is_err())
             return polytope.err_to_err();
-        let cliques = DAGCliques.from_json_ob(data.cliques);
+        let cliques = DAGCliques.parse_json(data.cliques);
         if(cliques.is_err())
             return cliques.err_to_err();
         let hasse_overrides: {[key: number]: Vector2} = {};
@@ -120,16 +122,20 @@ export class CliqueViewer implements IMode
             hasse_overrides[parseInt(i)] = new Vector2(v[0], v[1]);
         }
 
+        //FIXME: Stopgap
+        let q_polytope = polytope;
+
         SIDEBAR_HEAD.innerHTML = "";
         SIDEBAR_CONTENTS.innerHTML = "";
         RIGHT_AREA.innerHTML = "";
 
         let cv = new CliqueViewer
         (
-            dag.unwrap(), polytope.unwrap(), cliques.unwrap(), draw_options,
+            dag.unwrap(), polytope.unwrap(), q_polytope.unwrap(), cliques.unwrap(), draw_options,
             SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
         );
         cv.set_hasse_overrides(hasse_overrides);
+        cv.recomp_poset_scales();
 
         return Result.ok(cv);
     }
@@ -137,6 +143,7 @@ export class CliqueViewer implements IMode
     private constructor(
         dag: FramedDAGEmbedding,
         polytope: FlowPolytope,
+        q_polytope: FlowPolytope,
         cliques: DAGCliques,
 
         draw_options: DrawOptions,
@@ -151,6 +158,7 @@ export class CliqueViewer implements IMode
         this.draw_options = draw_options;
         this.cliques = cliques;
         this.polytope = polytope;
+        this.q_polytope = q_polytope;
         this.draw_options.set_builtin_color_scheme(
             this.cliques.routes.length
         );
@@ -195,7 +203,9 @@ export class CliqueViewer implements IMode
         //left corner selector
         let possible: [string,string][] = [["brick", "Bricks"]];
         if([2,3].includes(polytope.dim))
-            possible.push(["polytope", "Polytopes"])
+            possible.push(["polytope", "Polytope"])
+        if([2,3].includes(q_polytope.dim))
+            possible.push(["qpolytope", "Quot. Polytope"])
         let ab = ActionBox.create();
         sidebar_contents.appendChild(ab.element);
         ab.box.add_selector(
@@ -309,6 +319,13 @@ export class CliqueViewer implements IMode
         poly_canvas.resize_canvas();
         this.poly_canvas = poly_canvas;
 
+        //Quotient Polytope canvas
+        let {canvas: q_poly_canvas, element: qp_canvas_element} = PolytopeCanvas.create(draw_options);
+        q_poly_canvas.set_polytope(this.q_polytope, this.cliques.cliques[this.current_clique]);
+        segments.poly.appendChild(qp_canvas_element);
+        q_poly_canvas.resize_canvas();
+        this.q_poly_canvas = q_poly_canvas;
+
         //Brick Canvas
         let {canvas: brick_canvas, element: b_canvas_element} = DAGCanvas.create(draw_options);
         segments.poly.appendChild(b_canvas_element);
@@ -362,18 +379,25 @@ export class CliqueViewer implements IMode
 
     change_left_corner_view(view: string)
     {
+        this.poly_canvas.root.style.display = "none";
+        this.q_poly_canvas.root.style.display = "none";
+        this.brick_canvas.canvas.style.display = "none";
+
         if(view == "polytope")
         {
-            this.poly_canvas.canvas.style.display = "";
-            this.brick_canvas.canvas.style.display = "none";
+            this.poly_canvas.root.style.display = "";
         }
         else if (view == "brick")
         {
             this.brick_canvas.canvas.style.display = "";
-            this.poly_canvas.canvas.style.display = "none";
+        }
+        else if (view == "qpolytope")
+        {
+            this.q_poly_canvas.root.style.display = "";
         }
         else
         {
+            this.brick_canvas.canvas.style.display = "";
             console.warn("Tried to change left corner to invalid name!")
         }
     }
@@ -427,7 +451,8 @@ export class CliqueViewer implements IMode
             this.swap_box.hide_box(route);
         }
 
-        this.poly_canvas.set_clique(clq)
+        this.poly_canvas.set_clique(clq);
+        this.q_poly_canvas.set_clique(clq);
     }
 
     //Mutate across the (idx)th route in the current clique.
@@ -444,6 +469,7 @@ export class CliqueViewer implements IMode
         let oc = this.cliques.cliques[old_clq];
         let nc = this.cliques.cliques[new_clq];
         this.poly_canvas.set_clique(nc);
+        this.q_poly_canvas.set_clique(nc)
 
         //If cliques are different, update swap box.
         if(old_clq != new_clq) {
@@ -1159,6 +1185,7 @@ export class CliqueViewer implements IMode
     draw_polytope()
     {
         this.poly_canvas.draw();
+        this.q_poly_canvas.draw();
     }
 
     /*
@@ -1507,9 +1534,9 @@ export class CliqueViewer implements IMode
         }
 
         return {
-            dag: this.dag.to_json_ob(),
-            polytope: this.polytope.to_json_ob(),
-            cliques: this.cliques.to_json_ob(),
+            dag: this.dag.to_json_object(),
+            polytope: this.polytope.to_json_object(),
+            cliques: this.cliques.to_json_object(),
             hasse_overrides
         }
     }
