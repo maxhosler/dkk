@@ -859,7 +859,6 @@ export class DAGCliques
 	}
 }
 
-//TODO: Bricks
 export type JSONDAGCliques = {
 	dag: JSONFramedDag,
 	routes: number[][],
