@@ -186,6 +186,7 @@ export class DKKProgram
         else if(data.datatype == "precomp")
         {
             let d = data.data;
+            console.log(d);
             this.set_dag_precomp(d);
         }
         else if(data.datatype == "dag")
@@ -281,21 +282,17 @@ export class DKKProgram
 
     /*
     Loads the provided DAG, as well as any precomputed data, into the 
-    clique viewer. Since this is not intended to be called outside the clique
-    viewer, does nothing when not.
+    clique viewer.
 
     If the loaded data is found to be invalid, does nothing and shows alert.
     */
     set_dag_precomp(emb: JSONCliqueData)
     {
-        if(this.mode.name() == "clique-viewer")
-        {
-            let attempt = CliqueViewer.precomp_destructive_new(emb, this.draw_options);
-            if(attempt.is_ok())
-                this.set_mode(attempt.unwrap())
-            else
-                alert("Invalid DAG data! "+attempt.error().err_message);
-        }
+        let attempt = CliqueViewer.precomp_destructive_new(emb, this.draw_options);
+        if(attempt.is_ok())
+            this.set_mode(attempt.unwrap())
+        else
+            alert("Invalid DAG data! "+attempt.error().err_message);
     }
 
     set_mode(mode: IMode)

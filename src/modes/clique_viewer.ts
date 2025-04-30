@@ -135,6 +135,7 @@ export class CliqueViewer implements IMode
             SIDEBAR_HEAD, SIDEBAR_CONTENTS, RIGHT_AREA
         );
         cv.set_hasse_overrides(hasse_overrides);
+        cv.recomp_poset_scales();
 
         return Result.ok(cv);
     }
