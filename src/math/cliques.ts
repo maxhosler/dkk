@@ -847,7 +847,23 @@ export class DAGCliques
 			}
 			else if(f == "brick_hasse")
 			{
-				out.brick_hasse = HasseDiagram.parse_json(data.brick_hasse).unwrap()
+				out.brick_hasse = BrickHasseDiagram.parse_json(data.brick_hasse).unwrap()
+			}
+			else if(f == "routes")
+			{
+				out.routes = [];
+				for(let r of data.routes)
+				{
+					out.routes.push(new Route(r))
+				}
+			}
+			else if(f == "cliques")
+			{
+				out.cliques = [];
+				for(let r of data.cliques)
+				{
+					out.cliques.push(new Clique(r))
+				}
 			}
 			else
 			{
