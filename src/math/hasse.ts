@@ -419,23 +419,18 @@ function hasse_empty(): HasseDiagram
     return new HasseDiagram(poset_relation, cliques);
 }
 
-//JRB
-export class BrickHasseDiagram
+export class BrickHasseDiagram implements JSONable
 {
     readonly poset_size: number;
     readonly covering_relation: boolean[][];
-    
-    //JRB: I probably should mimic these, but I won't
-    //readonly layout_rows: Vector2[];
-    //readonly bounding_box: BoundingBox;
 
-    constructor(poset_relation: boolean[][], bricks: Brick[]) //JRB: Not sure about cliques
+    public static from_poset(poset_relation: boolean[][]): BrickHasseDiagram
     {
         //Extracts the covering relation from the poset relation.
         let covering_relation: boolean[][] = structuredClone(poset_relation);
-        this.poset_size = covering_relation.length;
-        for(let brk1 = 0; brk1 < this.poset_size; brk1++){
-            for(let brk2 = 0; brk2 < this.poset_size; brk2++)
+        let poset_size = covering_relation.length;
+        for(let brk1 = 0; brk1 < poset_size; brk1++){
+            for(let brk2 = 0; brk2 < poset_size; brk2++)
             {
                 if(brk1 == brk2)
                 {
@@ -443,7 +438,7 @@ export class BrickHasseDiagram
                     continue;
                 }
                 if(!poset_relation[brk1][brk2]) continue;
-                for(let brk_mid = 0; brk_mid < this.poset_size; brk_mid++)
+                for(let brk_mid = 0; brk_mid < poset_size; brk_mid++)
                 {
                     if(brk_mid == brk1 || brk_mid == brk2) continue;
                     if(poset_relation[brk1][brk_mid] && poset_relation[brk_mid][brk2])
@@ -454,12 +449,43 @@ export class BrickHasseDiagram
                 }
             }
         }
-        this.covering_relation = covering_relation;
+
+        return new BrickHasseDiagram(poset_size, poset_relation);
     }
 
+    private constructor(poset_size: number, covering_relation: boolean[][])
+    {
+        this.poset_size = poset_size;
+        this.covering_relation = covering_relation
+    }
+
+    static json_schema(): ZodType<JSONBrickHasseDiagram> {
+        return z.object({
+            poset_size: z.number(),
+            covering_relation: z.boolean().array().array()
+        })
+    }
+    to_json_object(): JSONBrickHasseDiagram
+    {
+        return {
+            poset_size: this.poset_size,
+            covering_relation: structuredClone(this.covering_relation)
+        }
+    }
+
+    static parse_json(raw_ob: Object): Result<BrickHasseDiagram>
+    {
+        let res = BrickHasseDiagram.json_schema().safeParse(raw_ob);
+        if(!res.success)
+            return Result.err("MalformedData", res.error.toString())
+
+        return Result.ok(
+            new BrickHasseDiagram(res.data.poset_size, res.data.covering_relation)
+        )
+    }
 }
-//ENDJRB
 
-
-
-
+export type JSONBrickHasseDiagram = {
+    poset_size: number,
+    covering_relation: boolean[][]
+}

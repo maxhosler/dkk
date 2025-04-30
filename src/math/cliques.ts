@@ -1,6 +1,6 @@
 import { FramedDAG, JSONFramedDag } from "./dag";
 import { Option, Result } from "../util/result";
-import { BrickHasseDiagram, HasseDiagram, JSONHasseDiagram } from "./hasse";
+import { BrickHasseDiagram, HasseDiagram, JSONBrickHasseDiagram, JSONHasseDiagram } from "./hasse";
 import { z, ZodType } from "zod";
 
 //Just a wrapper around a list of numbers, each representing an edge
@@ -140,17 +140,16 @@ export class DAGCliques
 	readonly shared_subroutes_arr: SharedSubrouteCollection[][];
 	readonly hasse: HasseDiagram;
 
-	//JRB
 	readonly bricks: Brick[];
-	//the jth entry of downbricks is a list with clique_size elements
-	//the ith entry of the jth entry of downbricks is the downbrick of route i of clique j (if exists)
-	//and -1 otherwise
+
+	//downbricks[j] is a list with clique_size elements
+	//downbricks[j][i] is the downbrick of route i of clique j (if exists) and -1 otherwise
 	readonly downbricks: number[][];
 	readonly upbricks: number[][];
+
 	//brick_leq_matrix[i][j] is true if brick j is leq brick i, and false otherwise
 	readonly brick_leq_matrix: boolean[][];
 	readonly brick_hasse: BrickHasseDiagram;
-	//ENDJRB
 
 	constructor(dag: FramedDAG)
 	{
@@ -502,7 +501,7 @@ export class DAGCliques
 			}
 		}
 		this.brick_leq_matrix = brick_leq_matrix;
-		this.brick_hasse = new BrickHasseDiagram(brick_leq_matrix, this.bricks);
+		this.brick_hasse = BrickHasseDiagram.from_poset(brick_leq_matrix);
 	}
 
 	/*
@@ -701,12 +700,10 @@ export class DAGCliques
 		return -1;
 	}
 
-	//check if two bricks are compatible
 	bricks_compatible(brk_idx_1: number, brk_idx_2: number): boolean
 	{
-		return (this.clique_from_bricks([brk_idx_1,brk_idx_2])!=-1)
+		return this.clique_from_bricks([brk_idx_1,brk_idx_2])!=-1
 	}
-	//ENDJRB
 
 	shared_subroutes(route_idx_1: number, route_idx_2: number): SharedSubroute[]
 	{
@@ -761,7 +758,14 @@ export class DAGCliques
 			clique_leq_matrix: z.boolean().array().array(),
 
 			shared_subroutes_arr: shared_subroute_schema().array().array().array(),
-			hasse: HasseDiagram.json_schema()
+			hasse: HasseDiagram.json_schema(),
+			
+			bricks: brick_schema().array(),
+			downbricks: z.number().array().array(),
+			upbricks: z.number().array().array(),
+
+			brick_leq_matrix: z.boolean().array().array(),
+			brick_hasse: BrickHasseDiagram.json_schema()
 		})
 	}
 	to_json_object(): JSONDAGCliques
@@ -805,10 +809,18 @@ export class DAGCliques
 
 		let hasse = this.hasse.to_json_object();
 
+		let bricks = structuredClone(this.bricks);
+		let downbricks = structuredClone(this.downbricks)
+		let upbricks = structuredClone(this.upbricks);
+
+		let brick_leq_matrix = structuredClone(this.brick_leq_matrix);
+		let brick_hasse = this.brick_hasse.to_json_object();
+
 		return {
 			dag, routes, cliques, clique_size, exceptional_routes,
 			mutations, clique_leq_matrix, shared_subroutes_arr,
-			hasse
+			hasse,
+			bricks, downbricks, upbricks, brick_leq_matrix, brick_hasse
 		}
 	}
 
@@ -830,7 +842,14 @@ export type JSONDAGCliques = {
 	mutations: number[][],
 	clique_leq_matrix: boolean[][],
 	shared_subroutes_arr: JSONSharedSubroute[][][],
-	hasse: JSONHasseDiagram
+	hasse: JSONHasseDiagram,
+
+	bricks: Brick[],
+	downbricks: number[][];
+	upbricks: number[][];
+
+	brick_leq_matrix: boolean[][];
+	brick_hasse: JSONBrickHasseDiagram;
 };
 export type JSONSharedSubroute = {
 	in_vert: number,
@@ -859,10 +878,15 @@ function shared_subroute_schema(): ZodType<JSONSharedSubroute>
 		out_order: z.literal(1).or(z.literal(0)).or(z.literal(-1))
 	})
 }
-
-function empty_fd(): FramedDAG
+function brick_schema(): ZodType<Brick>
 {
-	let dag = new FramedDAG(2);
-	dag.add_edge(0,1);
-	return dag;
+	return z.object({
+		in_vert: z.number(),
+		out_vert: z.number(),
+		edges: z.number().array(),
+		in_edge_order: z.number(),
+		out_edge_order: z.number(),
+		in_edges: z.tuple([z.number(), z.number()]),
+		out_edges: z.tuple([z.number(), z.number()])
+	})
 }
